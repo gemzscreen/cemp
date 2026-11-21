@@ -2,6 +2,12 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v0.1.0: Conversions (2026-11-21)
+- Unit converter: 12 categories (length, area, volume, mass, force, stress/pressure, moment, line load, unit weight, density, flow, temperature), 81 units incl. kgf/tf and board foot. Exact definition-based factors; all-units comparison table.
+- Reference tables: PH rebar sizes (area, perimeter, kg/m, kg per 6/7.5/9/12 m bar), PNS 49 grades (flagged *verify* for 2020 edition), typical material unit weights (flagged *verify*), sheet steel gauge, steel pipe NPS/DN Sch 40.
+- Dashboard "What's new" banner; Conversions tile shows unit/table counts.
+- Shared `lib/convert.ts` (reused by the v0.8.0 API). Added CLAUDE.md release/content rules.
+
 ## v0.0.0 — Foundation (2026-11-18)
 - Supabase project `CEMP` (ap-southeast-1) with full content schema: entries + revisions, code index, tools, units, reference tables, bookmarks, notes, releases.
 - Row-level security: viewers read published content only; editors write drafts; only the admin publishes.

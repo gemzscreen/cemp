@@ -10,11 +10,13 @@ const GROUP_TO_MODULE: Record<string, string> = {
 
 export default async function Dashboard() {
   const supabase = await createClient();
-  const [{ data: entries }, { data: specs }, { data: release }] = await Promise.all([
+  const [{ data: entries }, { data: specs }, { data: release }, { count: unitCount }, { count: tableCount }] = await Promise.all([
     supabase.from("entries").select("module"),
     supabase.from("specializations").select("*").order("sort"),
-    supabase.from("releases").select("version,batch_name,released_at")
-      .order("released_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle(),
+    supabase.from("releases").select("version,batch_name,notes_md,released_at")
+      .not("released_at", "is", null).order("id", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("units").select("id", { count: "exact", head: true }),
+    supabase.from("ref_tables").select("id", { count: "exact", head: true }),
   ]);
 
   const counts: Record<string, number> = {};
@@ -30,6 +32,17 @@ export default async function Dashboard() {
         {release && <> · current release <strong>{release.version}</strong> ({release.batch_name})</>}
       </p>
 
+      {release?.notes_md && (
+        <div className="whatsnew">
+          <span className="tag">What&apos;s new · {release.version}</span>
+          <div>
+            <strong>{release.batch_name}</strong>
+            <pre>{release.notes_md.replace(/\\n/g, "\n")}</pre>
+            <Link href="/releases" className="fine">All releases →</Link>
+          </div>
+        </div>
+      )}
+
       <div className="grid">
         {MODULES.map((m) => (
           <Link key={m.slug} href={`/${m.slug}`} className="tile">
@@ -37,7 +50,9 @@ export default async function Dashboard() {
             <span className="name">{m.name}</span>
             <span className="blurb">{m.blurb}</span>
             <span className="meta">
-              <span>{counts[m.kind] ?? 0} entries</span>
+              <span>{m.kind === "conversion"
+                ? `${unitCount ?? 0} units · ${tableCount ?? 0} tables`
+                : `${counts[m.kind] ?? 0} entries`}</span>
               <span>first batch {m.batch}</span>
             </span>
           </Link>

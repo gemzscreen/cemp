@@ -126,3 +126,31 @@ input:focus { outline: 2px solid var(--safe); border-color: var(--safe); }
   .nav { order: 3; flex-basis: 100%; }
   h1 { font-size: 1.35rem; }
 }
+
+/* v0.1.0: converter + tables */
+button.chip { cursor: pointer; font: inherit; font-size: .8rem; }
+.conv-row { display: grid; grid-template-columns: 1fr 1.4fr auto 1.4fr; gap: .5rem; align-items: center; }
+.conv-row input, .conv-row select { width: 100%; padding: .6rem .7rem; border: 1px solid #cbd2d9; border-radius: 7px; font: inherit; background: #fff; }
+.swap { border: 1px solid var(--line); background: #fff; border-radius: 7px; padding: .55rem .7rem; cursor: pointer; font-size: 1rem; }
+.swap:hover { border-color: var(--safe); color: var(--safe); }
+.conv-result { margin: 1rem 0; padding: .9rem 1rem; background: var(--safe-bg); border-radius: 8px; color: #1d4e83; }
+.conv-result .big { font-size: 1.8rem; font-weight: 800; font-family: var(--mono); }
+.conv-result .unit { font-weight: 700; }
+.muted { color: var(--muted); font-weight: 400; }
+.tbl-wrap { overflow-x: auto; }
+.tbl { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.tbl th, .tbl td { padding: .45rem .6rem; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.tbl th { font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); background: #faf8f3; }
+.tbl td.num { text-align: right; font-family: var(--mono); }
+.tbl tr.hl td { background: #f3f8fd; }
+.tbl.compact td, .tbl.compact th { padding: .35rem .5rem; }
+.whatsnew { display: flex; gap: 1rem; align-items: flex-start; background: var(--card); border: 1.5px solid var(--safe);
+  border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1.25rem; }
+.whatsnew .tag { font-family: var(--mono); font-size: .75rem; background: var(--safe); color: #fff; padding: .15rem .5rem; border-radius: 4px; white-space: nowrap; }
+.whatsnew pre { white-space: pre-wrap; font-family: inherit; margin: .25rem 0 0; font-size: .86rem; color: var(--ink-2); }
+@media (max-width: 640px) {
+  .conv-row { grid-template-columns: 1fr auto; }
+  .conv-row input { grid-column: 1 / -1; }
+  .conv-row select { grid-column: 1 / 2; }
+  .conv-row .swap { grid-row: 2 / 4; grid-column: 2; }
+}
