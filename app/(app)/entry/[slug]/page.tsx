@@ -2,12 +2,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { moduleByKind } from "@/lib/modules";
+import Diagram from "@/components/Diagram";
+import { reviewAndPublish, sendBackToDraft } from "./actions";
 
 type Section = { heading?: string; kind?: "safe" | "avoid" | "text" | "list"; text?: string; items?: string[] };
 
-export default async function EntryPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function EntryPage({
+  params, searchParams,
+}: { params: Promise<{ slug: string }>; searchParams: Promise<{ ok?: string; err?: string }> }) {
   const { slug } = await params;
+  const { ok, err } = await searchParams;
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const isAdmin = me?.role === "admin";
 
   const { data: entry } = await supabase
     .from("entries")
@@ -41,11 +49,12 @@ export default async function EntryPage({ params }: { params: Promise<{ slug: st
         </div>
       )}
 
+      {ok && <div className="msg ok" style={{ marginBottom: "1rem" }}>{ok === "published" ? "Reviewed and published." : "Moved back to draft."}</div>}
+      {err && <div className="msg err" style={{ marginBottom: "1rem" }}>{err}</div>}
+
       {rev?.diagram && (
-        <div className="panel" style={{ marginBottom: "1rem" }}>
-          <h2>Diagram spec</h2>
-          <p className="sub" style={{ margin: 0 }}>The SVG renderer ships in v0.2.0. Raw spec shown for now.</p>
-          <pre className="json">{JSON.stringify(rev.diagram, null, 2)}</pre>
+        <div className="panel diagram" style={{ marginBottom: "1rem" }}>
+          <Diagram spec={rev.diagram} />
         </div>
       )}
 
@@ -70,6 +79,24 @@ export default async function EntryPage({ params }: { params: Promise<{ slug: st
               return <li key={i}><code>{d?.short_name} {d?.edition ? `(${d.edition}) ` : ""}§{c?.section_no}</code> {c?.title}{r.note ? ` · ${r.note}` : ""}</li>;
             })}
           </ul>
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="panel admin-bar">
+          <strong>Admin</strong>
+          {entry.status !== "published" ? (
+            <form action={reviewAndPublish}>
+              <input type="hidden" name="slug" value={entry.slug} />
+              <button className="btn" style={{ width: "auto", marginTop: 0 }}>✓ Mark reviewed &amp; publish</button>
+            </form>
+          ) : (
+            <form action={sendBackToDraft}>
+              <input type="hidden" name="slug" value={entry.slug} />
+              <button className="btn ghost" style={{ width: "auto", marginTop: 0 }}>Unpublish (back to draft)</button>
+            </form>
+          )}
+          <span className="fine" style={{ margin: 0 }}>Publishing stamps this revision as reviewed by you. Check the values against your NSCP copy first.</span>
         </div>
       )}
 

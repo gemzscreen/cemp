@@ -2,6 +2,13 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v0.2.0: Diagram engine + Concrete Practices I (2026-11-22)
+- SVG diagram engine (`components/Diagram.tsx`, spec types in `lib/diagram.ts`): span (slab/beam elevations with safe/avoid/confine zones, laps, joints, moment/shear diagrams), column (zones, hoops, laps) and section (cover/spacing callouts).
+- 12 Concrete Practice cards seeded as **review** drafts: splice zones (slabs, SMF beams, SMF columns), column lo zone, SMF beam hoop zone, construction joints (beams, slabs), cover, clear spacing, hooks & bends, curing, strength sampling & acceptance.
+- NSCP 2015 clause index: 11 clauses (own-words summaries + ACI 318-14 equivalents), linked to cards.
+- Admin "Mark reviewed & publish" / "Unpublish" actions on entry pages (DB publish gate still enforces the rules).
+- Removed GitHub Pages `CNAME` file (site is served by Vercel).
+
 ## v0.1.0: Conversions (2026-11-21)
 - Unit converter: 12 categories (length, area, volume, mass, force, stress/pressure, moment, line load, unit weight, density, flow, temperature), 81 units incl. kgf/tf and board foot. Exact definition-based factors; all-units comparison table.
 - Reference tables: PH rebar sizes (area, perimeter, kg/m, kg per 6/7.5/9/12 m bar), PNS 49 grades (flagged *verify* for 2020 edition), typical material unit weights (flagged *verify*), sheet steel gauge, steel pipe NPS/DN Sch 40.

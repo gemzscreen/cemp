@@ -154,3 +154,7 @@ button.chip { cursor: pointer; font: inherit; font-size: .8rem; }
   .conv-row select { grid-column: 1 / 2; }
   .conv-row .swap { grid-row: 2 / 4; grid-column: 2; }
 }
+
+/* v0.2.0: diagrams + admin */
+.panel.diagram { padding: .75rem; background: #fff; }
+.admin-bar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: 1rem; border-color: var(--gold); background: #fffbef; }

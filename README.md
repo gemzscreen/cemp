@@ -51,7 +51,7 @@ npm run dev                  # http://localhost:3000
 |---|---|
 | v0.0.0 | Foundation ✅ |
 | v0.1.0 | Conversions + PH rebar/material tables ✅ |
-| v0.2.0 | Diagram engine + Concrete Practices I |
+| v0.2.0 | Diagram engine + Concrete Practices I ✅ |
 | v0.3.0 | Concrete Tools + NSCP 2015 clause index |
 | v0.4.0 | Steel, Welding, Bolting |
 | v0.5.0 | CM I: PERT/CPM, QS, Cost Estimating |
