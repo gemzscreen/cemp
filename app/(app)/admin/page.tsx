@@ -1,17 +1,18 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getMe } from "@/lib/auth";
 import { BATCHES } from "@/content";
 import { syncBatch, setApiClientActive } from "./actions";
 import ApiKeyForm from "@/components/ApiKeyForm";
 
 export const metadata = { title: "Admin" };
+export const maxDuration = 60; // sync runs as a server action of this page
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string }> }) {
   const { ok, err } = await searchParams;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const { supabase, user, role } = await getMe();
+  const me = { role };
   if (me?.role !== "admin") redirect("/");
 
   const [{ data: releases }, { data: queue }, { data: clients }] = await Promise.all([
@@ -39,7 +40,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
               </div>
               <form action={syncBatch}>
                 <input type="hidden" name="version" value={b.version} />
-                <button className="btn" style={{ width: "auto", marginTop: 0 }}>{synced.has(b.version) ? "Re-sync" : "Sync content"}</button>
+                <SubmitButton style={{ width: "auto", marginTop: 0 }} pending={`Syncing ${b.version}…`} hint="Usually 5–20 s. Keep this page open: a green or red message appears when done.">{synced.has(b.version) ? "Re-sync" : "Sync content"}</SubmitButton>
               </form>
             </div>
           ))}

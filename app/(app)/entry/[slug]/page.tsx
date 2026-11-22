@@ -1,6 +1,7 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getMe } from "@/lib/auth";
 import { moduleByKind } from "@/lib/modules";
 import Diagram from "@/components/Diagram";
 import ToolRunner from "@/components/ToolRunner";
@@ -15,21 +16,25 @@ export default async function EntryPage({
 }: { params: Promise<{ slug: string }>; searchParams: Promise<{ ok?: string; err?: string }> }) {
   const { slug } = await params;
   const { ok, err } = await searchParams;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const { supabase, user, role } = await getMe();
+  const me = { role };
   const isAdmin = me?.role === "admin";
   const canEdit = isAdmin || me?.role === "editor";
 
-  const { data: entry } = await supabase
-    .from("entries")
-    .select(`id,module,title,slug,summary,status,published_at,updated_at,
-      specializations(name),
-      current:entry_revisions!entries_current_revision_fk(rev_no,body,diagram,code_edition,reviewed_at,change_note,created_at),
-      entry_clause_refs(note, code_clauses(section_no,title,code_documents(short_name,edition))),
-      entry_tags(tags(name,kind))`)
-    .eq("slug", slug)
-    .maybeSingle();
+  // One round of parallel queries: the entry (with its tool), the user's bookmark and notes (matched by slug).
+  const [{ data: entry }, { data: bm }, { data: notes }] = await Promise.all([
+    supabase.from("entries")
+      .select(`id,module,title,slug,summary,status,published_at,updated_at,
+        specializations(name),
+        current:entry_revisions!entries_current_revision_fk(rev_no,body,diagram,code_edition,reviewed_at,change_note,created_at),
+        entry_clause_refs(note, code_clauses(section_no,title,code_documents(short_name,edition))),
+        entry_tags(tags(name,kind)),
+        tools(calc_key,hand_check)`)
+      .eq("slug", slug)
+      .maybeSingle(),
+    supabase.from("bookmarks").select("entry_id, entries!inner(slug)").eq("entries.slug", slug).eq("user_id", user?.id ?? "").maybeSingle(),
+    supabase.from("user_notes").select("id,body,updated_at, entries!inner(slug)").eq("entries.slug", slug).eq("user_id", user?.id ?? "").order("created_at"),
+  ]);
   if (!entry) notFound();
 
   // Supabase returns to-one joins as objects; normalise defensively.
@@ -38,13 +43,7 @@ export default async function EntryPage({
   const spec = one(entry.specializations as any) as any;
   const mod = moduleByKind(entry.module);
   const sections: Section[] = rev?.body?.sections ?? [];
-  const [{ data: bm }, { data: notes }] = await Promise.all([
-    supabase.from("bookmarks").select("entry_id").eq("entry_id", entry.id).eq("user_id", user?.id ?? "").maybeSingle(),
-    supabase.from("user_notes").select("id,body,updated_at").eq("entry_id", entry.id).eq("user_id", user?.id ?? "").order("created_at"),
-  ]);
-  const { data: tool } = entry.module === "tool"
-    ? await supabase.from("tools").select("calc_key,hand_check").eq("entry_id", entry.id).maybeSingle()
-    : { data: null };
+  const tool = entry.module === "tool" ? (one(entry.tools as any) as { calc_key: string; hand_check: any } | null) : null;
 
   return (
     <article>
@@ -55,7 +54,7 @@ export default async function EntryPage({
       <form action={toggleBookmark} className="no-print" style={{ margin: "-.3rem 0 .6rem" }}>
         <input type="hidden" name="entry_id" value={entry.id} /><input type="hidden" name="slug" value={entry.slug} />
         <input type="hidden" name="on" value={bm ? "1" : "0"} />
-        <button className="btn ghost" style={{ width: "auto", marginTop: 0 }}>{bm ? "★ Saved (remove)" : "☆ Save to my list"}</button>
+        <SubmitButton className="btn ghost" style={{ width: "auto", marginTop: 0 }} pending="Saving…">{bm ? "★ Saved (remove)" : "☆ Save to my list"}</SubmitButton>
         {" "}<Link href={`/entry/${entry.slug}/history`} className="btn ghost" style={{ width: "auto", marginTop: 0 }}>History</Link>
         {canEdit && <>{" "}<Link href={`/entry/${entry.slug}/edit`} className="btn ghost" style={{ width: "auto", marginTop: 0 }}>✎ Edit</Link></>}
       </form>
@@ -111,7 +110,7 @@ export default async function EntryPage({
         <form action={addNote} className="note-form">
           <input type="hidden" name="entry_id" value={entry.id} /><input type="hidden" name="slug" value={entry.slug} />
           <textarea name="body" rows={2} maxLength={4000} placeholder="Add a note: site experience, project reference, a reminder…" required />
-          <button className="btn" style={{ width: "auto", marginTop: ".4rem" }}>Add note</button>
+          <SubmitButton style={{ width: "auto", marginTop: ".4rem" }} pending="Adding…">Add note</SubmitButton>
         </form>
       </div>
 
@@ -121,12 +120,12 @@ export default async function EntryPage({
           {entry.status !== "published" ? (
             <form action={reviewAndPublish}>
               <input type="hidden" name="slug" value={entry.slug} />
-              <button className="btn" style={{ width: "auto", marginTop: 0 }}>✓ Mark reviewed &amp; publish</button>
+              <SubmitButton style={{ width: "auto", marginTop: 0 }} pending="Publishing…">✓ Mark reviewed &amp; publish</SubmitButton>
             </form>
           ) : (
             <form action={sendBackToDraft}>
               <input type="hidden" name="slug" value={entry.slug} />
-              <button className="btn ghost" style={{ width: "auto", marginTop: 0 }}>Unpublish (back to draft)</button>
+              <SubmitButton className="btn ghost" style={{ width: "auto", marginTop: 0 }} pending="Updating…">Unpublish (back to draft)</SubmitButton>
             </form>
           )}
           <span className="fine" style={{ margin: 0 }}>Publishing stamps this revision as reviewed by you. Check the values against your NSCP copy first.</span>

@@ -1,12 +1,12 @@
 import Converter from "@/components/Converter";
 import RefTable, { type RefTableRow } from "@/components/RefTable";
-import { createClient } from "@/lib/supabase/server";
+import { getDb } from "@/lib/auth";
 import type { Unit, UnitCategory } from "@/lib/convert";
 
 export const metadata = { title: "Conversions" };
 
 export default async function ConversionsPage() {
-  const supabase = await createClient();
+  const supabase = await getDb();
   const [{ data: cats }, { data: units }, { data: tables }] = await Promise.all([
     supabase.from("unit_categories").select("*").order("sort"),
     supabase.from("units").select("*").order("sort"),

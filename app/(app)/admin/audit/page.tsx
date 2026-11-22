@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getMe } from "@/lib/auth";
 import { BATCHES } from "@/content";
 import { APP_VERSION } from "@/lib/modules";
 import { handCheckDrift, verifyFlags, type Finding } from "@/lib/audit";
@@ -10,9 +10,8 @@ const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ?
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 export default async function AuditPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const { supabase, user, role } = await getMe();
+  const me = { role };
   if (me?.role !== "admin") redirect("/");
 
   const [{ data: entries }, { data: releases }, { data: refTables }] = await Promise.all([

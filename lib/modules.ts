@@ -18,4 +18,4 @@ export const MODULES: {
 export const moduleBySlug = (slug: string) => MODULES.find((m) => m.slug === slug);
 export const moduleByKind = (kind: string) => MODULES.find((m) => m.kind === kind);
 
-export const APP_VERSION = "v1.0.0-rc.1";
+export const APP_VERSION = "v1.0.0-rc.2";

@@ -34,9 +34,11 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  let user = null;
+  // getClaims() refreshes an expired session and verifies the JWT (locally with asymmetric keys).
+  let user: { sub: string } | null = null;
   try {
-    ({ data: { user } } = await supabase.auth.getUser());
+    const { data } = await supabase.auth.getClaims();
+    user = data?.claims?.sub ? { sub: data.claims.sub as string } : null;
   } catch {
     user = null; // auth service unreachable: treat as signed out
   }

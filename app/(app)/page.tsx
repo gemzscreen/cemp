@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getDb } from "@/lib/auth";
 import { MODULES } from "@/lib/modules";
 
 type Spec = { id: number; grp: string; parent_id: number | null; name: string; slug: string; sort: number };
@@ -9,7 +9,7 @@ const GROUP_TO_MODULE: Record<string, string> = {
 };
 
 export default async function Dashboard() {
-  const supabase = await createClient();
+  const supabase = await getDb();
   const [{ data: entries }, { data: specs }, { data: release }, { count: unitCount }, { count: tableCount }] = await Promise.all([
     supabase.from("entries").select("module"),
     supabase.from("specializations").select("*").order("sort"),

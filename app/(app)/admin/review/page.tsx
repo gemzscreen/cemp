@@ -1,6 +1,7 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getMe } from "@/lib/auth";
 import { MODULES, moduleByKind } from "@/lib/modules";
 import { bulkAction } from "./actions";
 
@@ -9,9 +10,8 @@ const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ?
 
 export default async function ReviewQueue({ searchParams }: { searchParams: Promise<{ module?: string; status?: string; source?: string; q?: string; ok?: string; err?: string }> }) {
   const sp = await searchParams;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const { supabase, user, role } = await getMe();
+  const me = { role };
   if (me?.role !== "admin" && me?.role !== "editor") redirect("/");
   const isAdmin = me?.role === "admin";
   const status = sp.status && ["draft", "review", "published", "deprecated"].includes(sp.status) ? sp.status : null;
@@ -51,9 +51,9 @@ export default async function ReviewQueue({ searchParams }: { searchParams: Prom
       <form action={bulkAction} className="panel">
         <input type="hidden" name="back" value={back} />
         <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: ".6rem" }}>
-          {isAdmin && <button name="action" value="publish" className="btn" style={{ width: "auto", marginTop: 0 }}>✓ Mark reviewed &amp; publish selected</button>}
-          <button name="action" value="to-review" className="btn ghost" style={{ width: "auto", marginTop: 0 }}>Send drafts to review</button>
-          {isAdmin && <button name="action" value="to-draft" className="btn ghost" style={{ width: "auto", marginTop: 0 }}>Back to draft</button>}
+          {isAdmin && <SubmitButton name="action" value="publish" style={{ width: "auto", marginTop: 0 }} pending="Publishing…" hint="Each entry goes through the publish gate.">✓ Mark reviewed &amp; publish selected</SubmitButton>}
+          <SubmitButton name="action" value="to-review" className="btn ghost" style={{ width: "auto", marginTop: 0 }} pending="Updating…">Send drafts to review</SubmitButton>
+          {isAdmin && <SubmitButton name="action" value="to-draft" className="btn ghost" style={{ width: "auto", marginTop: 0 }} pending="Updating…">Back to draft</SubmitButton>}
           <span className="fine" style={{ alignSelf: "center" }}>{rows.length} entries</span>
         </div>
         <div className="tbl-wrap"><table className="tbl compact">

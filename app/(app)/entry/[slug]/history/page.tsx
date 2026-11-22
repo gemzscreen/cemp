@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getMe } from "@/lib/auth";
 import { diffLines, sectionsToLines } from "@/lib/sections";
 import { restoreRevision } from "../../editor-actions";
 
@@ -12,9 +12,8 @@ type Rev = { id: string; rev_no: number; body: any; diagram: any; change_note: s
 export default async function History({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ a?: string; b?: string; ok?: string; err?: string }> }) {
   const { slug } = await params;
   const sp = await searchParams;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const { supabase, user, role } = await getMe();
+  const me = { role };
   const canEdit = me?.role === "admin" || me?.role === "editor";
   const { data: e } = await supabase.from("entries").select("id,title,current_revision_id").eq("slug", slug).maybeSingle();
   if (!e) notFound();

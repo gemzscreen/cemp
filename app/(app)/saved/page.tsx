@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getMe } from "@/lib/auth";
 import { moduleByKind, MODULES } from "@/lib/modules";
 import OfflineButton from "@/components/OfflineButton";
 
@@ -7,8 +7,7 @@ export const metadata = { title: "Saved" };
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null);
 
 export default async function SavedPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await getMe();
   const uid = user?.id ?? "";
   const [{ data: bms }, { data: notes }] = await Promise.all([
     supabase.from("bookmarks").select("created_at, entries(slug,title,module,summary,status)").eq("user_id", uid).order("created_at", { ascending: false }),

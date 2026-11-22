@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import SubmitButton from "@/components/SubmitButton";
+import { getMe } from "@/lib/auth";
 import { createEntry } from "../editor-actions";
 
 export const metadata = { title: "New entry" };
 
 export default async function NewEntry({ searchParams }: { searchParams: Promise<{ err?: string }> }) {
   const { err } = await searchParams;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const { supabase, user, role } = await getMe();
+  const me = { role };
   if (me?.role !== "admin" && me?.role !== "editor") redirect("/");
   const { data: specs } = await supabase.from("specializations").select("slug,name,parent_id").not("parent_id", "is", null).order("sort");
   return (
@@ -24,7 +24,7 @@ export default async function NewEntry({ searchParams }: { searchParams: Promise
         <label className="fld"><span>Title</span><input name="title" required maxLength={140} /></label>
         <label className="fld"><span>Slug <span className="muted">(optional, from title)</span></span><input name="slug" pattern="[a-z0-9-]*" placeholder="e.g. column-splice-zones" /></label>
         <label className="fld"><span>Summary</span><textarea name="summary" rows={2} maxLength={300} /></label>
-        <div><button className="btn" style={{ width: "auto" }}>Create draft &amp; open editor</button></div>
+        <div><SubmitButton style={{ width: "auto" }} pending="Creating…">Create draft &amp; open editor</SubmitButton></div>
       </form>
     </>
   );

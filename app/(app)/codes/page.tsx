@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getDb } from "@/lib/auth";
 
 export const metadata = { title: "Codes" };
 
@@ -10,7 +10,7 @@ type Doc = { id: number; short_name: string; title: string; edition: string | nu
 const secKey = (s: string) => s.split(".").map((p) => p.padStart(4, "0")).join(".");
 
 export default async function CodesPage() {
-  const supabase = await createClient();
+  const supabase = await getDb();
   const { data, error } = await supabase
     .from("code_documents")
     .select("id,short_name,title,edition,publisher,jurisdiction,status,notes,code_clauses(id,section_no,title,summary,formula_latex,limits,entry_clause_refs(note,entries(title,slug,status)))")

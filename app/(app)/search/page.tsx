@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getDb } from "@/lib/auth";
 import { CALCS } from "@/lib/calc";
 import { moduleByKind } from "@/lib/modules";
 
@@ -9,7 +9,7 @@ type Hit = { slug: string; title: string; summary: string | null; module: string
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const q = ((await searchParams).q ?? "").trim().slice(0, 80);
-  const supabase = await createClient();
+  const supabase = await getDb();
   let hits: Hit[] = [], clauses: any[] = [], err: string | null = null;
   if (q.length >= 2) {
     const safe = q.replace(/[%_,()]/g, " ");

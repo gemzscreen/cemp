@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { getDb } from "@/lib/auth";
 
 export const metadata = { title: "Releases" };
 
 export default async function Releases() {
-  const supabase = await createClient();
+  const supabase = await getDb();
   const { data } = await supabase.from("releases").select("*").order("id", { ascending: false });
   return (
     <>

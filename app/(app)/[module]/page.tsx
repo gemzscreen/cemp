@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getDb } from "@/lib/auth";
 import { moduleBySlug } from "@/lib/modules";
 
 type Spec = { id: number; parent_id: number | null; name: string; slug: string };
@@ -18,7 +18,7 @@ export default async function ModulePage({
   const m = moduleBySlug(module);
   if (!m) notFound();
 
-  const supabase = await createClient();
+  const supabase = await getDb();
   const { data: specsData } = await supabase.from("specializations").select("id,parent_id,name,slug").order("sort");
   const specs = (specsData ?? []) as Spec[];
   const children = specs.filter((s) => s.parent_id);

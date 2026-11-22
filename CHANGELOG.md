@@ -2,6 +2,13 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v1.0.0-rc.2: Speed and progress feedback (2026-11-22)
+- **Functions now run in Singapore** (`vercel.json` → `sin1`), next to the Supabase database (ap-southeast-1). Before, every query crossed from the US default region (~200 ms each).
+- **One auth check per request**: `lib/auth.ts` (`getMe`, `getDb`) caches the session and role for the layout and page together; `getClaims()` replaces `getUser()` in pages and middleware (local JWT verification with asymmetric keys; forged cookies still rejected).
+- **Entry page**: entry, tool, bookmark and notes load in one parallel round instead of ~8 sequential queries.
+- **Sync**: one upsert for all clauses, one query for all existing entries, 6 entries processed at a time with parallel writes per entry; all failures reported together (release recorded only if none). `maxDuration = 60`.
+- **Feedback**: buttons show a spinner and “Syncing v0.x…”/“Publishing…” while working and block double clicks (`components/SubmitButton.tsx`); every page shows an instant loading skeleton on navigation (`app/(app)/loading.tsx`).
+
 ## v1.0.0-rc.1: Content audit, release gate, fix pass, guides (2026-11-22)
 Release candidate. v1.0.0 is tagged when `/admin/audit` shows 0 blockers (all batches synced, all entries reviewed and published).
 - **Audit**: `lib/audit.ts` (verify flags, hand-check drift, repo checks); `npm run audit` → `docs/AUDIT.md` (0 errors, 3 verify warnings at release); `/admin/audit` live release gate with blockers (unsynced batches, unpublished entries, missing refs/hand-checks, hand-check drift, problems linking to unpublished tools) and warnings (verify flags, in-app edits not yet in the repo, missing edition stamps, flagged reference tables). Drift check run against all 15 stored hand-checks: 0 drifting; tampered value detected.
