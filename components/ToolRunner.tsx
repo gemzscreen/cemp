@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { CALCS, defaults, type Inputs } from "@/lib/calc";
 
 type HandCheck = { inputs: Inputs; results: { label: string; value: number | string; unit?: string }[]; verified_by?: string; note?: string };
@@ -21,8 +21,10 @@ export default function ToolRunner({ calcKey, handCheck }: { calcKey: string; ha
       <div className="panel">
         <h2>Inputs</h2>
         <div className="tool-grid">
-          {calc.fields.map((f) => (
-            <label key={f.key} className="fld">
+          {calc.fields.map((f, fi) => (
+            <Fragment key={f.key}>
+            {f.group && f.group !== calc.fields[fi - 1]?.group && <h3 className="fld-group">{f.group}</h3>}
+            <label className="fld">
               <span>{f.label}{f.unit ? <span className="muted"> ({f.unit})</span> : null}</span>
               {f.type === "text" ? (
                 <textarea rows={f.rows ?? 6} value={String(vals[f.key])} onChange={(e) => setVals({ ...vals, [f.key]: e.target.value })} />
@@ -35,9 +37,13 @@ export default function ToolRunner({ calcKey, handCheck }: { calcKey: string; ha
               )}
               {f.help && <small className="muted">{f.help}</small>}
             </label>
+            </Fragment>
           ))}
         </div>
-        <button type="button" className="btn ghost" style={{ width: "auto" }} onClick={() => setVals(defaults(calc))}>Reset to example</button>
+        <div className="no-print" style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+          <button type="button" className="btn ghost" style={{ width: "auto" }} onClick={() => setVals(defaults(calc))}>Reset to example</button>
+          <button type="button" className="btn ghost" style={{ width: "auto" }} onClick={() => window.print()}>Print / save as PDF</button>
+        </div>
       </div>
 
       {out ? (
@@ -76,7 +82,7 @@ export default function ToolRunner({ calcKey, handCheck }: { calcKey: string; ha
       ) : <div className="msg err">Enter valid numbers in all fields.</div>}
 
       {handCheck && (
-        <details className="panel">
+        <details className="panel no-print">
           <summary><strong>Recorded hand-check example</strong>{handCheck.verified_by ? ` · ${handCheck.verified_by}` : ""}</summary>
           <p className="fine">Inputs: {Object.entries(handCheck.inputs).map(([k, v]) => `${k} = ${v}`).join(", ")}</p>
           <ul>{handCheck.results.map((r) => <li key={r.label}>{r.label}: <strong>{r.value} {r.unit}</strong></li>)}</ul>

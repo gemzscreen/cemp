@@ -2,6 +2,7 @@
 // Run: npx tsx scripts/check-content.ts
 import { BATCHES } from "../content";
 import { CALCS, defaults } from "../lib/calc";
+import { DOCS } from "../content/types";
 
 // Clauses seeded before content-as-code (v0.2.0–v0.3.0 migrations)
 const SEEDED = ["425.5.2","426.5.6","418.6.3","418.7.4","418.7.5","418.6.4","420.6.1","425.2","425.3","426.5.3","426.12",
@@ -12,14 +13,20 @@ const TAGS = ["slab","beam","girder","column","footing","wall","stair","connecti
 let errors = 0;
 const err = (m: string) => { errors++; console.log("✕", m); };
 const slugs = new Set<string>();
+// Clauses are keyed by document; a batch may cite clauses from itself or any earlier batch (sync in order).
+const key = (doc: string | undefined, sec: string) => `${doc ?? "NSCP"}|${sec}`;
+const known = new Set(SEEDED.map((s) => key("NSCP", s)));
 for (const b of BATCHES) {
-  const known = new Set([...SEEDED, ...b.clauses.map((c) => c.section)]);
+  b.clauses.forEach((c) => {
+    if (c.doc && !DOCS[c.doc]) err(`${b.version}: clause ${c.section} uses document "${c.doc}" missing from DOCS`);
+    known.add(key(c.doc, c.section));
+  });
   for (const e of b.entries) {
     if (slugs.has(e.slug)) err(`${b.version}: duplicate slug ${e.slug}`); slugs.add(e.slug);
     if (!SPECS.includes(e.specialization)) err(`${e.slug}: unknown specialization ${e.specialization}`);
     e.tags.forEach((t) => TAGS.includes(t) || err(`${e.slug}: unknown tag ${t}`));
     if ((e.module === "practice" || e.module === "code") && e.refs.length === 0) err(`${e.slug}: needs ≥1 clause ref`);
-    e.refs.forEach((r) => (r.doc && r.doc !== "NSCP") || known.has(r.section) || err(`${e.slug}: clause ${r.section} not defined`));
+    e.refs.forEach((r) => known.has(key(r.doc, r.section)) || err(`${e.slug}: clause ${r.doc ?? "NSCP"} ${r.section} not defined in this or an earlier batch`));
     if (e.module === "tool") {
       const c = e.calc_key && CALCS[e.calc_key];
       if (!c) err(`${e.slug}: unknown calc_key ${e.calc_key}`);

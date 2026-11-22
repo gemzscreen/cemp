@@ -1,8 +1,9 @@
 // Shared types and helpers for the CEMP calc library.
+type FieldBase = { key: string; label: string; unit?: string; help?: string; group?: string }; // group → heading in the form
 export type Field =
-  | { key: string; label: string; unit?: string; type: "number"; default: number; min?: number; step?: number; help?: string }
-  | { key: string; label: string; unit?: string; type: "select"; default: string; options: { value: string; label: string }[]; help?: string }
-  | { key: string; label: string; unit?: string; type: "text"; default: string; rows?: number; help?: string };
+  | (FieldBase & { type: "number"; default: number; min?: number; step?: number })
+  | (FieldBase & { type: "select"; default: string; options: { value: string; label: string }[] })
+  | (FieldBase & { type: "text"; default: string; rows?: number });
 
 export type Result = { label: string; value: number | string; unit?: string; main?: boolean };
 export type Check = { label: string; ok: boolean; detail: string };

@@ -2,6 +2,14 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v0.6.0: Construction Management II, QA/QC & Safety (2026-11-22)
+- Checklist engine (`lib/calc/checklist.ts`): pass/fail/N.A. inspection forms run in the ToolRunner with grouped headings, verdict (accepted only when nothing fails or is left unchecked), failed-item table and a **Print / save as PDF** button with print styles. Items default to "Not checked" so forms can't be pre-filled.
+- 7 checklists: pre-pour, rebar placement, formwork & shoring, steel bolting & visual weld (AISC 360 N5), scaffold, excavation, daily site safety walk.
+- QA/QC calcs (`lib/calc/qaqc.ts`): concrete sampling frequency (NSCP 426.12.2 vs DPWH 1 set/75 m³) and strength acceptance (running average of 3, f'c − 3.5 / 0.9f'c single-test limit).
+- Safety calcs (`lib/calc/safety.ts`): OSH personnel by workforce (DO 198-18 high-risk table; brackets above 50 flagged to verify), FR/SR/TRIR, JHA with 5 × 5 risk matrix. All defaults matched an independent Python check.
+- Content batch v0.6.0: 12 tools, 6 practice cards, 2 explainers; 16 clauses indexed (NSCP 426.6/426.11/426.13, AISC 360 N5, RA 11058 Secs. 5–16, DO 198-18 Secs. 14–15). `DOCS` gains RA 11058 and DOLE DO 198.
+- `check-content` now validates refs to every document (not only NSCP) against clauses from the same or earlier batches.
+
 ## v0.5.0: Construction Management I (2026-11-22)
 - `lib/calc/cm.ts`: PERT/CPM scheduler (text activity list, forward/backward pass, float, critical path, σ, probability via normal CDF), cost build-up (DC/OCM/profit/VAT/unit cost), concrete materials takeoff by class, rebar weight + commercial-length takeoff. All defaults matched an independent Python check.
 - Calc core: `text` input fields and `table` outputs; ToolRunner renders textarea and result tables (critical path highlighted).

@@ -186,3 +186,15 @@ details.panel summary { cursor: pointer; }
 /* v0.5.0 */
 .fld textarea { width: 100%; padding: .5rem .6rem; border: 1px solid #cbd2d9; border-radius: 7px; font-family: var(--mono); font-size: .82rem; font-weight: 400; }
 .tool-grid .fld:has(textarea) { grid-column: 1 / -1; }
+
+/* v0.6.0: checklist group headings + printable tools */
+.fld-group { grid-column: 1 / -1; margin: .8rem 0 0; padding-top: .5rem; border-top: 1px solid var(--line); font-size: .92rem; color: var(--navy); }
+@media print {
+  .topbar, .nav, .no-print, .btn, form { display: none !important; }
+  body { background: #fff; }
+  .panel { border: 0 !important; box-shadow: none !important; padding: 0 !important; break-inside: avoid-page; }
+  .tool-grid { grid-template-columns: 1fr 1fr; }
+  .fld select, .fld input, .fld textarea { border: 0; border-bottom: 1px solid #999; border-radius: 0; appearance: none; -webkit-appearance: none; }
+  details > :not(summary) { display: block; }
+  .tbl tr.hl td { background: #fde2e2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
