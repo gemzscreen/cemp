@@ -2,7 +2,15 @@
 import type { DiagramSpec } from "@/lib/diagram";
 
 export type ClauseRef = { doc?: string; section: string; note?: string }; // doc defaults to NSCP 2015
-export type Section = { kind: "safe" | "avoid" | "text" | "list"; heading?: string; text?: string; items?: string[] };
+export type Card = { q: string; a: string };
+export type Problem = { statement: string; given: string[]; find: string; steps: string[]; answer: string[]; tool?: string /* entry slug */ };
+/** v0.7.0 adds: table (comparisons), cards (flashcards), problem (worked board-type problem).
+ *  verified: false shows a "verify" badge on the section (unverified reference data). */
+export type Section = {
+  kind: "safe" | "avoid" | "text" | "list" | "table" | "cards" | "problem";
+  heading?: string; text?: string; items?: string[];
+  columns?: string[]; rows?: string[][]; cards?: Card[]; problem?: Problem; verified?: boolean;
+};
 
 export type BatchClause = { doc?: string; section: string; title: string; summary: string; equivalent?: string };
 export type BatchEntry = {

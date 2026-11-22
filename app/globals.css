@@ -198,3 +198,15 @@ details.panel summary { cursor: pointer; }
   details > :not(summary) { display: block; }
   .tbl tr.hl td { background: #fde2e2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* v0.7.0: section kinds */
+.sec-safe { border-color: var(--safe); background: #f3f8fd; }
+.sec-avoid { border-color: var(--avoid); background: #fff7ef; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .6rem; }
+.flash { border: 1px solid var(--line); border-radius: 9px; padding: .7rem .8rem; background: #fff; cursor: pointer; }
+.flash summary { list-style: none; font-weight: 600; font-size: .9rem; }
+.flash summary::-webkit-details-marker { display: none; }
+.flash[open] { background: #f3f8fd; border-color: var(--safe); }
+.flash .ans { margin-top: .5rem; padding-top: .5rem; border-top: 1px dashed var(--line); font-size: .88rem; }
+.problem details summary { cursor: pointer; margin: .3rem 0; }
+@media print { .flash .ans { display: block; } }

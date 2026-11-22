@@ -10,6 +10,10 @@ const SEEDED = ["425.5.2","426.5.6","418.6.3","418.7.4","418.7.5","418.6.4","420
 const SPECS = ["concrete","steel","welding","bolting","project-management","pert-cpm","quantity-surveying","cost-estimation","qa-qc","safety-health","cele","ph-to-global"];
 const TAGS = ["slab","beam","girder","column","footing","wall","stair","connection","truss","rebar","formwork","concreting","curing","welding-activity","bolting-activity","takeoff","estimating","scheduling","inspection","safety","pre-construction","construction","turnover"];
 
+// Tool entries seeded by SQL (v0.3.0) plus every tool defined in content batches
+const TOOL_SLUGS = new Set(["tool-beam-flexural-capacity","tool-beam-required-steel","tool-column-maximum-axial-strength","tool-development-length-and-lap-splice",
+  "tool-hooked-bar-development-length","tool-one-way-slab-thickness-and-temperature-bars",
+  ...BATCHES.flatMap((b) => b.entries.filter((e) => e.module === "tool").map((e) => e.slug))]);
 let errors = 0;
 const err = (m: string) => { errors++; console.log("✕", m); };
 const slugs = new Set<string>();
@@ -27,6 +31,13 @@ for (const b of BATCHES) {
     e.tags.forEach((t) => TAGS.includes(t) || err(`${e.slug}: unknown tag ${t}`));
     if ((e.module === "practice" || e.module === "code") && e.refs.length === 0) err(`${e.slug}: needs ≥1 clause ref`);
     e.refs.forEach((r) => known.has(key(r.doc, r.section)) || err(`${e.slug}: clause ${r.doc ?? "NSCP"} ${r.section} not defined in this or an earlier batch`));
+    e.sections.forEach((s, k) => {
+      const at = `${e.slug} §${k + 1}`;
+      if (s.kind === "table" && (!s.columns?.length || (s.rows ?? []).some((r) => r.length !== s.columns!.length))) err(`${at}: table rows must match ${s.columns?.length} columns`);
+      if (s.kind === "cards" && !s.cards?.length) err(`${at}: empty flashcard deck`);
+      if (s.kind === "problem" && (!s.problem?.answer.length || !s.problem.steps.length)) err(`${at}: problem without steps/answer`);
+      if (s.kind === "problem" && s.problem?.tool && !TOOL_SLUGS.has(s.problem.tool)) err(`${at}: links to unknown tool ${s.problem.tool}`);
+    });
     if (e.module === "tool") {
       const c = e.calc_key && CALCS[e.calc_key];
       if (!c) err(`${e.slug}: unknown calc_key ${e.calc_key}`);

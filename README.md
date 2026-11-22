@@ -56,7 +56,7 @@ npm run dev                  # http://localhost:3000
 | v0.4.0 | Steel, Welding, Bolting ✅ |
 | v0.5.0 | CM I: PERT/CPM, QS, Cost Estimating ✅ |
 | v0.6.0 | CM II: QA/QC, Safety ✅ |
-| v0.7.0 | Education: CELE + PH ↔ Global |
+| v0.7.0 | Education: CELE + PH ↔ Global ✅ |
 | v0.8.0 | Integration API (darkwizscroll, DARKWIZ CT), search, bookmarks, Excel/PDF export |
 | v0.9.0 | Admin editor, review queue, revision diffs, offline/PWA |
 | v1.0.0 | Content audit → stable release |

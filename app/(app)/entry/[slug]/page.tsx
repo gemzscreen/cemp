@@ -4,9 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { moduleByKind } from "@/lib/modules";
 import Diagram from "@/components/Diagram";
 import ToolRunner from "@/components/ToolRunner";
+import Sections from "@/components/Sections";
+import type { Section } from "@/content/types";
 import { reviewAndPublish, sendBackToDraft } from "./actions";
 
-type Section = { heading?: string; kind?: "safe" | "avoid" | "text" | "list"; text?: string; items?: string[] };
 
 export default async function EntryPage({
   params, searchParams,
@@ -64,17 +65,7 @@ export default async function EntryPage({
 
       {tool?.calc_key && <ToolRunner calcKey={tool.calc_key} handCheck={tool.hand_check} />}
 
-      {sections.length > 0 ? sections.map((s, i) => (
-        <div key={i} className="panel" style={{
-          marginBottom: ".8rem",
-          borderColor: s.kind === "safe" ? "var(--safe)" : s.kind === "avoid" ? "var(--avoid)" : undefined,
-          background: s.kind === "safe" ? "#f3f8fd" : s.kind === "avoid" ? "#fff7ef" : undefined,
-        }}>
-          {s.heading && <h2>{s.kind === "safe" ? "✓ " : s.kind === "avoid" ? "✕ " : ""}{s.heading}</h2>}
-          {s.text && <p style={{ margin: 0 }}>{s.text}</p>}
-          {s.items && <ul style={{ margin: ".3rem 0 0" }}>{s.items.map((it, j) => <li key={j}>{it}</li>)}</ul>}
-        </div>
-      )) : !tool && <div className="empty"><strong>No content in this revision yet.</strong></div>}
+      {sections.length > 0 ? <Sections sections={sections} /> : !tool && <div className="empty"><strong>No content in this revision yet.</strong></div>}
 
       {(entry.entry_clause_refs as any[])?.length > 0 && (
         <div className="panel">

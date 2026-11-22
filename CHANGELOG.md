@@ -2,6 +2,13 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v0.7.0: Education, CELE + PH ↔ Global (2026-11-22)
+- New section kinds (`content/types.ts`, `components/Sections.tsx`): comparison **tables**, **flashcard** decks (tap to reveal, no client JS) and **worked problems** (given/find, hidden solution, answer, link to the calculator). Any section can carry `verified: false` → "verify" badge. Entry page now renders sections through the shared component.
+- Worked problems are generated from `lib/calc` inside the batch (`problem()` helper), so answers always equal the tool output. All 10 matched an independent Python check.
+- HGE calculators (`lib/calc/hge.ts`): hydrostatic force on a rectangular gate (vertical/inclined, center of pressure), primary consolidation settlement (NC, OC below/above σ'c).
+- Content batch v0.7.0 (17 entries): CELE overview (2026 format: PSAD Day 1; AMSTHC + HGE Day 2) and 3 subject outlines; 4 flashcard decks (68 cards); 3 worked-problem sets (10 problems); 2 HGE tools; PH ↔ Global: NSCP vs US source codes, PH vs Brunei/Singapore/Malaysia (flagged verify), cylinder vs cube strength (flagged verify), site terminology.
+- `check-content` validates table widths, empty decks, problem answers and problem → tool links.
+
 ## v0.6.0: Construction Management II, QA/QC & Safety (2026-11-22)
 - Checklist engine (`lib/calc/checklist.ts`): pass/fail/N.A. inspection forms run in the ToolRunner with grouped headings, verdict (accepted only when nothing fails or is left unchecked), failed-item table and a **Print / save as PDF** button with print styles. Items default to "Not checked" so forms can't be pre-filled.
 - 7 checklists: pre-pour, rebar placement, formwork & shoring, steel bolting & visual weld (AISC 360 N5), scaffold, excavation, daily site safety walk.
