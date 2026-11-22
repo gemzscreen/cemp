@@ -17,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <nav className="nav">
           {MODULES.map((m) => <Link key={m.slug} href={`/${m.slug}`}>{m.name}</Link>)}
           <Link href="/releases">Releases</Link>
+          {profile?.role === "admin" && <Link href="/admin">Admin</Link>}
         </nav>
         <div className="user">
           <span>{profile?.full_name ?? user.email}</span>

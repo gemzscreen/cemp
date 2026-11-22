@@ -40,7 +40,16 @@ export type SectionSpec = {
   caption?: string;
 };
 
-export type DiagramSpec = SpanSpec | ColumnSpec | SectionSpec;
+/** Bolt pattern on a plate, with spacing / edge distance callouts. */
+export type BoltsSpec = {
+  type: "bolts";
+  rows: number; cols: number;
+  labels: { pitch?: string; gauge?: string; edge?: string; end?: string };
+  load?: { e?: string };  // draw eccentric load arrow with label
+  caption?: string;
+};
+
+export type DiagramSpec = SpanSpec | ColumnSpec | SectionSpec | BoltsSpec;
 
 export const STATUS_LABEL: Record<ZoneStatus, string> = {
   safe: "SAFE", avoid: "AVOID", confine: "CONFINE", neutral: "",

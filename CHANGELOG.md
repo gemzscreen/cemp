@@ -2,6 +2,13 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v0.4.0: Steel, Welding & Bolting (2026-11-22)
+- Steel calculators (`lib/calc/steel.ts`): plate tension (yield/rupture), W-shape compression (E3), W-shape flexure with LTB (F2) + shear (G2), bolt group shear/bearing with eccentric elastic method, fillet weld strength + size limits. I-shape properties computed from plate dims. All defaults matched an independent Python check.
+- 5 steel practice cards and 8 NSCP 2015 Ch. 5 clauses (AISC 360 equivalents), flagged to verify section numbering.
+- Bolt-pattern diagram renderer.
+- **Content-as-code**: `content/batches/*.ts` + `/admin` page with Sync button and review queue; `scripts/check-content.ts` validator. Replaces large SQL seed migrations (saves tokens and time per release).
+- Calc library split into `core.ts`, `index.ts` (concrete), `steel.ts`.
+
 ## v0.3.0: Concrete Tools + Codes index (2026-11-22)
 - Shared calc library `lib/calc` (pure TS, SI units, step-by-step output): development length & Class A/B laps, hooked-bar ldh, beam φMn (analysis), beam required As (design), one-way slab hmin + temperature bars, column φPn,max.
 - Tool runner UI: live form, results, pass/fail checks, step-by-step substitutions, recorded hand-check panel.

@@ -2,32 +2,9 @@
 // Equations follow NSCP 2015 Vol. 1 Chapter 4 (= ACI 318-14 numbering with a "4" prefix).
 // Every calc returns step-by-step substitutions so results can be hand-checked.
 
-export type Field =
-  | { key: string; label: string; unit?: string; type: "number"; default: number; min?: number; step?: number; help?: string }
-  | { key: string; label: string; unit?: string; type: "select"; default: string; options: { value: string; label: string }[]; help?: string };
-
-export type Result = { label: string; value: number | string; unit?: string; main?: boolean };
-export type Check = { label: string; ok: boolean; detail: string };
-export type CalcOutput = { results: Result[]; checks: Check[]; steps: string[] };
-export type Inputs = Record<string, number | string>;
-export type Calc = { key: string; title: string; clauses: string[]; fields: Field[]; compute: (i: Inputs) => CalcOutput };
-
-const n = (v: number | string) => Number(v);
-const r = (v: number, d = 1) => Math.round(v * 10 ** d) / 10 ** d;
-export const ES = 200000; // MPa
-
-export function beta1(fc: number) {
-  if (fc <= 28) return 0.85;
-  if (fc >= 55) return 0.65;
-  return 0.85 - (0.05 * (fc - 28)) / 7;
-}
-export function phiFlexure(et: number, fy: number) {
-  const ety = fy / ES;
-  if (et >= 0.005) return 0.9;
-  if (et <= ety) return 0.65;
-  return 0.65 + (0.25 * (et - ety)) / (0.005 - ety);
-}
-export const barArea = (db: number) => (Math.PI * db * db) / 4;
+import { type Calc, type Inputs, n, r, ES, barArea, beta1, phiFlexure } from "./core";
+import { STEEL_CALCS } from "./steel";
+export * from "./core";
 
 const LAMBDA = { type: "select" as const, key: "lambda", label: "Concrete type (λ)", default: "1",
   options: [{ value: "1", label: "Normal weight (λ = 1.0)" }, { value: "0.75", label: "Lightweight (λ = 0.75)" }] };
@@ -322,7 +299,7 @@ const columnAxial: Calc = {
 };
 
 export const CALCS: Record<string, Calc> = Object.fromEntries(
-  [devLength, hookLength, beamAnalysis, beamDesign, oneWaySlab, columnAxial].map((c) => [c.key, c]),
+  [devLength, hookLength, beamAnalysis, beamDesign, oneWaySlab, columnAxial, ...STEEL_CALCS].map((c) => [c.key, c]),
 );
 
 export function defaults(c: Calc): Inputs {

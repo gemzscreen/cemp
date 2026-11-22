@@ -1,6 +1,6 @@
 // SVG diagram engine for Practice cards. Pure render (no client JS) so it works in
 // server components, static export and the future API.
-import type { ColumnSpec, DiagramSpec, SectionSpec, SpanSpec, ZoneStatus } from "@/lib/diagram";
+import type { BoltsSpec, ColumnSpec, DiagramSpec, SectionSpec, SpanSpec, ZoneStatus } from "@/lib/diagram";
 import { STATUS_LABEL } from "@/lib/diagram";
 
 const C = {
@@ -338,12 +338,55 @@ function Section({ s }: { s: SectionSpec }) {
   );
 }
 
+/* ---------------- BOLTS ---------------- */
+function Bolts({ s }: { s: BoltsSpec }) {
+  const W = 800, H = 430, gap = 80, edge = 50, r = 14;
+  const pw = (s.cols - 1) * gap + 2 * edge, ph = (s.rows - 1) * gap + 2 * edge;
+  const x0 = 260 - pw / 2, y0 = 40 + (300 - ph) / 2;
+  const holes: [number, number][] = [];
+  for (let c = 0; c < s.cols; c++) for (let w = 0; w < s.rows; w++) holes.push([x0 + edge + c * gap, y0 + edge + w * gap]);
+  const lbl = (x: number, y: number, t?: string, anchor: "start" | "middle" | "end" = "middle") =>
+    t ? <T x={x} y={y} textAnchor={anchor} fontSize="14" fontWeight="700">{t}</T> : null;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={s.caption ?? "Bolt pattern"} style={{ width: "100%", height: "auto" }}>
+      <Defs />
+      <rect x={x0} y={y0} width={pw} height={ph} fill="#eef0f4" stroke={C.ink} strokeWidth="2" />
+      {holes.map(([x, y], i) => (
+        <g key={i}><circle cx={x} cy={y} r={r} fill="#fff" stroke={C.ink} strokeWidth="2" /><circle cx={x} cy={y} r={r - 5} fill={C.bar} /></g>
+      ))}
+      {s.rows > 1 && (
+        <g>
+          <line x1={x0 - 24} y1={y0 + edge} x2={x0 - 24} y2={y0 + edge + gap} stroke={C.ink} />
+          {[y0 + edge, y0 + edge + gap].map((y, i) => <line key={i} x1={x0 - 30} y1={y + 6} x2={x0 - 18} y2={y - 6} stroke={C.ink} strokeWidth="1.2" />)}
+          {lbl(x0 - 34, y0 + edge + gap / 2 + 5, s.labels.pitch, "end")}
+        </g>
+      )}
+      {s.cols > 1 && <><line x1={x0 + edge} y1={y0 + ph + 26} x2={x0 + edge + gap} y2={y0 + ph + 26} stroke={C.ink} />{lbl(x0 + edge + gap / 2, y0 + ph + 46, s.labels.gauge)}</>}
+      <line x1={x0} y1={y0 - 16} x2={x0 + edge} y2={y0 - 16} stroke={C.avoidS} strokeWidth="2" />
+      {lbl(x0 + edge / 2, y0 - 24, s.labels.edge)}
+      <line x1={x0 + pw + 16} y1={y0} x2={x0 + pw + 16} y2={y0 + edge} stroke={C.avoidS} strokeWidth="2" />
+      {lbl(x0 + pw + 24, y0 + edge / 2 + 5, s.labels.end, "start")}
+      {s.load && (
+        <g>
+          <line x1={x0 + pw / 2} y1={y0 + ph / 2} x2={x0 + pw + 170} y2={y0 + ph / 2} stroke={C.muted} strokeDasharray="5 4" />
+          <line x1={x0 + pw + 170} y1={y0 + ph / 2 - 60} x2={x0 + pw + 170} y2={y0 + ph / 2 + 50} stroke={C.joint} strokeWidth="4" />
+          <polygon points={`${x0 + pw + 162},${y0 + ph / 2 + 44} ${x0 + pw + 178},${y0 + ph / 2 + 44} ${x0 + pw + 170},${y0 + ph / 2 + 62}`} fill={C.joint} />
+          <T x={x0 + pw + 180} y={y0 + ph / 2 - 64} fontSize="14" fontWeight="800" fill={C.joint}>P</T>
+          {lbl(x0 + pw + 85, y0 + ph / 2 - 10, s.load.e)}
+        </g>
+      )}
+      <T x={x0} y={H - 14} fontSize="12" fill={C.muted}>Plate with {s.rows * s.cols} bolts · distances to hole centers</T>
+    </svg>
+  );
+}
+
 export default function Diagram({ spec }: { spec: DiagramSpec }) {
   if (!spec || typeof spec !== "object") return null;
   switch (spec.type) {
     case "span": return <Span s={spec} />;
     case "column": return <Column s={spec} />;
     case "section": return <Section s={spec} />;
+    case "bolts": return <Bolts s={spec} />;
     default: return null;
   }
 }

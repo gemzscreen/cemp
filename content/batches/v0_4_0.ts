@@ -1,0 +1,117 @@
+import type { Batch } from "../types";
+
+const VERIFY_CH5 =
+  "NSCP 2015 Chapter 5 section numbers here assume Chapter 5 mirrors AISC 360-10 chapter order (B→502, D→504, E→505, F→506, G→507, J→510). Verify numbers and values against your NSCP copy before marking reviewed.";
+const toolNote = (use: string, limits: string[]) => [
+  { kind: "text" as const, heading: "When to use", text: use },
+  { kind: "avoid" as const, heading: "Limitations", items: limits },
+  { kind: "text" as const, heading: "Note", text: "LRFD per NSCP 2015 Ch. 5 / AISC 360. Section properties are computed from plate dimensions (fillets neglected), so they are slightly conservative. Use mill/AISC tables for final design. " + VERIFY_CH5 },
+];
+
+const batch: Batch = {
+  version: "v0.4.0",
+  batch_name: "Steel, Welding & Bolting",
+  notes: [
+    "5 steel calculators: plate tension, W-shape compression, W-shape flexure (LTB) + shear, bolt group (concentric/eccentric), fillet weld with size limits",
+    "5 steel practice cards: bolt installation, holes/spacing/edge distance, fillet weld size rules, weld visual inspection, base plates & anchor bolts",
+    "8 NSCP 2015 Chapter 5 clauses indexed with AISC 360 equivalents",
+    "New bolt-pattern diagram renderer",
+    "Content-as-code: batches now sync from /admin instead of SQL migrations",
+  ],
+  clauses: [
+    { section: "502.4.1", title: "Classification of sections for local buckling", equivalent: "AISC 360-10 §B4.1",
+      summary: "Elements are compact, noncompact or slender by width-to-thickness ratio. For rolled I-shapes in flexure: flange compact if bf/2tf ≤ 0.38√(E/Fy); web compact if h/tw ≤ 3.76√(E/Fy). In compression, flange nonslender if bf/2tf ≤ 0.56√(E/Fy), web if h/tw ≤ 1.49√(E/Fy)." },
+    { section: "504.2", title: "Tensile strength", equivalent: "AISC 360-10 §D2",
+      summary: "Design tensile strength is the lower of yielding on the gross section (φ = 0.90, Fy·Ag) and rupture on the effective net section (φ = 0.75, Fu·Ae)." },
+    { section: "504.3", title: "Effective net area", equivalent: "AISC 360-10 §D3",
+      summary: "Ae = U·An, where U is the shear lag factor (1.0 when all cross-section elements are connected). Net width deducts hole diameter plus 2 mm per hole." },
+    { section: "505.3", title: "Flexural buckling of members without slender elements", equivalent: "AISC 360-10 §E3",
+      summary: "Fe = π²E/(KL/r)². If KL/r ≤ 4.71√(E/Fy): Fcr = 0.658^(Fy/Fe)·Fy; otherwise Fcr = 0.877Fe. φPn = 0.90·Fcr·Ag." },
+    { section: "506.2", title: "Doubly symmetric compact I-shaped members bent about the major axis", equivalent: "AISC 360-10 §F2",
+      summary: "Mn is the lower of yielding (Mp = Fy·Zx) and lateral-torsional buckling, governed by Lb relative to Lp = 1.76ry√(E/Fy) and Lr; Cb modifies the LTB strength. φb = 0.90." },
+    { section: "507.2", title: "Shear strength of members with unstiffened or stiffened webs", equivalent: "AISC 360-10 §G2",
+      summary: "Vn = 0.6Fy·Aw·Cv. For rolled I-shapes with h/tw ≤ 2.24√(E/Fy), φv = 1.00 and Cv = 1.0." },
+    { section: "510.2", title: "Welds", equivalent: "AISC 360-10 §J2",
+      summary: "Fillet weld strength φRn = 0.75 × 0.60FEXX × effective throat × length. Minimum leg size depends on the thinner part joined (3, 5, 6, 8 mm); maximum along an edge is t for t < 6 mm, otherwise t − 2 mm; minimum length is 4 × leg size." },
+    { section: "510.3", title: "Bolts and threaded parts", equivalent: "AISC 360-10 §J3",
+      summary: "Bolt shear φRn = 0.75·Fnv·Ab per shear plane; bearing/tearout at holes φ = 0.75 × min(1.2·lc·t·Fu, 2.4·d·t·Fu). Covers hole sizes, minimum spacing (2.67d, preferably 3d), minimum edge distances and pretension requirements." },
+  ],
+  entries: [
+    /* ---------- tools ---------- */
+    { slug: "tool-steel-plate-tension", module: "tool", calc_key: "steel-tension-plate", specialization: "steel",
+      title: "Steel plate in tension: yielding and rupture", summary: "Gross-section yielding vs net-section rupture for bolted plates.",
+      tags: ["connection", "inspection"], refs: [{ section: "504.2" }, { section: "504.3" }],
+      sections: toolNote("Splice plates, gusset plates and tension straps with bolt holes.", ["Block shear rupture is a separate check", "Staggered holes (s²/4g) not included"]) },
+    { slug: "tool-steel-w-column-compression", module: "tool", calc_key: "steel-compression-w", specialization: "steel",
+      title: "Steel W-shape column: compressive strength φPn", summary: "Flexural buckling strength of a W-shape about both axes.",
+      tags: ["column", "inspection"], refs: [{ section: "505.3" }, { section: "502.4.1" }],
+      sections: toolNote("Checking steel columns and posts, or comparing W-shape options.", ["Members with slender elements (E7) are flagged, not designed", "Torsional/flexural-torsional buckling not checked (rarely governs for W-shapes)", "Effective length factor K is your input"]) },
+    { slug: "tool-steel-w-beam-flexure", module: "tool", calc_key: "steel-flexure-w", specialization: "steel",
+      title: "Steel W-shape beam: flexure (LTB) and shear", summary: "φMn with lateral-torsional buckling and φVn for compact W-shapes.",
+      tags: ["beam", "inspection"], refs: [{ section: "506.2" }, { section: "507.2" }, { section: "502.4.1" }],
+      sections: toolNote("Hot-rolled steel beams and girders with known bracing (not cold-formed purlins).", ["Compact flanges only; noncompact flanges (F3) are flagged", "Use Cb = 1.0 unless you've computed it", "Deflection is a separate check"]) },
+    { slug: "tool-bolt-group-shear", module: "tool", calc_key: "steel-bolt-group", specialization: "bolting",
+      title: "Bolt group in shear: concentric or eccentric", summary: "Bolt shear, bearing/tearout and eccentric group capacity (elastic method).",
+      tags: ["connection", "bolting-activity"], refs: [{ section: "510.3" }],
+      sections: toolNote("Shear tabs, bracket plates and splice connections.", ["Elastic method: conservative vs the instantaneous center method", "Rectangular bolt patterns only", "Slip-critical connections need a separate slip check"]) },
+    { slug: "tool-fillet-weld", module: "tool", calc_key: "steel-fillet-weld", specialization: "welding",
+      title: "Fillet weld: strength and size limits", summary: "Weld capacity with minimum/maximum leg size and length checks.",
+      tags: ["connection", "welding-activity"], refs: [{ section: "510.2" }],
+      sections: toolNote("Checking weld sizes on shop drawings and site welds.", ["Directional strength increase for transverse welds not used (conservative)", "Base metal strength checked separately"]) },
+
+    /* ---------- practice cards ---------- */
+    { slug: "high-strength-bolt-installation", module: "practice", specialization: "bolting",
+      title: "High-strength bolt installation", summary: "Snug-tight vs pretensioned: when each applies and how to tighten and check.",
+      tags: ["connection", "bolting-activity", "inspection"], refs: [{ section: "510.3", note: "Joint types and pretension" }],
+      diagram: { type: "bolts", rows: 3, cols: 2, labels: { pitch: "s ≥ 3d", gauge: "g", edge: "Le", end: "Le" }, caption: "Bolted splice plate" },
+      sections: [
+        { kind: "list", heading: "Joint types", items: ["Snug-tight: plies in firm contact, full effort of a worker with a spud wrench. Default for most bearing connections.", "Pretensioned: bolts tightened to minimum pretension (bracing, moment and vibration-prone connections, as specified).", "Slip-critical: pretensioned and faying surfaces prepared to a slip class. Required where slip is not allowed."] },
+        { kind: "safe", heading: "Turn-of-nut method (pretensioned joints)", items: ["Bring all bolts to snug-tight first, working from the stiffest part outward", "Match-mark nut and bolt end", "Rotate from snug: 1/3 turn for length ≤ 4d, 1/2 turn for 4d–8d, 2/3 turn for 8d–12d", "Other methods: calibrated wrench, twist-off bolts, direct tension indicators (DTIs)"] },
+        { kind: "avoid", heading: "Avoid", items: ["Reusing pretensioned A490 bolts or galvanized A325 bolts", "Oversize/slotted holes without the washers the design requires", "Paint on faying surfaces of slip-critical joints unless qualified", "Mixing bolt grades on site: check the head markings (A325 / A490 or 8.8 / 10.9)"] },
+        { kind: "list", heading: "Inspection", items: ["Verify grade markings, washers and nut orientation", "Check snug-tight condition of every bolt", "For turn-of-nut: verify match-mark rotation", "Record calibration (Skidmore) results for pretensioned work"] },
+        { kind: "text", heading: "Note", text: "Turn-of-nut rotations follow the RCSC Specification. Minimum pretension values (e.g. M20 A325 ≈ 142 kN) come from the code table; confirm them in your NSCP copy. " + VERIFY_CH5 },
+      ] },
+    { slug: "bolt-holes-spacing-edge-distance", module: "practice", specialization: "bolting",
+      title: "Bolt holes, spacing and edge distance", summary: "Standard hole sizes, minimum pitch/gauge and minimum edge distances for metric bolts.",
+      tags: ["connection", "bolting-activity", "inspection"], refs: [{ section: "510.3", note: "Hole sizes, spacing, edge distance" }],
+      diagram: { type: "bolts", rows: 3, cols: 2, labels: { pitch: "s ≥ 2.67d (3d pref.)", gauge: "g ≥ 3d", edge: "Le,min", end: "Le,min" }, caption: "Spacing and edge distance" },
+      sections: [
+        { kind: "list", heading: "Standard hole diameter", items: ["M16 to M24: d + 2 mm (e.g. M20 → 22 mm)", "M27 and larger: d + 3 mm", "Oversize and slotted holes only where the design allows"] },
+        { kind: "list", heading: "Minimum edge distance (center of standard hole to edge)", items: ["M16: 22 mm", "M20: 26 mm", "M22: 28 mm", "M24: 30 mm", "M27: 34 mm", "M30: 38 mm", "M36: 46 mm"] },
+        { kind: "safe", heading: "Spacing", items: ["Minimum center-to-center spacing 2.67d; 3d preferred", "Maximum edge distance 12t, and not more than 150 mm", "Allow wrench clearance near webs and stiffeners"] },
+        { kind: "avoid", heading: "Avoid", items: ["Flame-cut or torch-enlarged holes", "Drifting bolts through misaligned holes so that the plate deforms", "Reducing edge distance at copes and plate ends to fit a pattern"] },
+        { kind: "text", heading: "Note", text: VERIFY_CH5 },
+      ] },
+    { slug: "fillet-weld-size-rules", module: "practice", specialization: "welding",
+      title: "Fillet weld size rules", summary: "Minimum and maximum leg sizes, minimum length and end returns.",
+      tags: ["connection", "welding-activity", "inspection"], refs: [{ section: "510.2" }],
+      sections: [
+        { kind: "list", heading: "Minimum leg size (by thinner part joined)", items: ["t ≤ 6 mm: 3 mm", "6 < t ≤ 13 mm: 5 mm", "13 < t ≤ 19 mm: 6 mm", "t > 19 mm: 8 mm", "Single-pass welds must still meet this"] },
+        { kind: "list", heading: "Maximum leg size along an edge", items: ["Edge thinner than 6 mm: not more than t", "Edge 6 mm or thicker: t − 2 mm, unless the drawing calls for full throat"] },
+        { kind: "safe", heading: "Length", items: ["Minimum effective length 4 × leg size", "Longitudinal welds on plate ends: each weld length ≥ the distance between them", "Use end returns where specified (typically 2 × leg size)"] },
+        { kind: "avoid", heading: "Avoid", items: ["Oversizing welds: more heat, distortion and cost, not more strength in the base metal", "Intermittent welds in exposed or corrosive locations unless sealed"] },
+        { kind: "text", heading: "Note", text: VERIFY_CH5 },
+      ] },
+    { slug: "weld-visual-inspection", module: "practice", specialization: "welding",
+      title: "Weld visual inspection", summary: "What to check before, during and after welding on site and in the shop.",
+      tags: ["welding-activity", "inspection"], refs: [{ section: "510.2" }],
+      sections: [
+        { kind: "list", heading: "Before welding", items: ["Welder qualification records (WPQ) for the process and position", "Approved WPS on hand", "Electrodes match the WPS; low-hydrogen electrodes stored dry (oven)", "Joint fit-up, gap and bevel per the drawings; surfaces clean and dry"] },
+        { kind: "list", heading: "During welding", items: ["Preheat where the WPS requires it", "Interpass cleaning (slag removal)", "Correct sequence to control distortion"] },
+        { kind: "safe", heading: "After welding: check", items: ["Leg size with a fillet gauge, and length", "Profile: no excessive convexity", "No cracks (reject), no lack of fusion", "Undercut and porosity within the code's visual acceptance limits", "Weld fully cleaned of slag and spatter"] },
+        { kind: "avoid", heading: "Common site problems", items: ["Welding in rain or wind without shelter", "Wet or rusty electrodes", "Undersized welds on hard-to-reach sides", "Grinding welds flush to hide defects"] },
+        { kind: "text", heading: "Note", text: "Visual acceptance limits are in AWS D1.1 (structural steel). NDT (UT/MT) is applied where the specifications require it. " + VERIFY_CH5 },
+      ] },
+    { slug: "base-plates-and-anchor-bolts", module: "practice", specialization: "steel",
+      title: "Base plates and anchor bolts", summary: "Setting anchor bolts, levelling and grouting steel column bases.",
+      tags: ["column", "connection", "construction"], refs: [{ section: "510.3", note: "Threaded parts" }],
+      sections: [
+        { kind: "safe", heading: "Setting anchor bolts", items: ["Use a rigid template, fixed before pouring the pedestal", "Check positions, projection and plumbness before and after the pour", "Protect threads (tape or PVC sleeve)", "Survey as-built positions before fabricating base plates"] },
+        { kind: "safe", heading: "Base plate", items: ["Holes oversized for anchor bolts, with thick plate washers welded or specified per design", "Level with leveling nuts or shims", "Leave a grout space (typically 25–50 mm)", "Pack with non-shrink grout, fully under the plate, before loading the column"] },
+        { kind: "avoid", heading: "Avoid", items: ["Bending or heating anchor bolts to fit misplaced holes", "Grouting with ordinary sand-cement mortar", "Leaving voids under the plate", "Erecting heavy loads on leveling nuts alone for long periods"] },
+        { kind: "text", heading: "Note", text: "Hole and washer sizes follow AISC Design Guide 1 recommendations. Follow the structural drawings. " + VERIFY_CH5 },
+      ] },
+  ],
+};
+
+export default batch;
