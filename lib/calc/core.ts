@@ -1,11 +1,13 @@
 // Shared types and helpers for the CEMP calc library.
 export type Field =
   | { key: string; label: string; unit?: string; type: "number"; default: number; min?: number; step?: number; help?: string }
-  | { key: string; label: string; unit?: string; type: "select"; default: string; options: { value: string; label: string }[]; help?: string };
+  | { key: string; label: string; unit?: string; type: "select"; default: string; options: { value: string; label: string }[]; help?: string }
+  | { key: string; label: string; unit?: string; type: "text"; default: string; rows?: number; help?: string };
 
 export type Result = { label: string; value: number | string; unit?: string; main?: boolean };
 export type Check = { label: string; ok: boolean; detail: string };
-export type CalcOutput = { results: Result[]; checks: Check[]; steps: string[] };
+export type Table = { columns: string[]; rows: (string | number)[][]; highlight?: number[] };
+export type CalcOutput = { results: Result[]; checks: Check[]; steps: string[]; table?: Table };
 export type Inputs = Record<string, number | string>;
 export type Calc = { key: string; title: string; clauses: string[]; fields: Field[]; compute: (i: Inputs) => CalcOutput };
 

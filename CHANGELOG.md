@@ -2,6 +2,11 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v0.5.0: Construction Management I (2026-11-22)
+- `lib/calc/cm.ts`: PERT/CPM scheduler (text activity list, forward/backward pass, float, critical path, σ, probability via normal CDF), cost build-up (DC/OCM/profit/VAT/unit cost), concrete materials takeoff by class, rebar weight + commercial-length takeoff. All defaults matched an independent Python check.
+- Calc core: `text` input fields and `table` outputs; ToolRunner renders textarea and result tables (critical path highlighted).
+- Content batch v0.5.0: 4 tools, 3 QS practice cards, 2 education explainers, DPWH Blue Book Items 404/405 indexed.
+
 ## v0.4.0: Steel, Welding & Bolting (2026-11-22)
 - Steel calculators (`lib/calc/steel.ts`): plate tension (yield/rupture), W-shape compression (E3), W-shape flexure with LTB (F2) + shear (G2), bolt group shear/bearing with eccentric elastic method, fillet weld strength + size limits. I-shape properties computed from plate dims. All defaults matched an independent Python check.
 - 5 steel practice cards and 8 NSCP 2015 Ch. 5 clauses (AISC 360 equivalents), flagged to verify section numbering.

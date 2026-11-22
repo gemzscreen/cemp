@@ -24,7 +24,9 @@ export default function ToolRunner({ calcKey, handCheck }: { calcKey: string; ha
           {calc.fields.map((f) => (
             <label key={f.key} className="fld">
               <span>{f.label}{f.unit ? <span className="muted"> ({f.unit})</span> : null}</span>
-              {f.type === "number" ? (
+              {f.type === "text" ? (
+                <textarea rows={f.rows ?? 6} value={String(vals[f.key])} onChange={(e) => setVals({ ...vals, [f.key]: e.target.value })} />
+              ) : f.type === "number" ? (
                 <input inputMode="decimal" value={String(vals[f.key])} onChange={(e) => setVals({ ...vals, [f.key]: e.target.value })} />
               ) : (
                 <select value={String(vals[f.key])} onChange={(e) => setVals({ ...vals, [f.key]: e.target.value })}>
@@ -50,6 +52,18 @@ export default function ToolRunner({ calcKey, handCheck }: { calcKey: string; ha
                 </div>
               ))}
             </div>
+            {out.table && (
+              <div className="tbl-wrap" style={{ marginTop: ".9rem" }}>
+                <table className="tbl compact">
+                  <thead><tr>{out.table.columns.map((c) => <th key={c}>{c}</th>)}</tr></thead>
+                  <tbody>{out.table.rows.map((row, ri) => (
+                    <tr key={ri} className={out.table!.highlight?.includes(ri) ? "hl" : ""}>
+                      {row.map((v, ci) => <td key={ci} className={typeof v === "number" ? "num" : ""}>{v}</td>)}
+                    </tr>))}
+                  </tbody>
+                </table>
+              </div>
+            )}
             <ul className="checks">
               {out.checks.map((c) => <li key={c.label} className={c.ok ? "ok" : "bad"}>{c.ok ? "✓" : "✕"} <strong>{c.label}</strong>: {c.detail}</li>)}
             </ul>

@@ -32,4 +32,5 @@ export const DOCS: Record<string, { short_name: string; edition: string | null }
   "AISC 360": { short_name: "AISC 360", edition: "360-22" },
   "ACI 318": { short_name: "ACI 318", edition: "318-19" },
   "AWS D1.1": { short_name: "AWS D1.1", edition: null },
+  "DPWH Blue Book": { short_name: "DPWH Blue Book", edition: null },
 };

@@ -4,6 +4,7 @@
 
 import { type Calc, type Inputs, n, r, ES, barArea, beta1, phiFlexure } from "./core";
 import { STEEL_CALCS } from "./steel";
+import { CM_CALCS } from "./cm";
 export * from "./core";
 
 const LAMBDA = { type: "select" as const, key: "lambda", label: "Concrete type (λ)", default: "1",
@@ -299,7 +300,7 @@ const columnAxial: Calc = {
 };
 
 export const CALCS: Record<string, Calc> = Object.fromEntries(
-  [devLength, hookLength, beamAnalysis, beamDesign, oneWaySlab, columnAxial, ...STEEL_CALCS].map((c) => [c.key, c]),
+  [devLength, hookLength, beamAnalysis, beamDesign, oneWaySlab, columnAxial, ...STEEL_CALCS, ...CM_CALCS].map((c) => [c.key, c]),
 );
 
 export function defaults(c: Calc): Inputs {
