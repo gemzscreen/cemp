@@ -40,3 +40,8 @@ Stack: Next.js 15 App Router + Supabase (project `CEMP`, ref `qzbcgwjnzwockhvimu
 
 ## Roles
 first account = admin (Gemz). Others viewer by default; editor promoted via SQL. Sign-ups disabled; users added by invite.
+
+## Profile & layout (v1.1.1)
+- `profiles.avatar` (data URL, ≤200 kB, resized client-side to 192 px) and `profiles.job_title`; users edit their own row on `/account`; role and e-mail stay admin-only (trigger).
+- Header = QS CRM style "Welcome, <first name>" + avatar + role chip; footer = live clock (`components/Clock.tsx`) + version. Names via `displayName()` in `lib/auth.ts`.
+- Mobile breakpoint 860 px: `HeaderNav` hamburger, `TopicNav` collapsible sidebar. Never put `overflow` on `.nav` (it clips the dropdowns).

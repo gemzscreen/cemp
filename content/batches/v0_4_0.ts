@@ -76,7 +76,7 @@ const batch: Batch = {
       tags: ["connection", "bolting-activity", "inspection"], refs: [{ section: "510.3", note: "Hole sizes, spacing, edge distance" }],
       diagram: { type: "bolts", rows: 3, cols: 2, labels: { pitch: "s ≥ 2.67d (3d pref.)", gauge: "g ≥ 3d", edge: "Le,min", end: "Le,min" }, caption: "Spacing and edge distance" },
       sections: [
-        { kind: "list", heading: "Standard hole diameter", items: ["M16 to M24: d + 2 mm (e.g. M20 → 22 mm)", "M27 and larger: d + 3 mm", "Oversize and slotted holes only where the design allows"] },
+        { kind: "list", heading: "Standard hole diameter", items: ["M16 to M22: d + 2 mm (e.g. M20 → 22 mm)", "M24 and larger: d + 3 mm (e.g. M24 → 27 mm)", "Oversize and slotted holes only where the design allows"] },
         { kind: "list", heading: "Minimum edge distance (center of standard hole to edge)", items: ["M16: 22 mm", "M20: 26 mm", "M22: 28 mm", "M24: 30 mm", "M27: 34 mm", "M30: 38 mm", "M36: 46 mm"] },
         { kind: "safe", heading: "Spacing", items: ["Minimum center-to-center spacing 2.67d; 3d preferred", "Maximum edge distance 12t, and not more than 150 mm", "Allow wrench clearance near webs and stiffeners"] },
         { kind: "avoid", heading: "Avoid", items: ["Flame-cut or torch-enlarged holes", "Drifting bolts through misaligned holes so that the plate deforms", "Reducing edge distance at copes and plate ends to fit a pattern"] },

@@ -221,7 +221,7 @@ details.panel summary { cursor: pointer; }
 .note-form textarea { width: 100%; padding: .5rem .6rem; border: 1px solid #cbd2d9; border-radius: 7px; font: inherit; }
 .linkbtn { background: none; border: 0; color: var(--avoid); cursor: pointer; font-size: .78rem; padding: 0 .3rem; text-decoration: underline; }
 .key-box { font-family: var(--mono); background: #fff8e6; border: 1px solid #e9c46a; padding: .6rem; border-radius: 7px; word-break: break-all; }
-@media (max-width: 640px) { .nav-search { display: none; } }
+@media (max-width: 640px) { .topbar > .nav-search { display: none; } }
 pre.code { background: #0f1f33; color: #e6edf5; padding: .8rem; border-radius: 8px; overflow-x: auto; font-size: .8rem; }
 
 /* v0.9.0: editor, history diff, review queue */
@@ -370,3 +370,92 @@ input.price { width: 7rem; text-align: right; padding: .3rem .45rem; border: 1px
 .topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .7rem; }
 .topic h3 { margin: 0 0 .4rem; font-size: .95rem; }
 .topic .chips { margin-bottom: .4rem; }
+
+/* ===== v1.1.1: header, account, footer, mobile ===== */
+body { display: flex; flex-direction: column; min-height: 100vh; }
+.wrap { flex: 1; width: 100%; }
+.topbar { gap: .75rem; padding: .55rem 1.1rem; min-height: 58px; }
+.nav { overflow: visible; align-items: center; flex-wrap: nowrap; }            /* was overflow-x:auto → clipped the dropdowns */
+.nav > a, .nav .navmenu > summary { font-size: .95rem; padding: .45rem .7rem; }
+.nav a.active { background: rgba(255,255,255,.12); color: #fff; }
+.nav .nav-search { margin-left: auto; }
+.nav .nav-search input { width: 190px; }
+.brand-name { font-size: 1.05rem; }
+.navmenu-body { min-width: 380px; padding: .45rem; }
+.navmenu-body a, .navmenu-body .menu-btn { font-size: .95rem; padding: .6rem .7rem; align-items: center; }
+.navmenu-body a strong, .navmenu-body .menu-btn strong { font-weight: 650; }
+.navmenu-body a small { font-size: .8rem; }
+.navmenu-body .ico { font-size: 1.15rem; width: 1.6rem; flex: none; color: #8a6d1a; }
+.me > summary { display: flex; align-items: center; gap: .35rem; padding: .3rem .5rem !important; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); }
+.acct { gap: .5rem; }
+.acct .hi { color: #e7ecf2; font-size: .9rem; }
+.acct .hi b { color: #fff; }
+.rolechip { font-style: normal; font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--gold); color: var(--navy); padding: .12rem .45rem; border-radius: 999px; }
+.avatar { border-radius: 50%; display: inline-grid; place-items: center; background: var(--gold); color: var(--navy); font-weight: 800; flex: none; object-fit: cover; }
+img.avatar.pic { border: 2px solid rgba(255,255,255,.6); }
+.menu-head { display: flex; gap: .7rem; align-items: center; }
+.menu-head b { display: block; font-size: 1rem; }
+.menu-head small { display: block; color: #6b7785; font-size: .78rem; }
+.hamburger { display: none; background: none; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; width: 40px; height: 36px; padding: 8px 9px; cursor: pointer; flex-direction: column; justify-content: space-between; }
+.hamburger span { display: block; height: 2px; background: #fff; border-radius: 2px; }
+.foot { display: grid; grid-template-columns: 1fr auto 1fr; gap: .75rem; align-items: center; padding: .7rem 1.25rem; border-top: 1px solid var(--line); background: #fff; font-size: .8rem; color: var(--muted); }
+.foot .fc { text-align: center; }
+.foot .fr { text-align: right; }
+.fclock { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ver-pill { font-family: var(--mono); font-size: .74rem; border: 1px solid var(--line); border-radius: 999px; padding: .15rem .6rem; color: var(--ink-2); }
+.ver-pill:hover { text-decoration: none; border-color: var(--navy); }
+.greet h1 { font-size: 1.7rem; margin: 0; }
+.greet p { margin: .15rem 0 1rem; color: var(--muted); }
+.est-hero, .est-hero:hover, .est-hero * { text-decoration: none !important; }   /* no underline on the dashboard card */
+.est-hero:hover { filter: brightness(1.06); }
+
+@media (max-width: 860px) {
+  .topbar { flex-wrap: nowrap; padding: .5rem .75rem; }
+  .hamburger { display: flex; order: 3; margin-left: .25rem; }
+  .me { order: 2; margin-left: auto; }
+  .acct .hi, .rolechip { display: none; }
+  .nav { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: .15rem;
+    background: var(--navy); padding: .6rem .75rem 1rem; box-shadow: 0 12px 24px rgba(0,0,0,.25); max-height: calc(100vh - 58px); overflow-y: auto; }
+  .nav.open { display: flex; }
+  .nav > a, .nav .navmenu > summary { padding: .7rem .8rem; font-size: 1rem; }
+  .nav .nav-cta { text-align: center; }
+  .nav .navmenu-body { position: static; box-shadow: none; min-width: 0; margin: .25rem 0 .5rem; }
+  .nav .nav-search { margin: .4rem 0 0; }
+  .nav .nav-search input { width: 100%; padding: .7rem; font-size: 16px; }
+  .me .navmenu-body { position: fixed; top: 58px; right: .5rem; left: .5rem; min-width: 0; }
+  .wrap { padding: 1rem .8rem 3rem; }
+  h1 { font-size: 1.35rem; }
+  .greet h1 { font-size: 1.4rem; }
+  .foot { grid-template-columns: 1fr; text-align: center; }
+  .foot .fr, .foot .fc { text-align: center; }
+  input, select, textarea { font-size: 16px !important; }             /* stop iOS zoom on focus */
+  .lib-head { flex-direction: column; align-items: stretch; }
+  .lib-filter input { width: 100%; }
+  .cardgrid, .calc-grid, .topic-grid { grid-template-columns: 1fr; }
+  .est-head { padding: .8rem; }
+  .est-head h1 { font-size: 1.25rem; }
+  .est-actions .btn { flex: 1; }
+  .est-hero { flex-wrap: wrap; }
+  .est-hero .go { margin-left: 0; width: 100%; text-align: center; }
+  .tool-grid { grid-template-columns: 1fr !important; }
+  .snap-grid { grid-template-columns: repeat(2, 1fr); }
+  .key-results { grid-template-columns: 1fr 1fr; }
+  .tbl { font-size: .82rem; }
+  .row { flex-wrap: wrap; }
+  .lib-nav-wrap:not([open]) .lib-nav { display: none; }
+}
+/* collapsible topic sidebar: a summary bar on phones, hidden on desktop */
+.lib-nav-wrap > summary { display: none; }
+@media (max-width: 860px) {
+  .lib-nav-wrap > summary { display: flex; justify-content: space-between; list-style: none; cursor: pointer; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: .7rem .9rem; font-weight: 700; margin-bottom: .5rem; }
+  .lib-nav-wrap > summary::-webkit-details-marker { display: none; }
+  .lib-nav-wrap[open] > summary { border-color: var(--navy); }
+}
+.account-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+.account-grid .panel { max-width: none !important; }
+.pf-photo { display: flex; gap: 1rem; align-items: center; margin-bottom: .8rem; }
+.pf-photo img.avatar.pic { border-color: var(--line); }
+@media (max-width: 860px) { .account-grid { grid-template-columns: 1fr; } }
+.navmenu-body { max-width: min(440px, calc(100vw - 1rem)); }
+.navmenu-body a, .navmenu-body a small { white-space: normal; }
+@media (max-width: 860px) { .nav .navmenu-body { max-width: none; } .nav .nav-search { display: block; } }

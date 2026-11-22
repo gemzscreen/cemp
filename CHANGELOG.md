@@ -2,6 +2,17 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v1.1.1: Profile, mobile, fixes (2026-11-22)
+- Header: new ⌂ Dashboard link; Library/Admin menus no longer clipped (the nav had overflow-x:auto) and use larger, wrapping text.
+- "Welcome, <name>" chip with avatar and role badge (QS CRM style). Names fall back to a readable form of the e-mail ("gem.tubalado" → "Gem Tubalado").
+- Profile page (/account): edit display name, title/position and photo (resized to 192 px on the device), plus the password form.
+- Footer with live date and time, Darkwiz Lab credit and version. Dashboard greets by time of day with today's date.
+- Dashboard "Estimate a job" card: removed the white underline on hover.
+- Mobile: ☰ menu with search inside, topic sidebar collapses to "Browse topics", single-column grids, 16 px inputs (no iOS zoom), stacked footer.
+- DB: profiles.avatar (data URL ≤ 200 kB) and job_title; e-mail changes are admin-only (migration v1_1_1_profile).
+- Content batch v1.1.1: column confinement card rewritten (what ℓo is, end vs middle zone, worked example).
+- Accuracy fix (batch v0.4.0): standard bolt hole for M24 is d + 3 = 27 mm (was listed under d + 2).
+
 ## v1.1.0: Organize + Estimate (2026-11-22)
 - **One numbered topic tree** (`lib/taxonomy.ts`): 1 Concrete · 2 Masonry & finishes · 3 Steel · 4 Lumber · 5 Earthworks & foundations · 6 Water & sanitary · 7 Safety · 8 Quality · 9 Estimating & scheduling · 10 Review & reference, each with sub-topics. Tools, Practices, Learn, Codes (clauses placed by document/section) and Conversions (reference tables) now have a sidebar tree with counts, grouped card sections and a filter box. Every existing entry is placed explicitly; new ones by category or inference. Editor and New entry have a category picker; batches may set `category`.
 - **Navigation**: Library ▾ (Tools, Practices, Codes, Conversions) · Estimate · Learn · search · account menu (Saved, My estimates, Change password, Help, Sign out) · Admin menu (Review, Audit, Sync & API keys, New entry, Releases, API docs).

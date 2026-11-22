@@ -21,3 +21,26 @@ export async function changePassword(_prev: PwState, formData: FormData): Promis
   }
   return { ok: true };
 }
+
+export type ProfileState = { ok?: boolean; error?: string };
+
+/** Name, job title and photo. Role and e-mail are admin-only (DB trigger). Photo = small data URL resized in the browser. */
+export async function updateProfile(_prev: ProfileState, formData: FormData): Promise<ProfileState> {
+  const fullName = String(formData.get("full_name") ?? "").trim().replace(/\s+/g, " ");
+  const jobTitle = String(formData.get("job_title") ?? "").trim();
+  const avatar = String(formData.get("avatar") ?? "");
+  if (fullName.length < 2 || fullName.length > 80) return { error: "Name: 2 to 80 characters." };
+  if (jobTitle.length > 120) return { error: "Title: up to 120 characters." };
+  if (avatar && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(avatar)) return { error: "Photo must be a PNG, JPEG or WebP image." };
+  if (avatar.length > 200000) return { error: "Photo is too large: choose a smaller image." };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Your session expired. Sign in again." };
+  const { error } = await supabase.from("profiles").update({
+    full_name: fullName, job_title: jobTitle || null, avatar: formData.get("remove_avatar") === "1" ? null : avatar || undefined,
+  }).eq("id", user.id);
+  if (error) return { error: error.message };
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

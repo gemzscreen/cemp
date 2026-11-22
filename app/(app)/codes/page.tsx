@@ -1,4 +1,5 @@
 import Link from "next/link";
+import TopicNav from "@/components/TopicNav";
 import { getDb } from "@/lib/auth";
 import { clauseCategory, groupByCategory } from "@/lib/taxonomy";
 
@@ -30,7 +31,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="lib">
-      <aside className="lib-nav">
+      <TopicNav label="Browse code topics">
         <Link href={href()} className={`lib-all ${!sp.cat ? "on" : ""}`}>All clauses <span>{rows.length}</span></Link>
         {tree.map((g) => (
           <div key={g.cat.slug} className="lib-group">
@@ -39,7 +40,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
           </div>
         ))}
         <a href="#documents" className="lib-leaf archived">Documents indexed ({docs.length})</a>
-      </aside>
+      </TopicNav>
 
       <section className="lib-main">
         <div className="lib-head">

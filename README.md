@@ -68,5 +68,6 @@ Read-only, key-authenticated API at `/api/v1` for darkwizscroll, DARKWIZ CT and 
 | v0.9.0 | Admin editor, review queue, revision diffs, offline/PWA ✅ |
 | v1.0.0 | Content audit → stable release (rc.1–rc.2 shipped: audit, release gate, fix pass, guides, speed; content gate still open) |
 | v1.1.0 | Organize + Estimate: topic tree, new nav, account/password, archive/delete, 13 estimating calculators with sketches, project BOM ✅ |
+| v1.1.1 | Profile (name, title, photo), welcome header + clock footer, Dashboard link, mobile menu, ℓo card rewrite ✅ |
 | v1.2.0 | Standards side by side: PH (NSCP/DPWH) · Brunei (BS 8110/5950 + SMM2) · International (ACI/ASTM) panels per entry |
 | v1.3.0 | Depth: Learn rebuilt around topics and worked design examples; longer practice cards with diagrams |

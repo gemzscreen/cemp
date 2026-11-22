@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getDb } from "@/lib/auth";
+import { getMe, displayName } from "@/lib/auth";
+import Greeting from "@/components/Greeting";
 import { MODULES } from "@/lib/modules";
 import { CATEGORIES } from "@/lib/taxonomy";
 import { ESTIMATOR_META } from "@/lib/calc/estimate";
@@ -8,7 +9,7 @@ import EstimateIcon from "@/components/EstimateIcon";
 
 
 export default async function Dashboard() {
-  const supabase = await getDb();
+  const { supabase, user, fullName } = await getMe();
   const [{ data: entries }, { data: release }, { count: unitCount }, { count: tableCount }] = await Promise.all([
     supabase.from("entries").select("module").neq("status", "deprecated"),
     supabase.from("releases").select("version,batch_name,notes_md,released_at")
@@ -23,11 +24,7 @@ export default async function Dashboard() {
 
   return (
     <>
-      <h1>Dashboard</h1>
-      <p className="sub">
-        Civil Engineering practices library
-        {release && <> · current release <strong>{release.version}</strong> ({release.batch_name})</>}
-      </p>
+      <Greeting name={displayName(fullName, user?.email)} />
 
       {release?.notes_md && (
         <div className="whatsnew">

@@ -1,3 +1,4 @@
+import TopicNav from "@/components/TopicNav";
 import Converter from "@/components/Converter";
 import RefTable, { type RefTableRow } from "@/components/RefTable";
 import { getDb } from "@/lib/auth";
@@ -18,7 +19,7 @@ export default async function ConversionsPage() {
 
   return (
     <div className="lib">
-      <aside className="lib-nav">
+      <TopicNav label="Converter & tables">
         <a href="#converter" className="lib-all">Unit converter <span>{(units ?? []).length}</span></a>
         {groups.map((g) => (
           <div key={g.cat.slug} className="lib-group">
@@ -26,7 +27,7 @@ export default async function ConversionsPage() {
             {g.leaves.flatMap((l) => l.items).map((x) => <a key={x.slug} href={`#${x.slug}`} className="lib-leaf">{x.name} <span /></a>)}
           </div>
         ))}
-      </aside>
+      </TopicNav>
       <section className="lib-main">
         <div className="lib-head"><div>
           <h1>Conversions</h1>

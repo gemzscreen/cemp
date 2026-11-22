@@ -1,4 +1,5 @@
 import Link from "next/link";
+import TopicNav from "@/components/TopicNav";
 import { notFound } from "next/navigation";
 import { getMe } from "@/lib/auth";
 import { moduleBySlug } from "@/lib/modules";
@@ -41,7 +42,7 @@ export default async function ModulePage({ params, searchParams }: {
 
   return (
     <div className="lib">
-      <aside className="lib-nav">
+      <TopicNav label="Browse topics">
         <Link href={href()} className={`lib-all ${!sp.cat ? "on" : ""}`}>All {m.name.toLowerCase()} <span>{rows.length}</span></Link>
         {tree.map((g) => (
           <div key={g.cat.slug} className="lib-group">
@@ -56,7 +57,7 @@ export default async function ModulePage({ params, searchParams }: {
           </div>
         ))}
         {role === "admin" && <Link href={showArchived ? `/${m.slug}` : `/${m.slug}?archived=1`} className="lib-leaf archived">{showArchived ? "← Back to active" : "Archived entries"}</Link>}
-      </aside>
+      </TopicNav>
 
       <section className="lib-main">
         <div className="lib-head">

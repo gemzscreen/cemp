@@ -1,21 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getMe } from "@/lib/auth";
+import { getMe, displayName, roleName } from "@/lib/auth";
 import { Suspense } from "react";
 import { MODULES, APP_VERSION } from "@/lib/modules";
 import NavMenu from "@/components/NavMenu";
+import HeaderNav from "@/components/HeaderNav";
+import Avatar from "@/components/Avatar";
+import Clock from "@/components/Clock";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, role, fullName } = await getMe();
+  const { user, role, fullName, avatar, jobTitle } = await getMe();
   if (!user) redirect("/login");
-  const profile = { role, full_name: fullName };
+  const name = displayName(fullName, user.email);
   const isAdmin = role === "admin", canReview = isAdmin || role === "editor";
 
   return (
     <>
       <header className="topbar">
-        <Link href="/" className="brand"><span className="logo">CE</span>CEMP <span className="ver">{APP_VERSION}</span></Link>
-        <nav className="nav">
+        <Link href="/" className="brand"><span className="logo">CE</span><span className="brand-name">CEMP</span></Link>
+        <HeaderNav>
           <Suspense fallback={<span className="navmenu-fallback">Library ▾</span>}>
             <NavMenu label="Library">
               {MODULES.filter((m) => m.kind !== "education").map((m) => (
@@ -24,33 +27,41 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </NavMenu>
           </Suspense>
           <Link href="/estimate" className="nav-cta">∑ Estimate</Link>
-          <Link href="/education">Learn</Link>
+          <Link href="/education">✎ Learn</Link>
           {canReview && (
             <Suspense fallback={<span className="navmenu-fallback">Admin ▾</span>}>
               <NavMenu label="Admin">
-                <Link href="/admin/review">Review queue</Link>
-                {isAdmin && <Link href="/admin/audit">Content audit &amp; release gate</Link>}
-                {isAdmin && <Link href="/admin">Sync, API keys</Link>}
-                <Link href="/entry/new">+ New entry</Link>
-                <Link href="/releases">Releases</Link>
-                <Link href="/api-docs">API docs</Link>
+                <Link href="/admin/review"><span className="ico">☑</span><span><strong>Review queue</strong><small>Check, edit and publish entries</small></span></Link>
+                {isAdmin && <Link href="/admin/audit"><span className="ico">✓</span><span><strong>Content audit</strong><small>Release gate: blockers and warnings</small></span></Link>}
+                {isAdmin && <Link href="/admin"><span className="ico">⟳</span><span><strong>Sync &amp; API keys</strong><small>Load content batches, manage app keys</small></span></Link>}
+                <Link href="/entry/new"><span className="ico">＋</span><span><strong>New entry</strong><small>Draft a practice, code or education entry</small></span></Link>
+                <Link href="/releases"><span className="ico">⌘</span><span><strong>Releases</strong><small>What changed in each version</small></span></Link>
+                <Link href="/api-docs"><span className="ico">⇄</span><span><strong>API docs</strong><small>For darkwizscroll and DARKWIZ CT</small></span></Link>
               </NavMenu>
             </Suspense>
           )}
-        </nav>
-        <form action="/search" className="nav-search"><input name="q" placeholder="Search…" aria-label="Search CEMP" /></form>
+          <form action="/search" className="nav-search"><input name="q" placeholder="Search…" aria-label="Search CEMP" /></form>
+        </HeaderNav>
         <Suspense fallback={<span className="navmenu-fallback">Account ▾</span>}>
-          <NavMenu label={<span className="acct"><span className="avatar">{(profile?.full_name ?? user.email ?? "?").slice(0, 1).toUpperCase()}</span><span className="acct-name">{profile?.full_name ?? user.email}</span></span>} align="right">
-            <div className="menu-head"><strong>{profile?.full_name ?? user.email}</strong><small>{user.email} · {profile?.role ?? "viewer"}</small></div>
-            <Link href="/saved">★ Saved &amp; notes</Link>
-            <Link href="/estimate/projects">∑ My estimates</Link>
-            <Link href="/account">⚿ Change password</Link>
-            <Link href="/help">? Help</Link>
-            <form action="/auth/signout" method="post"><button className="menu-btn">Sign out</button></form>
+          <NavMenu className="me" align="right" label={<span className="acct"><Avatar name={name} src={avatar} /><span className="hi">Welcome, <b>{name.split(" ")[0]}</b></span><i className="rolechip">{roleName(role)}</i></span>}>
+            <div className="menu-head">
+              <Avatar name={name} src={avatar} size={42} />
+              <div><b>{name}</b><small>{jobTitle ?? user.email}</small><small>{user.email} · {roleName(role)}</small></div>
+            </div>
+            <Link href="/account"><span className="ico">☺</span><span><strong>Profile &amp; password</strong><small>Name, title, photo, password</small></span></Link>
+            <Link href="/saved"><span className="ico">★</span><span><strong>Saved &amp; notes</strong></span></Link>
+            <Link href="/estimate/projects"><span className="ico">∑</span><span><strong>My estimates</strong></span></Link>
+            <Link href="/help"><span className="ico">?</span><span><strong>Help</strong></span></Link>
+            <form action="/auth/signout" method="post"><button className="menu-btn"><span className="ico">⏻</span><span><strong>Sign out</strong></span></button></form>
           </NavMenu>
         </Suspense>
       </header>
       <main className="wrap">{children}</main>
+      <footer className="foot">
+        <div className="fl"><Clock /></div>
+        <div className="fc"><b>CEMP</b> · Civil Engineering practices library · Powered by <a href="https://darkwizlab.com" target="_blank" rel="noopener">Darkwiz Lab</a> 2026</div>
+        <div className="fr"><Link href="/releases" className="ver-pill">{APP_VERSION}</Link></div>
+      </footer>
     </>
   );
 }
