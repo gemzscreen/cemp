@@ -2,54 +2,56 @@
 import { type Calc, n, r } from "./core";
 import { checklist } from "./checklist";
 
-/* 1. Safety officer staffing for a construction site (high-risk workplace) */
-type SO = { so2: number; so3: number; extra: number };
-/** DO 198-18 Sec. 14 minimum safety officers, high-risk column. Values from secondary summaries:
- *  verify against the official DO 198-18 table before relying on brackets above 50 workers. */
-export function safetyOfficersHighRisk(N: number): SO {
-  if (N <= 0) return { so2: 0, so3: 0, extra: 0 };
-  if (N <= 9) return { so2: 1, so3: 0, extra: 0 };
-  if (N <= 50) return { so2: 0, so3: 1, extra: 0 };
-  if (N <= 199) return { so2: 1, so3: 1, extra: 0 };
-  if (N <= 250) return { so2: 0, so3: 2, extra: 0 };
-  if (N <= 750) return { so2: 1, so3: 2, extra: 0 };
-  return { so2: 1, so3: 2, extra: Math.ceil((N - 750) / 250) };
+/* 1. OSH personnel for a construction site: DOLE DO 252 s.2025 (Revised IRR of RA 11058), Sec. 22 */
+export type OshPersonnel = { so: string; firstAiders: number; nurses: string; physicians: string; dentist: string; bracket: string };
+const extra = (N: number, over: number, per: number) => (N > over ? Math.ceil((N - over) / per) : 0);
+/** Construction-industry minimums from DO 252-25 Sec. 22 (read from the DPWH-circulated copy, DMC 33 s.2025). */
+export function constructionOshPersonnel(N: number): OshPersonnel {
+  if (N <= 0) return { so: "none", firstAiders: 0, nurses: "none", physicians: "none", dentist: "none", bracket: "no workers" };
+  const bracket = N <= 9 ? "1–9" : N <= 99 ? "10–99" : N <= 199 ? "100–199" : N <= 500 ? "200–500" : N <= 2000 ? "501–2,000" : "over 2,000";
+  const so = N <= 9 ? "1 SO2" : N <= 99 ? "2 SO2" : N <= 199 ? "3 SO2 or 2 SO3" : N <= 500 ? "2 SO3 + 1 SO4"
+    : `2 SO3 + 1 SO4 + ${extra(N, 500, 500)} SO2`;
+  const firstAiders = N <= 9 ? 1 : N <= 99 ? 2 : N <= 199 ? 3 : 6 + extra(N, 500, 500);
+  const nurses = N <= 50 ? "none required" : N <= 99 ? "2 part-time" : N <= 2000 ? "1 full-time" : `${1 + extra(N, 2000, 250)} full-time`;
+  const physicians = N <= 99 ? "none required" : N <= 199 ? "1 part-time" : N <= 500 ? "2 part-time" : N <= 2000 ? "2 part-time or 1 full-time"
+    : `2 part-time or 1 full-time, plus ${extra(N, 2000, 500)} × (1 full-time or 4 part-time)`;
+  const dentist = N >= 100 ? "at least 1 part-time" : "none required";
+  return { so, firstAiders, nurses, physicians, dentist, bracket };
 }
-const soText = (s: SO) => [s.so2 && `${s.so2} SO2`, s.so3 && `${s.so3} SO3`, s.extra && `${s.extra} additional SO3/SO4`].filter(Boolean).join(" + ") || "none";
 
 const safetyOfficers: Calc = {
   key: "safety-officer-requirement",
-  title: "Construction site OSH personnel: safety officers, committee and program type",
-  clauses: ["Sec. 12", "Sec. 13", "Sec. 14", "Sec. 15"],
+  title: "Construction site OSH personnel (DO 252-25): safety officers, first-aiders, health staff",
+  clauses: ["Sec. 22", "Sec. 14"],
   fields: [
-    { key: "N", label: "Workers on site (peak, all contractors and subcontractors)", unit: "workers", type: "number", default: 120, min: 0 },
-    { key: "shifts", label: "Shifts per day", type: "number", default: 1, min: 1 },
+    { key: "N", label: "Workers on site (peak, main contractor + all subcontractors)", unit: "workers", type: "number", default: 120, min: 0 },
   ],
   compute(i) {
-    const N = Math.max(0, Math.round(n(i.N))), shifts = Math.max(1, Math.round(n(i.shifts)));
-    const so = safetyOfficersHighRisk(N);
-    const perShift = Math.ceil(N / shifts);
-    const bracket = N <= 9 ? "1–9" : N <= 50 ? "10–50" : N <= 99 ? "51–99" : N <= 199 ? "100–199" : N <= 250 ? "200–250" : N <= 500 ? "251–500" : N <= 750 ? "501–750" : "over 750";
-    const simple = N < 10;
+    const N = Math.max(0, Math.round(n(i.N)));
+    const p = constructionOshPersonnel(N);
     return {
       results: [
-        { label: "Minimum safety officers (high risk)", value: soText(so), main: true },
-        { label: "Workforce bracket", value: `${bracket} workers` },
-        { label: "OSH committee", value: simple ? "Simplified committee (owner/manager, SO, worker rep)" : "Full committee: PM as chair, SO as secretary, sub-contractor and worker reps", main: true },
-        { label: "OSH program / CSHP", value: simple ? "Simplified program" : "Full CSHP, approved before work starts", main: true },
-        { label: "First-aiders", value: `At least 1 certified first-aider per shift (${shifts} shift${shifts > 1 ? "s" : ""}, ~${perShift} workers each)` },
-        { label: "Nurse / physician / dentist", value: N > 50 ? "Required: size by the DO 198-18 Sec. 15 table" : "Not required at this size (first-aider + nearby clinic)" },
+        { label: "Minimum safety officers", value: p.so, main: true },
+        { label: "Certified first-aiders", value: p.firstAiders, main: true },
+        { label: "OH nurses", value: p.nurses },
+        { label: "OH physicians", value: p.physicians },
+        { label: "OH dentist", value: p.dentist },
+        { label: "Workforce bracket", value: `${p.bracket} workers` },
+        { label: "OSH committee", value: N > 0 ? "Required (all construction establishments, Sec. 14(f))" : "–" },
+        { label: "Construction Safety & Health Program", value: N > 0 ? "Required before work starts; revise when scope changes" : "–" },
       ],
       checks: [
-        { label: "Construction is a high-risk workplace", ok: true, detail: "Use the high-risk column regardless of contract size" },
-        { label: "SO qualifications", ok: true, detail: "SO2 = 40-h COSH (construction); SO3 = COSH + 48 h advanced/specialized training + 2 years OSH experience; SO4 = OSH practitioner/consultant" },
-        { label: "Table values", ok: N <= 50, detail: N <= 50 ? "1–9 → 1 SO2 and 10–50 → 1 SO3 are well established" : "Brackets above 50 workers are from secondary summaries of DO 198-18 Sec. 14: verify against the official table" },
-        { label: "Owner/main contractor coordination", ok: true, detail: "Each subcontractor's SOs add to, and coordinate under, the main contractor's general SO" },
+        { label: "Regulation in force", ok: true, detail: "DOLE DO 252 s.2025 (Revised IRR of RA 11058) superseded DO 198-18; construction rules are in Sec. 22" },
+        { label: "CSHP approval route", ok: true, detail: "Submit to the DOLE provincial/field office with jurisdiction; public projects: approved by DPWH or the implementing agency, then submitted to DOLE" },
+        { label: "Table source", ok: true, detail: "Read from the DPWH-circulated scan (DMC 33 s.2025), which has OCR errors: confirm figures against an official printed copy" },
+        { label: "Headcount", ok: true, detail: "Use peak workers on site including subcontractors; their SOs coordinate under the main contractor's" },
       ],
       steps: [
-        `Peak workers N = ${N} → bracket ${bracket} (high risk)`,
-        N > 750 ? `Over 750: 1 SO2 + 2 SO3, plus 1 SO3/SO4 for every additional 250 or fraction: ⌈(${N} − 750)/250⌉ = ${so.extra}` : `Table row ${bracket}: ${soText(so)}`,
-        simple ? "Fewer than 10 workers → simplified committee and program" : "10 or more workers on a high-risk site → full committee and full program",
+        `Peak workers N = ${N} → bracket ${p.bracket}`,
+        `Safety officers: 1–9 → 1 SO2; 10–99 → 2 SO2; 100–199 → 3 SO2 or 2 SO3; 200–500 → 2 SO3 + 1 SO4; +1 SO2 per additional 500 or fraction → ${p.so}`,
+        `First-aiders: 1–9 → 1; 10–99 → 2; 100–199 → 3; 200–500 → 6; +1 per additional 500 → ${p.firstAiders}`,
+        `Nurses: 51–99 → 2 part-time; 100–2,000 → 1 full-time; +1 full-time per additional 250 → ${p.nurses}`,
+        `Physicians: 100–199 → 1 PT; 200–500 → 2 PT; 501–2,000 → 2 PT or 1 FT → ${p.physicians}; dentist ≥ 100 workers → ${p.dentist}`,
       ],
     };
   },

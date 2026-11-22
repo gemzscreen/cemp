@@ -236,3 +236,9 @@ pre.diff .d-del { background: #fde8e8; color: #7f1d1d; text-decoration: line-thr
 pre.diff .d-same { color: #6b7785; }
 .filters { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
 .filters select, .filters input { padding: .45rem .55rem; border: 1px solid #cbd2d9; border-radius: 7px; font: inherit; }
+
+/* v1.0.0: audit gate, help */
+.gate.ok { border-color: var(--safe); background: #eef8f1; }
+.gate.bad { border-color: var(--avoid); background: #fff4ee; }
+.help h2 { margin-top: 0; }
+.help ol li, .help ul li { margin: .25rem 0; }

@@ -21,7 +21,7 @@ const batch: Batch = {
     { doc: BB, section: "Item 404", title: "Reinforcing steel",
       summary: "Covers furnishing, bending and placing bars per the plans. Measured by the computed mass (kg) of steel actually placed as shown, using nominal unit masses. Laps are paid only where shown or approved; extra laps for the contractor's convenience are not paid. Bars must be clean, accurately placed and tied, and supported on approved chairs/spacers." },
     { doc: BB, section: "Item 405", title: "Structural concrete",
-      summary: "Defines concrete classes (A, B, C, P, Seal) by minimum cement content and minimum compressive strength, plus batching, placing, curing and sampling requirements. Measured by volume (m³) to the neat dimensions shown on the plans." },
+      summary: "Defines concrete classes (A, B, C, P, Seal) and their mix requirements, plus batching, placing, curing and sampling. The 2025 revision (DPWH DO 32 s.2025) splits pay items by specified strength (e.g. Class A from 20.68 MPa up to 50 MPa) and pays the final quantity placed and accepted, in m³, with no deduction for small pipes (< 100 mm), reinforcement, anchors, conduits or weep holes." },
   ],
   entries: [
     /* ---------- tools ---------- */
@@ -52,7 +52,7 @@ const batch: Batch = {
       tags: ["takeoff", "estimating", "pre-construction"], refs: [{ doc: BB, section: "Item 405" }, { doc: BB, section: "Item 404" }],
       sections: [
         { kind: "list", heading: "Order of work", items: ["Read all sheets first: general notes, schedules, typical details", "Set up the BOQ by trade/division before measuring", "Measure substructure → superstructure → finishes → MEP", "Take off by grid line and floor, marking each member as it is measured", "Keep a dimension sheet: description, number, L × W × H, quantity, unit"] },
-        { kind: "safe", heading: "Measurement rules of thumb", items: ["Measure to the neat dimensions on the plans (the basis of payment)", "Concrete: deduct the column volume inside beams/slabs once, so it is counted in only one member", "Rebar: from schedules and typical details; include hooks and laps shown", "Formwork: contact area, by member type", "Add waste as a separate line, not hidden in quantities"] },
+        { kind: "safe", heading: "Measurement rules of thumb", items: ["Measure to the dimensions on the plans; DPWH Item 405 (2025) pays the final quantity placed and accepted", "Concrete: deduct the column volume inside beams/slabs once, so it is counted in only one member", "Rebar: from schedules and typical details; include hooks and laps shown", "Formwork: contact area, by member type", "Add waste as a separate line, not hidden in quantities"] },
         { kind: "avoid", heading: "Common errors", items: ["Double-counting beam-column intersections", "Missing typical details (lintels, stiffener columns, stair landings)", "Mixing units (m² vs m³; kg vs pcs)", "Scaling from drawings instead of using written dimensions"] },
         { kind: "text", heading: "Note", text: VERIFY_BB },
       ] },
@@ -72,6 +72,7 @@ const batch: Batch = {
         { kind: "list", heading: "Classes (minimum cement content · minimum 28-day f'c)", items: ["Class A: 360 kg/m³ (9 bags) · 20.7 MPa: general structural concrete", "Class B: 320 kg/m³ (8 bags) · 16.5 MPa: non-reinforced/massive work", "Class C: 380 kg/m³ (9.5 bags) · 20.7 MPa: thin reinforced sections, railings", "Class P: 440 kg/m³ (11 bags) · 37.7 MPa: prestressed members", "Seal: 380 kg/m³ (9.5 bags) · 20.7 MPa: placed under water"] },
         { kind: "safe", heading: "On site", items: ["Check the class on the plans for each member", "Trial mix / design mix approved before pouring", "Slump and cylinder samples per the specs"] },
         { kind: "avoid", heading: "Avoid", items: ["Confusing DPWH classes with 1:2:4-style site-mix labels", "Adding water to restore slump"] },
+        { kind: "text", heading: "2025 revision", text: "DPWH DO 32 s.2025 revised Item 405: pay items are now split by specified strength within each class (Class A 20.68–50 MPa, Class B 16.50–20.68 MPa, Class C 20.68–27.58 MPa, Class P 34.47–50 MPa), and mix requirements sit in its Table 405.2. The cement contents above are the traditional tabulated values: check Table 405.2 of the revised spec for your contract." },
         { kind: "text", heading: "Note", text: "Values as commonly tabulated from the Blue Book. " + VERIFY_BB },
       ] },
 

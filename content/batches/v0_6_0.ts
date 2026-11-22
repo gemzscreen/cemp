@@ -1,8 +1,8 @@
 import type { Batch, BatchEntry } from "../types";
 
-const RA = "RA 11058", DO = "DOLE DO 198", BB = "DPWH Blue Book", AISC = "AISC 360";
-const OSH_ED = "RA 11058 / DOLE DO 198-18";
-const VERIFY_OSH = "Section numbers and requirements are summarized in our own words from RA 11058 and its IRR (DOLE DO 198-18), with DOLE DO 13 s.1998 (construction guidelines) and DPWH DO 46 s.2025 (CSHP forms). Check the official text and any later DOLE issuances before relying on them.";
+const RA = "RA 11058", DO = "DOLE DO 252", BB = "DPWH Blue Book", AISC = "AISC 360";
+const OSH_ED = "RA 11058 / DOLE DO 252-25";
+const VERIFY_OSH = "Summarized in our own words from RA 11058 and its Revised IRR, DOLE DO 252 s.2025 (which superseded DO 198-18; construction rules in Sec. 22), with DPWH DO 46 s.2025 (CSHP forms). Figures were read from the DPWH-circulated copy (DMC 33 s.2025): check them against an official printed copy and any later DOLE issuances.";
 const tool = (use: string, limits: string[]) => [
   { kind: "text" as const, heading: "When to use", text: use },
   { kind: "avoid" as const, heading: "Limitations", items: limits },
@@ -15,9 +15,15 @@ const batch: Batch = {
   notes: [
     "Printable pass/fail inspection checklists: pre-pour, rebar placement, formwork & shoring, structural steel bolting & visual weld, scaffold, excavation, daily site safety walk",
     "Concrete QA tools: strength-test sampling frequency (NSCP 426.12.2 vs DPWH 1 set per 75 m³) and strength acceptance (running average of 3, low single test)",
-    "Safety tools: OSH personnel by workforce (DO 198-18, high-risk), injury frequency/severity rates and TRIR, job hazard analysis with 5 × 5 risk rating",
+    "Safety tools: construction OSH personnel by workforce (DO 252-25 Sec. 22), injury frequency/severity rates and TRIR, job hazard analysis with 5 × 5 risk rating",
     "6 practice cards (ITP & hold points, concrete testing plan, CSHP outline, OSH personnel & committee, PPE matrix, toolbox talk library) + 2 explainers",
-    "Codes index: NSCP 426.6/426.11/426.13, AISC 360 Ch. N5, RA 11058 Secs. 5–16, DO 198-18 Secs. 14–15. Tools gain a Print / save as PDF button",
+    "Codes index: NSCP 426.6/426.11/426.13, AISC 360 Ch. N5, RA 11058 Secs. 5–16, DO 252-25 Secs. 14 and 22 (DO 252-25 added as a code document; DO 198-18 marked superseded). Tools gain a Print / save as PDF button",
+  ],
+  documents: [
+    { short_name: "DOLE DO 252", title: "Revised Implementing Rules and Regulations of RA 11058", edition: "2025", publisher: "DOLE", year: 2025, status: "current",
+      notes: "Dated 29 April 2025; supersedes DO 198-18 (Sec. 49). Construction: Sec. 22. Circulated to DPWH via DMC 33 s.2025." },
+    { short_name: "DOLE DO 198", title: "IRR of RA 11058", edition: "2018", publisher: "DOLE", year: 2018, status: "superseded",
+      notes: "Superseded by DOLE DO 252 s.2025; still governs final orders issued before it took effect (Sec. 47)." },
   ],
   clauses: [
     { section: "426.6", title: "Reinforcement materials and construction requirements", equivalent: "ACI 318-14 §26.6",
@@ -48,10 +54,10 @@ const batch: Batch = {
       summary: "Workplaces must have qualified first-aiders, and depending on workforce and risk, nurses, physicians and dentists, plus first-aid and treatment facilities." },
     { doc: RA, section: "Sec. 16", title: "Safety and health training",
       summary: "Workers get mandatory OSH orientation; safety officers and OSH personnel get the prescribed training for their category, with refresher and specialized training as required." },
-    { doc: DO, section: "Sec. 14", title: "Safety officer: number and qualification",
-      summary: "Gives the minimum number and category (SO1–SO4) of safety officers by number of workers and risk class. High-risk workplaces such as construction need at least one SO2 for 1–9 workers and one SO3 for 10–50, with more officers in larger brackets. Defines the training and experience for each category." },
-    { doc: DO, section: "Sec. 15", title: "Occupational health personnel and facilities",
-      summary: "Gives the minimum first-aiders, nurses, physicians and dentists by number of workers and risk class, and when a clinic or hospital nearby may substitute for on-site facilities." },
+    { doc: DO, section: "Sec. 14", title: "OSH program, safety officers, OH personnel and committee (general)",
+      summary: "Sets the core OSH requirements every covered workplace must meet: a written OSH program, safety officers of the required category (SO1–SO4, defined by training hours and experience), occupational health personnel and facilities, and an OSH committee. Sector sections (Secs. 17–30) give the headcount tables." },
+    { doc: DO, section: "Sec. 22", title: "OSH standards for the construction industry",
+      summary: "Construction-specific rules. Minimum safety officers: 1–9 workers one SO2; 10–99 two SO2; 100–199 three SO2 or two SO3; 200–500 two SO3 and one SO4; plus one SO2 per additional 500 or fraction. First-aiders, OH nurses, physicians and a part-time dentist (100+ workers) scale with headcount. Every construction establishment has an OSH committee. The Construction Safety and Health Program is submitted to the DOLE office with jurisdiction before work starts (public projects: approved by DPWH or the implementing agency first) and revised when the scope changes; it must also cover items such as skills certification, heavy-equipment testing, working hours and breaks, fatigue management, living quarters and psychosocial support." },
   ],
   entries: [],
 };
@@ -98,10 +104,10 @@ batch.entries.push(
     tags: ["safety", "inspection", "construction"], refs: [{ doc: RA, section: "Sec. 8" }, { doc: RA, section: "Sec. 14" }],
     sections: tool("Safety officer's daily inspection and the weekly OSH committee walk.", CHECKLIST_LIMITS) }),
   T({ slug: "tool-safety-officer-requirement", calc_key: "safety-officer-requirement", specialization: "safety-health", code_edition: OSH_ED,
-    title: "OSH personnel for a construction site", summary: "Workers on site → safety officers, committee type, CSHP type, first-aiders.",
-    tags: ["safety", "pre-construction"], refs: [{ doc: DO, section: "Sec. 14" }, { doc: DO, section: "Sec. 15" }, { doc: RA, section: "Sec. 13" }],
-    sections: [...tool("Bid preparation (OSH cost and staffing) and CSHP preparation.",
-      ["High-risk (construction) column only", "Brackets above 50 workers are from secondary summaries and flagged to verify", "Nurse/physician/dentist numbers are pointed to the DO 198-18 Sec. 15 table, not computed"]),
+    title: "OSH personnel for a construction site (DO 252-25)", summary: "Workers on site → safety officers, first-aiders, nurses, physicians, dentist.",
+    tags: ["safety", "pre-construction"], refs: [{ doc: DO, section: "Sec. 22" }, { doc: DO, section: "Sec. 14" }, { doc: RA, section: "Sec. 13" }],
+    sections: [...tool("Bid preparation (OSH staffing and cost) and CSHP preparation.",
+      ["Construction industry (DO 252-25 Sec. 22) only", "Figures read from an OCR scan of the order: confirm against an official copy", "Clinic/facility requirements are not computed"]),
       { kind: "text" as const, heading: "Note", text: VERIFY_OSH }] }),
   T({ slug: "tool-injury-rates", calc_key: "injury-rates", specialization: "safety-health", code_edition: OSH_ED,
     title: "Safety statistics: frequency rate, severity rate, TRIR", summary: "Man-hours and incidents → FR and SR per million hours and TRIR per 200,000 hours.",
@@ -137,21 +143,25 @@ batch.entries.push(
     ] }),
   P({ slug: "cshp-outline", specialization: "safety-health", code_edition: OSH_ED,
     title: "Construction Safety and Health Program (CSHP): outline", summary: "What a CSHP contains before it is submitted for approval.",
-    tags: ["safety", "pre-construction"], refs: [{ doc: RA, section: "Sec. 12" }, { doc: RA, section: "Sec. 13" }, { doc: DO, section: "Sec. 14" }],
+    tags: ["safety", "pre-construction"], refs: [{ doc: RA, section: "Sec. 12" }, { doc: RA, section: "Sec. 13" }, { doc: DO, section: "Sec. 22" }],
     sections: [
-      { kind: "list", heading: "Contents", items: ["Project description: name, location, owner, contractor, workers, start and duration, scope", "Safety policy signed by the top official with control of the project", "OSH committee structure and members", "Site safety and health personnel sized to the workforce (SOs, first-aiders, OH staff)", "Safety officer duties, incl. authority to stop work", "Specific provisions: toolbox meetings, accident investigation and reporting, PPE, public protection, signage, hazardous substances, welfare, emergency preparedness, waste, equipment testing", "SOPs and JHAs for high-risk work: excavation, scaffolds, work at height, lifting, electrical, hot work, confined space, demolition", "Penalties for violations; OSH training plan", "Itemized OSH cost (PPE, signage, training, personnel)", "Attachments: registrations, licenses, SO and operator certificates, equipment inspection certificates"] },
+      { kind: "list", heading: "Contents", items: ["Project description: name, location, owner, contractor, workers, start and duration, scope", "Safety policy signed by the top official with control of the project", "OSH committee structure and members", "Site safety and health personnel sized to the workforce (SOs, first-aiders, OH staff)", "Safety officer duties, incl. authority to stop work", "Specific provisions: toolbox meetings, accident investigation and reporting, PPE, public protection, signage, hazardous substances, welfare, emergency preparedness, waste, equipment testing", "SOPs and JHAs for high-risk work: excavation, scaffolds, work at height, lifting, electrical, hot work, confined space, demolition", "Penalties for violations; OSH training plan", "Itemized OSH cost (PPE, signage, training, personnel)", "Added by DO 252-25: skills certification of workers, heavy-equipment testing and inspection, working hours and breaks, pandemic control, fatigue management, living quarters (if any), psychosocial support", "Attachments: registrations, licenses, SO and operator certificates, equipment inspection certificates"] },
+      { kind: "list", heading: "Approval route (DO 252-25 Sec. 22)", items: ["Submit to the DOLE provincial, field or satellite office with jurisdiction before work starts", "Public projects: approved by DPWH or the implementing agency, then submitted to DOLE", "Submit a revised CSHP when the scope of work changes"] },
       { kind: "safe", heading: "Good practice", items: ["Price the CSHP into the bid as its own cost line", "Update the CSHP when scope, methods or subcontractors change"] },
       { kind: "avoid", heading: "Avoid", items: ["Copy-paste programs with another project's hazards", "Starting work before the CSHP is approved"] },
       { kind: "text", heading: "Note", text: VERIFY_OSH },
     ] }),
   P({ slug: "osh-personnel-and-committee", specialization: "safety-health", code_edition: OSH_ED,
-    title: "Safety officers, OSH committee and health personnel", summary: "How many, what qualification, and who chairs, for construction sites.",
-    tags: ["safety", "pre-construction"], refs: [{ doc: DO, section: "Sec. 14" }, { doc: DO, section: "Sec. 15" }, { doc: RA, section: "Sec. 13" }, { doc: RA, section: "Sec. 16" }],
+    title: "Safety officers, OSH committee and health personnel (construction)", summary: "How many, what qualification, and who chairs, under DO 252-25 Sec. 22.",
+    tags: ["safety", "pre-construction"], refs: [{ doc: DO, section: "Sec. 22" }, { doc: DO, section: "Sec. 14" }, { doc: RA, section: "Sec. 13" }, { doc: RA, section: "Sec. 16" }],
     sections: [
-      { kind: "list", heading: "Safety officer categories", items: ["SO1: OSH orientation + trainer's orientation (low-risk micro workplaces)", "SO2: 40-hour basic OSH course for the industry (COSH for construction)", "SO3: SO2 training + 48 hours advanced/specialized OSH training + 2 years OSH experience", "SO4: OSH practitioner/consultant level"] },
-      { kind: "list", heading: "Construction (high risk) minimums", items: ["1–9 workers: 1 SO2", "10–50 workers: 1 SO3", "Larger sites: more SO2/SO3 by bracket (see the OSH personnel tool; verify above 50)", "First-aider per shift; nurse/physician/dentist above 50 workers per the DO 198-18 Sec. 15 table"] },
-      { kind: "list", heading: "Committee on site", items: ["Chair: project manager", "Secretary: general construction safety officer", "Members: subcontractor SOs, health personnel, worker representatives"] },
-      { kind: "avoid", heading: "Avoid", items: ["Counting only the main contractor's workers: include subcontractors at peak", "A safety officer who also runs production: the role needs authority and time"] },
+      { kind: "list", heading: "Safety officer categories", items: ["SO1: mandatory 8-hour basic OSH training", "SO2: mandatory 40-hour basic OSH training course", "SO3: 40-hour course + 48 hours advanced/specialized OSH training + 2 years relevant OSH experience", "SO4: SO3-level training + more advanced training (320 aggregate OSH training hours) + at least 4 years as SO3"] },
+      { kind: "table", heading: "Construction minimums (DO 252-25 Sec. 22)", verified: false, columns: ["Workers", "Safety officers", "First-aiders", "OH nurse", "OH physician"], rows: [
+        ["1–9", "1 SO2", "1", "–", "–"], ["10–99", "2 SO2", "2", "2 part-time from 51", "–"], ["100–199", "3 SO2 or 2 SO3", "3", "1 full-time", "1 part-time"],
+        ["200–500", "2 SO3 + 1 SO4", "6", "1 full-time", "2 part-time"], ["Each additional 500", "+1 SO2", "+1", "1 FT up to 2,000; +1 FT per 250 beyond", "2 PT or 1 FT up to 2,000; +1 FT or 4 PT per 500 beyond"],
+      ] },
+      { kind: "list", heading: "Also required", items: ["Part-time OH dentist from 100 workers", "An OSH committee for every construction establishment (Sec. 14(f) sets the make-up)", "CSHP submitted to DOLE before work starts; public projects approved by DPWH/implementing agency first; revised when scope changes"] },
+      { kind: "avoid", heading: "Avoid", items: ["Using the old DO 198-18 table: it was superseded in 2025", "Counting only the main contractor's workers: include subcontractors at peak", "A safety officer who also runs production: the role needs authority and time"] },
       { kind: "text", heading: "Note", text: VERIFY_OSH },
     ] }),
   P({ slug: "ppe-matrix-construction", specialization: "safety-health", code_edition: OSH_ED,
@@ -190,11 +200,11 @@ batch.entries.push(
 /* ---------- education ---------- */
 batch.entries.push(
   { slug: "ra-11058-in-one-page", module: "education", specialization: "safety-health", code_edition: OSH_ED,
-    title: "RA 11058 and DO 198-18 in one page", summary: "Duties, workers' rights, OSH program, personnel and penalties: the board-exam and site version.",
+    title: "RA 11058 and its Revised IRR (DO 252-25) in one page", summary: "Duties, workers' rights, OSH program, personnel and penalties: the board-exam and site version.",
     tags: ["safety"], refs: [{ doc: RA, section: "Sec. 6" }, { doc: RA, section: "Sec. 12" }],
     sections: [
-      { kind: "list", heading: "Structure", items: ["Sec. 4: duties of employers, workers and other persons (incl. contractors and the project owner)", "Secs. 5–8: workers' rights: to know, to refuse unsafe work, to report accidents, to free PPE", "Secs. 9–11: signage, safe equipment, OSH information", "Secs. 12–16: OSH program, committee, safety officer, OH personnel, training", "Penalties: daily administrative fines until corrected, plus higher fines for violations causing death or injury"] },
-      { kind: "list", heading: "Construction specifics", items: ["Construction is a high-risk workplace", "CSHP approved before work starts (DOLE DO 13 s.1998; DPWH DO 46 s.2025 forms for DPWH projects)", "OSH cost is part of the project cost", "Operators and equipment certified"] },
+      { kind: "list", heading: "Structure", items: ["Sec. 4: duties of employers, workers and other persons (incl. contractors and the project owner)", "Secs. 5–8: workers' rights: to know, to refuse unsafe work, to report accidents, to free PPE", "Secs. 9–11: signage, safe equipment, OSH information", "Secs. 12–16: OSH program, committee, safety officer, OH personnel, training (detailed in the Revised IRR)", "Penalties: daily administrative fines until corrected, plus higher fines for violations causing death or injury"] },
+      { kind: "list", heading: "Construction specifics", items: ["Construction is a high-risk workplace", "CSHP approved before work starts (DO 252-25 Sec. 22; DPWH DO 46 s.2025 forms for DPWH projects)", "IRR: DO 252 s.2025 superseded DO 198-18; construction rules are in its Sec. 22", "OSH cost is part of the project cost", "Operators and equipment certified"] },
       { kind: "text", heading: "Note", text: VERIFY_OSH },
     ] },
   { slug: "qa-vs-qc-explained", module: "education", specialization: "qa-qc",

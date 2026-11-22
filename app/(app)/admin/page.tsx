@@ -69,7 +69,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </section>
 
       <section className="panel">
-        <h2>Review queue ({queue?.length ?? 0}) <Link href="/admin/review" className="btn ghost" style={{ width: "auto", marginTop: 0, fontSize: ".8rem" }}>Open full queue (filters, bulk publish, diffs)</Link> <Link href="/entry/new" className="btn ghost" style={{ width: "auto", marginTop: 0, fontSize: ".8rem" }}>+ New entry</Link></h2>
+        <h2>Review queue ({queue?.length ?? 0}) <Link href="/admin/review" className="btn ghost" style={{ width: "auto", marginTop: 0, fontSize: ".8rem" }}>Open full queue (filters, bulk publish, diffs)</Link> <Link href="/entry/new" className="btn ghost" style={{ width: "auto", marginTop: 0, fontSize: ".8rem" }}>+ New entry</Link> <Link href="/admin/audit" className="btn ghost" style={{ width: "auto", marginTop: 0, fontSize: ".8rem" }}>Content audit &amp; release gate</Link></h2>
         <p className="fine" style={{ marginTop: 0 }}>Open each item, check it against your code copy, then use “Mark reviewed &amp; publish”.</p>
         <div className="list">
           {(queue ?? []).map((q) => (

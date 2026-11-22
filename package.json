@@ -1,6 +1,6 @@
 {
   "name": "cemp-web-app",
-  "version": "0.9.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "CEMP Web App - Civil Engineering practices library (Codes, Tools, Conversions, Practices, Education)",
   "scripts": {
@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "check-content": "tsx scripts/check-content.ts"
+    "check-content": "tsx scripts/check-content.ts",
+    "audit": "tsx scripts/audit.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

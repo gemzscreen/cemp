@@ -26,8 +26,14 @@ export type BatchEntry = {
   calc_key?: string;                // module = tool → hand-check computed from lib/calc at sync time
   code_edition?: string;
 };
+/** Code documents a batch needs (upserted on short_name + edition before its clauses). */
+export type BatchDocument = {
+  short_name: string; title: string; edition: string; publisher?: string; year?: number;
+  jurisdiction?: string; status: "current" | "superseded" | "reference"; notes?: string;
+};
 export type Batch = {
   version: string;
+  documents?: BatchDocument[];
   batch_name: string;
   notes: string[];
   clauses: BatchClause[];
@@ -43,4 +49,5 @@ export const DOCS: Record<string, { short_name: string; edition: string | null }
   "DPWH Blue Book": { short_name: "DPWH Blue Book", edition: null },
   "RA 11058": { short_name: "RA 11058", edition: null },
   "DOLE DO 198": { short_name: "DOLE DO 198", edition: "2018" },
+  "DOLE DO 252": { short_name: "DOLE DO 252", edition: "2025" },
 };

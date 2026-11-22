@@ -22,7 +22,16 @@ export async function syncBatch(formData: FormData) {
   const log: string[] = [];
   const fail = (m: string) => redirect("/admin?err=" + encodeURIComponent(`${version}: ${m}`));
 
-  // documents
+  // documents declared by the batch (e.g. a new IRR, or marking an old one superseded)
+  for (const d of batch!.documents ?? []) {
+    const { error } = await supabase.from("code_documents").upsert(
+      { short_name: d.short_name, title: d.title, edition: d.edition, publisher: d.publisher ?? null, year: d.year ?? null,
+        jurisdiction: d.jurisdiction ?? "PH", status: d.status, notes: d.notes ?? null },
+      { onConflict: "short_name,edition" });
+    if (error) fail(`document ${d.short_name}: ${error.message}`);
+  }
+  if (batch!.documents?.length) log.push(`${batch!.documents.length} document(s) upserted`);
+
   const { data: docs } = await supabase.from("code_documents").select("id,short_name,edition");
   const docId = (key = "NSCP") => {
     const d = DOCS[key] ?? { short_name: key, edition: null };

@@ -2,6 +2,16 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v1.0.0-rc.1: Content audit, release gate, fix pass, guides (2026-11-22)
+Release candidate. v1.0.0 is tagged when `/admin/audit` shows 0 blockers (all batches synced, all entries reviewed and published).
+- **Audit**: `lib/audit.ts` (verify flags, hand-check drift, repo checks); `npm run audit` → `docs/AUDIT.md` (0 errors, 3 verify warnings at release); `/admin/audit` live release gate with blockers (unsynced batches, unpublished entries, missing refs/hand-checks, hand-check drift, problems linking to unpublished tools) and warnings (verify flags, in-app edits not yet in the repo, missing edition stamps, flagged reference tables). Drift check run against all 15 stored hand-checks: 0 drifting; tampered value detected.
+- **Fix pass (regulations changed in 2025)**:
+  - OSH: DOLE **DO 252 s.2025** (Revised IRR of RA 11058, 29 Apr 2025) supersedes DO 198-18. Construction rules are in **Sec. 22**. The OSH personnel tool now uses the Sec. 22 table (safety officers, first-aiders, nurses, physicians, dentist); v0.6.0 cards, clauses, CSHP outline (approval route, new components) and flashcards updated. Batches can now declare code documents: v0.6.0 adds DO 252 (current) and marks DO 198 superseded on sync.
+  - DPWH **Item 405 revised by DO 32 s.2025**: pay items split by specified strength; payment = final quantity placed and accepted (m³). v0.5.0 clause summary, concrete-classes card, takeoff card and flashcard corrected.
+  - One-way slab tool: Grade 415 note on the 420 MPa temperature-steel boundary (shows the ρ = 0.0020 alternative); results unchanged.
+  - NSCP Ch. 5 numbering: 504.2 and 510.3 confirmed against AISC D/J mapping.
+- **Guides**: in-app Help (`/help`: trust and limits, using CEMP, editors, admin). Help link in the nav.
+
 ## v0.9.0: Editor, review queue, revision diffs, offline/PWA (2026-11-22)
 - **In-app editor** (`/entry/<slug>/edit`, editors + admin): title, summary, code-edition stamp, clause refs (`DOC | section | note`), tags, and every section kind (text, list, safe, avoid, table, flashcards, problem JSON, diagram JSON) with add/move/remove, "verify" flag and live preview. Each save = new revision (`source = 'app'`) with a required change note; published entries go back to review. Shared validation in `lib/sections.ts` (also used by `check-content`).
 - **New entry** (`/entry/new`): practice, code or education drafts.

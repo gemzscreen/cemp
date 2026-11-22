@@ -8,7 +8,7 @@ Stack: Next.js 15 App Router + Supabase (project `CEMP`, ref `qzbcgwjnzwockhvimu
 2. **Schema changes only** → `supabase/migrations/YYYYMMDDHHMMSS_vX_Y_Z_<name>.sql`, applied with `apply_migration` (keep DDL small).
 3. Calculators → `lib/calc/<area>.ts`, registered in `lib/calc/index.ts`. Verify defaults against an independent hand/Python calc before pushing.
 4. Diagrams → spec types in `lib/diagram.ts`, renderer in `components/Diagram.tsx`. Render-check with tsx + rsvg-convert before pushing.
-5. Run `npm run check-content` and `npm run build`. Don't Read back generated files; check counts with grep/wc instead.
+5. Run `npm run check-content`, `npm run audit` (writes docs/AUDIT.md; must show 0 errors) and `npm run build`. Don't Read back generated files; check counts with grep/wc instead.
 6. Bump `APP_VERSION` in `lib/modules.ts` and `version` in package.json; update CHANGELOG.md and the README roadmap.
 7. Push to main (Vercel auto-deploys). Run Supabase security advisors after DDL.
 8. Handover: update the Project doc `claude/cemp-progress.md` (status, review queue, next step).
@@ -25,6 +25,11 @@ Stack: Next.js 15 App Router + Supabase (project `CEMP`, ref `qzbcgwjnzwockhvimu
 - Editors/admins can edit entries in the app (`/entry/<slug>/edit`). Each save is a new revision with `source = 'app'`.
 - **Sync never overwrites an in-app edit**: it skips entries whose current revision has `source = 'app'` and lists them in the sync log. Before changing such an entry in a batch file, copy the in-app version into the batch (use History → diff), then re-sync.
 - DB guards: a published entry can only point to a reviewed revision; only the admin can stamp `reviewed_by/reviewed_at`.
+
+## Release gate (v1.0.0)
+- `/admin/audit` checks the live DB: every batch synced, every entry published (or deprecated), refs and hand-checks present, **no hand-check drift** (stored examples recomputed with today's `lib/calc`), problem links to published tools. Tag a stable version only when it shows 0 blockers.
+- If you change a calculator's results, re-sync its batch so the stored hand-check is re-recorded (v0.3.0 SQL-seeded tools: re-record via a batch entry with the same slug).
+- Regulations change: DOLE DO 252 s.2025 superseded DO 198-18 (construction = Sec. 22); DPWH DO 32 s.2025 revised Item 405. Search before writing regulatory content.
 
 ## Roles
 first account = admin (Gemz). Others viewer by default; editor promoted via SQL. Sign-ups disabled; users added by invite.

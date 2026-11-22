@@ -248,6 +248,8 @@ const oneWaySlab: Calc = {
       checks: [
         { label: "h ≥ hmin (deflection not computed)", ok: h >= hmin, detail: `${h} vs ${r(hmin, 1)} mm` },
         { label: "Applies to normal-weight concrete, members not supporting partitions likely to be damaged", ok: true, detail: "Otherwise compute deflections" },
+        ...(fy >= 415 && fy < 420 ? [{ label: "Grade 415 bars: temperature-steel ratio boundary", ok: true,
+          detail: `The code table switches at fy = 420 MPa. This tool treats Grade 415 as Grade 60 (ρ = 0.0018). Read strictly (fy < 420 → ρ = 0.0020), As = ${r(0.002 * 1000 * h, 0)} mm²/m: confirm against your NSCP Table 424.4.3.2` }] : []),
       ],
       steps: [
         `hmin = ℓ/${den} × (0.4 + fy/700) = ${L}/${den} × ${r(fac, 4)} = ${r(hmin, 1)} mm`,
