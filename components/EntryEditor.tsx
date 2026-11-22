@@ -4,9 +4,10 @@ import Link from "next/link";
 import Sections from "@/components/Sections";
 import type { Section } from "@/content/types";
 import { KINDS, validateSections } from "@/lib/sections";
+import { CATEGORIES } from "@/lib/taxonomy";
 import { saveRevision, type SaveResult } from "@/app/(app)/entry/editor-actions";
 
-type Init = { slug: string; title: string; summary: string; code_edition: string; sections: Section[]; diagram: string; refs: string; tags: string; status: string; module: string };
+type Init = { slug: string; title: string; summary: string; code_edition: string; sections: Section[]; diagram: string; refs: string; tags: string; status: string; module: string; category: string };
 const lines = (s: string) => s.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
 const KIND_LABEL: Record<Section["kind"], string> = { text: "Text", list: "List", safe: "Safe / do (✓)", avoid: "Avoid (✕)", table: "Table", cards: "Flashcards", problem: "Worked problem (JSON)" };
 
@@ -90,6 +91,14 @@ export default function EntryEditor({ init }: { init: Init }) {
       <div className="panel" style={{ marginBottom: ".8rem" }}>
         <div className="tool-grid">
           <label className="fld"><span>Title</span><input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} /></label>
+          <label className="fld"><span>Category</span>
+            <select value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
+              {CATEGORIES.map((c, ci) => (
+                <optgroup key={c.slug} label={`${ci + 1}. ${c.name}`}>
+                  {c.children.map((l, li) => <option key={l.slug} value={l.slug}>{ci + 1}.{li + 1} {l.name}</option>)}
+                </optgroup>
+              ))}
+            </select></label>
           <label className="fld"><span>Code edition stamp</span><input value={f.code_edition} placeholder="e.g. NSCP 2015" onChange={(e) => setF({ ...f, code_edition: e.target.value })} /></label>
           <label className="fld"><span>Summary</span><textarea rows={2} value={f.summary} onChange={(e) => setF({ ...f, summary: e.target.value })} /></label>
           <label className="fld"><span>Clause references <span className="muted">(one per line: DOC | section | note; doc defaults to NSCP)</span></span>

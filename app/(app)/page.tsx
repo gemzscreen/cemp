@@ -1,18 +1,16 @@
 import Link from "next/link";
 import { getDb } from "@/lib/auth";
 import { MODULES } from "@/lib/modules";
+import { CATEGORIES } from "@/lib/taxonomy";
+import { ESTIMATOR_META } from "@/lib/calc/estimate";
+import EstimateIcon from "@/components/EstimateIcon";
 
-type Spec = { id: number; grp: string; parent_id: number | null; name: string; slug: string; sort: number };
 
-const GROUP_TO_MODULE: Record<string, string> = {
-  structural: "practices", construction_mgmt: "practices", education: "education",
-};
 
 export default async function Dashboard() {
   const supabase = await getDb();
-  const [{ data: entries }, { data: specs }, { data: release }, { count: unitCount }, { count: tableCount }] = await Promise.all([
-    supabase.from("entries").select("module"),
-    supabase.from("specializations").select("*").order("sort"),
+  const [{ data: entries }, { data: release }, { count: unitCount }, { count: tableCount }] = await Promise.all([
+    supabase.from("entries").select("module").neq("status", "deprecated"),
     supabase.from("releases").select("version,batch_name,notes_md,released_at")
       .not("released_at", "is", null).order("id", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("units").select("id", { count: "exact", head: true }),
@@ -22,8 +20,6 @@ export default async function Dashboard() {
 
   const counts: Record<string, number> = {};
   (entries ?? []).forEach((e) => { counts[e.module] = (counts[e.module] ?? 0) + 1; });
-  const all = (specs ?? []) as Spec[];
-  const parents = all.filter((s) => !s.parent_id);
 
   return (
     <>
@@ -44,6 +40,12 @@ export default async function Dashboard() {
         </div>
       )}
 
+      <Link href="/estimate" className="est-hero">
+        <span className="calc-ico"><EstimateIcon kind="tank" size={44} /></span>
+        <span><strong>Estimate a job</strong><small>{ESTIMATOR_META.length} quantity calculators: footings, beams, columns, slabs, walls, stairs, CHB, plaster, water tank, septic tank, tank stand, lumber. Build a project BOM with prices.</small></span>
+        <span className="go">Open →</span>
+      </Link>
+
       <div className="grid">
         {MODULES.map((m) => (
           <Link key={m.slug} href={`/${m.slug}`} className="tile">
@@ -55,23 +57,20 @@ export default async function Dashboard() {
                 ? `${unitCount ?? 0} units · ${tableCount ?? 0} tables`
                 : m.kind === "code" ? `${clauseCount ?? 0} clauses indexed`
                 : `${counts[m.kind] ?? 0} entries`}</span>
-              <span>first batch {m.batch}</span>
+
             </span>
           </Link>
         ))}
       </div>
 
       <section className="section">
-        <h2>Specializations</h2>
-        <div className="panel">
-          {parents.map((p) => (
-            <div className="spec-group" key={p.id}>
-              <h3>{p.name}</h3>
-              <div className="chips">
-                {all.filter((c) => c.parent_id === p.id).map((c) => (
-                  <Link key={c.id} className="chip" href={`/${GROUP_TO_MODULE[c.grp]}?spec=${c.slug}`}>{c.name}</Link>
-                ))}
-              </div>
+        <h2>Browse by topic</h2>
+        <div className="topic-grid">
+          {CATEGORIES.map((c, ci) => (
+            <div key={c.slug} className="panel topic">
+              <h3><span className="ico">{c.icon}</span> {ci + 1}. {c.name}</h3>
+              <div className="chips">{c.children.map((l) => <Link key={l.slug} className="chip" href={`/practices?cat=${l.slug}`}>{l.name}</Link>)}</div>
+              <div className="fine"><Link href={`/tools?cat=${c.slug}`}>Tools</Link> · <Link href={`/practices?cat=${c.slug}`}>Practices</Link> · <Link href={`/codes?cat=${c.slug}`}>Codes</Link></div>
             </div>
           ))}
         </div>

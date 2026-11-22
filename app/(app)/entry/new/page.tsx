@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import SubmitButton from "@/components/SubmitButton";
 import { getMe } from "@/lib/auth";
 import { createEntry } from "../editor-actions";
+import { CATEGORIES } from "@/lib/taxonomy";
 
 export const metadata = { title: "New entry" };
 
@@ -21,6 +22,8 @@ export default async function NewEntry({ searchParams }: { searchParams: Promise
           <select name="module" defaultValue="practice"><option value="practice">Practice card</option><option value="code">Code entry</option><option value="education">Education</option></select></label>
         <label className="fld"><span>Specialization</span>
           <select name="specialization">{(specs ?? []).map((s) => <option key={s.slug} value={s.slug}>{s.name}</option>)}</select></label>
+        <label className="fld"><span>Category</span>
+          <select name="category">{CATEGORIES.map((c, ci) => <optgroup key={c.slug} label={`${ci + 1}. ${c.name}`}>{c.children.map((l, li) => <option key={l.slug} value={l.slug}>{ci + 1}.{li + 1} {l.name}</option>)}</optgroup>)}</select></label>
         <label className="fld"><span>Title</span><input name="title" required maxLength={140} /></label>
         <label className="fld"><span>Slug <span className="muted">(optional, from title)</span></span><input name="slug" pattern="[a-z0-9-]*" placeholder="e.g. column-splice-zones" /></label>
         <label className="fld"><span>Summary</span><textarea name="summary" rows={2} maxLength={300} /></label>

@@ -5,11 +5,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { validateSections } from "@/lib/sections";
+import { isLeaf } from "@/lib/taxonomy";
 import type { Section } from "@/content/types";
 
 export type SavePayload = {
   slug: string; title: string; summary: string; code_edition: string; change_note: string;
-  sections: Section[]; diagram: string; refs: string; tags: string;
+  sections: Section[]; diagram: string; refs: string; tags: string; category: string;
 };
 export type SaveResult = { ok?: boolean; error?: string; warnings?: string[] };
 
@@ -60,7 +61,7 @@ export async function saveRevision(p: SavePayload): Promise<SaveResult> {
   }).select("id").single();
   if (re) return { error: re.message };
   const { error: ue } = await supabase.from("entries").update({
-    title: p.title.trim(), summary: p.summary.trim() || null, current_revision_id: rev.id,
+    title: p.title.trim(), summary: p.summary.trim() || null, current_revision_id: rev.id, category: isLeaf(p.category) ? p.category : null,
     status: entry.status === "published" ? "review" : entry.status,
   }).eq("id", entry.id);
   if (ue) return { error: ue.message };
@@ -91,6 +92,7 @@ export async function createEntry(formData: FormData) {
   const { data: spec } = await supabase.from("specializations").select("id").eq("slug", String(formData.get("specialization"))).maybeSingle();
   const { data: ins, error } = await supabase.from("entries").insert({
     module, title, slug, summary: String(formData.get("summary") ?? "").trim() || null, status: "draft", specialization_id: spec?.id ?? null,
+    category: isLeaf(String(formData.get("category"))) ? String(formData.get("category")) : null,
   }).select("id").single();
   if (error) back(error.message.includes("duplicate") ? `Slug "${slug}" already exists` : error.message);
   const { data: rev } = await supabase.from("entry_revisions").insert({

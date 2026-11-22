@@ -59,19 +59,6 @@ batch.entries.push(
 
 /* ---------- CELE ---------- */
 batch.entries.push(
-  E({ slug: "cele-exam-overview", specialization: "cele",
-    title: "CELE at a glance (2026 format)", summary: "Subjects, weights, schedule and passing rule of the Civil Engineers Licensure Examination.",
-    tags: [], refs: [],
-    sections: [
-      { kind: "table", heading: "Subjects (PRC program, September 2026)", columns: ["Day / time", "Subject", "Weight"], rows: [
-        ["Day 1, 8:00–14:00", "Principles of Structural Analysis and Design (PSAD)", "35%"],
-        ["Day 2, 8:00–13:00", "Applied Mathematics, Surveying, Transportation & Highway Engineering, Construction Management & Methods (AMSTHC)", "35%"],
-        ["Day 2, 14:00–18:00", "Hydraulics and Principles of Geotechnical Engineering (HGE)", "30%"],
-      ] },
-      { kind: "list", heading: "Passing rule", items: ["Weighted general average of at least 70%", "No subject rating below 50%", "Conditional/removal rules: check the PRC Board of Civil Engineering resolutions in force"] },
-      { kind: "safe", heading: "Preparation that pays", items: ["Balance all three: each is about a third of the grade", "Drill PSAD and HGE problems by type; speed matters in a 5–6 hour paper", "Know the approved non-programmable calculator list and its functions", "Use the CEMP calculators to check your hand solutions, not to replace them"] },
-      { kind: "text", heading: "Note", text: "Schedule and weights from the PRC exam program for September 2026. Subject order and times can change per exam; always read the program for your exam date." },
-    ] }),
   E({ slug: "cele-outline-psad", specialization: "cele",
     title: "CELE outline: Structural Analysis & Design (PSAD)", summary: "Topics, must-know formulas and which CEMP tools to practice with.",
     tags: ["beam", "column", "footing", "connection"], refs: [],

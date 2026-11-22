@@ -19,6 +19,7 @@ export type BatchEntry = {
   title: string;
   summary: string;
   specialization: string;           // specializations.slug
+  category?: string;                // lib/taxonomy leaf slug (else inferred)
   tags: string[];                   // tags.slug
   refs: ClauseRef[];
   sections: Section[];

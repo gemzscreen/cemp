@@ -31,5 +31,12 @@ Stack: Next.js 15 App Router + Supabase (project `CEMP`, ref `qzbcgwjnzwockhvimu
 - If you change a calculator's results, re-sync its batch so the stored hand-check is re-recorded (v0.3.0 SQL-seeded tools: re-record via a batch entry with the same slug).
 - Regulations change: DOLE DO 252 s.2025 superseded DO 198-18 (construction = Sec. 22); DPWH DO 32 s.2025 revised Item 405. Search before writing regulatory content.
 
+## Organize & Estimate (v1.1.0)
+- **Topic tree** in `lib/taxonomy.ts` (10 numbered groups → leaves). `entries.category` stores a leaf slug; null = inferred by `categoryOf` (explicit slug map → specialization → tags). New batch entries should set `category`. Codes use `clauseCategory(doc, section)`; reference tables use `TABLE_CATEGORY`.
+- **Estimating calculators** in `lib/calc/estimate.ts` (keys `est-*`, registered in CALCS so the API/CSV reuse them). Each returns `materials[]` for the project BOM. Factors default to Fajardo (editable presets via `Calc.presets`). Verify defaults vs an independent Python calc; render-check `components/Sketch.tsx` with rsvg-convert/Chrome.
+- **Projects**: `estimate_projects` (RLS: owner only). `addToProject` recomputes quantities server-side from calc key + inputs.
+- **Archive/delete**: archive = status `deprecated` (hidden everywhere, restorable). Delete = row removed + `entry_tombstones` row; sync skips tombstoned and archived slugs.
+- Brunei reference for the standards release: BS 8110 / BS 5950 + SMM2 (Gemz's choice).
+
 ## Roles
 first account = admin (Gemz). Others viewer by default; editor promoted via SQL. Sign-ups disabled; users added by invite.

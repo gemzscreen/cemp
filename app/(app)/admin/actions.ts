@@ -65,16 +65,20 @@ export async function syncBatch(formData: FormData) {
     .select("id,slug,status,current:entry_revisions!entries_current_revision_fk(body,diagram,source)")
     .in("slug", entries.map((e) => e.slug));
   const existingBySlug = new Map((existingRows ?? []).map((x: any) => [x.slug, x]));
+  const { data: tombs } = await supabase.from("entry_tombstones").select("slug").in("slug", entries.map((e) => e.slug));
+  const tombstoned = new Set((tombs ?? []).map((t) => t.slug));
+  const skipped: string[] = [];
 
   async function syncEntry(e: BatchEntry) {
     const body = { sections: e.sections };
     const existing = existingBySlug.get(e.slug) as any;
     let entryId = existing?.id as string | undefined;
     const cur = Array.isArray(existing?.current) ? existing?.current[0] : existing?.current;
+    if (tombstoned.has(e.slug) || existing?.status === "deprecated") { skipped.push(e.slug); return; } // deleted or archived by the admin
 
     if (!entryId) {
       const { data: ins, error } = await supabase.from("entries").insert({
-        module: e.module, title: e.title, slug: e.slug, summary: e.summary, status: "review",
+        module: e.module, title: e.title, slug: e.slug, summary: e.summary, status: "review", category: e.category ?? null,
         specialization_id: specs?.find((s) => s.slug === e.specialization)?.id ?? null,
       }).select("id").single();
       if (error) throw new Error(`entry ${e.slug}: ${error.message}`);
@@ -104,7 +108,7 @@ export async function syncBatch(formData: FormData) {
 
     // independent writes in parallel: entry pointer/status, refs, tags, tool hand-check
     const jobs: PromiseLike<unknown>[] = [
-      supabase.from("entries").update(existing ? { title: e.title, summary: e.summary, status: "review", current_revision_id: rev!.id } : { current_revision_id: rev!.id }).eq("id", entryId),
+      supabase.from("entries").update(existing ? { title: e.title, summary: e.summary, status: "review", current_revision_id: rev!.id, ...(e.category ? { category: e.category } : {}) } : { current_revision_id: rev!.id }).eq("id", entryId),
       supabase.from("entry_clause_refs").delete().eq("entry_id", entryId).then(() => refs.length ? supabase.from("entry_clause_refs").insert(refs) : null),
       supabase.from("entry_tags").delete().eq("entry_id", entryId).then(() => t.length ? supabase.from("entry_tags").insert(t) : null),
     ];
@@ -134,6 +138,7 @@ export async function syncBatch(formData: FormData) {
   if (failures.length) fail(`${failures.length} entr${failures.length > 1 ? "ies" : "y"} failed (release not recorded): ${failures.slice(0, 5).join(" | ")}`);
   log.push(`${created} new, ${revised} updated, ${unchanged} unchanged entries`);
   if (keptApp.length) log.push(`kept ${keptApp.length} in-app edit(s): ${keptApp.join(", ")}`);
+  if (skipped.length) log.push(`skipped ${skipped.length} archived/deleted: ${skipped.join(", ")}`);
 
   const { error: rle } = await supabase.from("releases").upsert(
     { version, batch_name: batch!.batch_name, notes_md: batch!.notes.map((x) => `- ${x}`).join("\n"), released_at: new Date().toISOString() },

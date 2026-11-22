@@ -7,7 +7,7 @@ import Diagram from "@/components/Diagram";
 import ToolRunner from "@/components/ToolRunner";
 import Sections from "@/components/Sections";
 import type { Section } from "@/content/types";
-import { reviewAndPublish, sendBackToDraft } from "./actions";
+import { reviewAndPublish, sendBackToDraft, archiveEntry, restoreEntry, deleteEntry } from "./actions";
 import { toggleBookmark, addNote, deleteNote } from "./saved-actions";
 
 
@@ -50,7 +50,7 @@ export default async function EntryPage({
       <p className="sub" style={{ marginBottom: ".5rem" }}>
         <Link href={`/${mod?.slug}`}>{mod?.name}</Link>{spec?.name ? ` · ${spec.name}` : ""}
       </p>
-      <h1>{entry.title} <span className={`badge b-${entry.status}`}>{entry.status}</span></h1>
+      <h1>{entry.title} <span className={`badge b-${entry.status}`}>{entry.status === "deprecated" ? "archived" : entry.status}</span></h1>
       <form action={toggleBookmark} className="no-print" style={{ margin: "-.3rem 0 .6rem" }}>
         <input type="hidden" name="entry_id" value={entry.id} /><input type="hidden" name="slug" value={entry.slug} />
         <input type="hidden" name="on" value={bm ? "1" : "0"} />
@@ -66,7 +66,7 @@ export default async function EntryPage({
         </div>
       )}
 
-      {ok && <div className="msg ok" style={{ marginBottom: "1rem" }}>{ok === "published" ? "Reviewed and published." : "Moved back to draft."}</div>}
+      {ok && <div className="msg ok" style={{ marginBottom: "1rem" }}>{ok === "published" ? "Reviewed and published." : ok === "archived" ? "Archived: hidden from lists and the API. Restore it any time from here." : ok === "restored" ? "Restored to review." : "Moved back to draft."}</div>}
       {err && <div className="msg err" style={{ marginBottom: "1rem" }}>{err}</div>}
 
       {rev?.diagram && (
@@ -129,6 +129,24 @@ export default async function EntryPage({
             </form>
           )}
           <span className="fine" style={{ margin: 0 }}>Publishing stamps this revision as reviewed by you. Check the values against your NSCP copy first.</span>
+          <div className="danger-zone">
+            {entry.status === "deprecated" ? (
+              <form action={restoreEntry}><input type="hidden" name="slug" value={entry.slug} />
+                <SubmitButton className="btn ghost" style={{ width: "auto", marginTop: 0 }} pending="Restoring…">↺ Restore from archive</SubmitButton></form>
+            ) : (
+              <form action={archiveEntry}><input type="hidden" name="slug" value={entry.slug} />
+                <SubmitButton className="btn ghost" style={{ width: "auto", marginTop: 0 }} pending="Archiving…">Archive (hide, restorable)</SubmitButton></form>
+            )}
+            <details>
+              <summary className="fine">Delete permanently…</summary>
+              <form action={deleteEntry} className="del-form">
+                <input type="hidden" name="slug" value={entry.slug} />
+                <span className="fine">Removes this entry, all its revisions, bookmarks and notes. Content sync will not bring it back. Type <strong>DELETE</strong>:</span>
+                <input name="confirm" required pattern="DELETE" autoComplete="off" placeholder="DELETE" />
+                <SubmitButton className="btn danger" style={{ width: "auto", marginTop: 0 }} pending="Deleting…">Delete permanently</SubmitButton>
+              </form>
+            </details>
+          </div>
         </div>
       )}
 

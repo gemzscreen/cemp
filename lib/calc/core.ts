@@ -8,9 +8,13 @@ export type Field =
 export type Result = { label: string; value: number | string; unit?: string; main?: boolean };
 export type Check = { label: string; ok: boolean; detail: string };
 export type Table = { columns: string[]; rows: (string | number)[][]; highlight?: number[] };
-export type CalcOutput = { results: Result[]; checks: Check[]; steps: string[]; table?: Table };
+/** Bill-of-materials line (estimating calculators): summed by key across a project. */
+export type Material = { key: string; name: string; unit: string; qty: number };
+export type CalcOutput = { results: Result[]; checks: Check[]; steps: string[]; table?: Table; materials?: Material[] };
 export type Inputs = Record<string, number | string>;
-export type Calc = { key: string; title: string; clauses: string[]; fields: Field[]; compute: (i: Inputs) => CalcOutput };
+/** Presets: when the "from" fields change, the mapped fields are filled (still editable). Key = from-values joined by "|". */
+export type Preset = { from: string[]; map: Record<string, Record<string, number>>; label?: string };
+export type Calc = { key: string; title: string; clauses: string[]; fields: Field[]; compute: (i: Inputs) => CalcOutput; presets?: Preset[] };
 
 export const n = (v: number | string) => Number(v);
 export const r = (v: number, d = 1) => Math.round(v * 10 ** d) / 10 ** d;

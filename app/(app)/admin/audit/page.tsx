@@ -14,13 +14,15 @@ export default async function AuditPage() {
   const me = { role };
   if (me?.role !== "admin") redirect("/");
 
-  const [{ data: entries }, { data: releases }, { data: refTables }] = await Promise.all([
+  const [{ data: entries }, { data: releases }, { data: refTables }, { data: tombs }] = await Promise.all([
     supabase.from("entries").select(`slug,title,module,status,
       current:entry_revisions!entries_current_revision_fk(rev_no,body,reviewed_by,source,code_edition),
       entry_clause_refs(clause_id), tools(calc_key,hand_check)`).order("module").order("slug"),
     supabase.from("releases").select("version,released_at"),
     supabase.from("ref_tables").select("slug,name,data"),
+    supabase.from("entry_tombstones").select("slug"),
   ]);
+  const tombstoned = new Set((tombs ?? []).map((t) => t.slug));
   const rows = (entries ?? []) as any[];
   const bySlug = new Map(rows.map((e) => [e.slug, e]));
   const batchEntry = new Map(BATCHES.flatMap((b) => b.entries.map((e) => [e.slug, { e, v: b.version }] as const)));
@@ -28,7 +30,7 @@ export default async function AuditPage() {
 
   const blockers: Finding[] = [], warnings: Finding[] = [];
   for (const b of BATCHES) if (!synced.has(b.version)) blockers.push({ level: "error", slug: b.version, issue: "content batch not synced yet" });
-  for (const [slug, { v }] of batchEntry) if (!bySlug.has(slug) && synced.has(v)) blockers.push({ level: "error", slug, issue: `in batch ${v} but missing from the database (re-sync)` });
+  for (const [slug, { v }] of batchEntry) if (!bySlug.has(slug) && synced.has(v) && !tombstoned.has(slug)) blockers.push({ level: "error", slug, issue: `in batch ${v} but missing from the database (re-sync)` });
   for (const e of rows) {
     const cur = one(e.current) as any, tool = one(e.tools) as any;
     if (e.status !== "published" && e.status !== "deprecated") blockers.push({ level: "error", slug: e.slug, issue: `status ${e.status}: review and publish, or deprecate` });

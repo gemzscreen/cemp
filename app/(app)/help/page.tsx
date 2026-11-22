@@ -19,10 +19,22 @@ export default function Help() {
         </ul>
       </section>
 
+      <section className="panel" style={{ marginBottom: "1rem" }} id="estimate">
+        <h2>Estimating a job</h2>
+        <ol>
+          <li>Open <Link href="/estimate">Estimate</Link> and pick a calculator (footing, beam, column, slab, wall, stairs, CHB, plaster, water tank, septic tank, tank stand, lumber).</li>
+          <li>Enter dimensions. Mix and mortar factors start from Fajardo&apos;s tables (orange fields) and can be changed for your job, e.g. for 50 kg bags.</li>
+          <li>Rebar is counted bar by bar from spacing and cover and cut from 6–12 m stock; bars longer than stock get 40db laps. The cutting list and step-by-step working are under the results.</li>
+          <li>Give the item a label (e.g. “F-1 footings”) and <strong>Add to BOM</strong> of a project. The project page sums all items, lets you enter unit prices, and exports CSV or prints.</li>
+        </ol>
+      </section>
+
       <section className="panel" style={{ marginBottom: "1rem" }} id="use">
         <h2>Using CEMP</h2>
         <ul>
           <li><strong>Modules:</strong> Codes (clause index), Tools (calculators and checklists), Conversions (units and reference tables), Practices (site cards with safe/avoid zones and diagrams), Education (CELE outlines, flashcards, worked problems, PH ↔ global comparisons).</li>
+          <li><strong>Finding things:</strong> Tools, Practices, Codes and Conversions share one numbered topic tree (Concrete, Masonry, Steel, Lumber, Earthworks, Water &amp; sanitary, Safety, Quality, Estimating, Review). Use the sidebar or the filter box on each page.</li>
+          <li><strong>Account menu</strong> (your initial, top right): Saved, My estimates, <Link href="/account">Change password</Link>, Help, Sign out.</li>
           <li><strong>Search</strong> (box in the header) covers entry titles, summaries, card text, code clauses and calculator names.</li>
           <li><strong>Tools:</strong> change any input and results update live. <em>Reset to example</em> restores the hand-check inputs. <em>Print / save as PDF</em> gives a clean printout; <em>Download CSV (Excel)</em> saves inputs, results, checks and steps.</li>
           <li><strong>Checklists</strong> (pre-pour, rebar, formwork, steel, scaffold, excavation, daily safety walk) start as “Not checked”. A form is accepted only when nothing fails and nothing is left unchecked. Print it for signatures.</li>
@@ -48,6 +60,7 @@ export default function Help() {
         <h2>For the admin</h2>
         <ul>
           <li><strong>Content batches</strong> live in the repo (<code>content/batches</code>). Admin → <em>Sync content</em> loads a batch as review drafts, in version order. Entries you edited in the app are kept and listed in the sync log.</li>
+          <li><strong>Archive or delete:</strong> on an entry, Admin → <em>Archive</em> hides it (restorable from “Archived entries” in the sidebar); <em>Delete permanently</em> (type DELETE) removes it with its revisions, and content sync will not bring it back.</li>
           <li><strong>Publishing:</strong> review each entry against your code copy, then publish (one by one, or in bulk from the review queue). The database refuses entries without a clause reference (practice/code) or a hand-check (tools).</li>
           <li><strong><Link href="/admin/audit">Content audit &amp; release gate</Link></strong>: blockers (unsynced batches, unpublished entries, missing refs/hand-checks, hand-check drift, problems linking to unpublished tools) and warnings (verify flags, in-app edits not yet copied to the repo).</li>
           <li><strong>API keys</strong> for darkwizscroll / DARKWIZ CT: Admin → Integration API keys; docs at <Link href="/api-docs">API docs</Link>. Only published content is served.</li>

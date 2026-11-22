@@ -2,6 +2,16 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v1.1.0: Organize + Estimate (2026-11-22)
+- **One numbered topic tree** (`lib/taxonomy.ts`): 1 Concrete · 2 Masonry & finishes · 3 Steel · 4 Lumber · 5 Earthworks & foundations · 6 Water & sanitary · 7 Safety · 8 Quality · 9 Estimating & scheduling · 10 Review & reference, each with sub-topics. Tools, Practices, Learn, Codes (clauses placed by document/section) and Conversions (reference tables) now have a sidebar tree with counts, grouped card sections and a filter box. Every existing entry is placed explicitly; new ones by category or inference. Editor and New entry have a category picker; batches may set `category`.
+- **Navigation**: Library ▾ (Tools, Practices, Codes, Conversions) · Estimate · Learn · search · account menu (Saved, My estimates, Change password, Help, Sign out) · Admin menu (Review, Audit, Sync & API keys, New entry, Releases, API docs).
+- **Change password** page (`/account`).
+- **Archive / delete entries** (admin): archive hides an entry everywhere and is restorable; delete (type DELETE) removes it with its revisions and leaves a tombstone so content sync never recreates it. Sync also skips archived entries. CELE exam overview removed from the v0.7.0 batch.
+- **Estimate workspace** (`/estimate`): 13 quantity calculators: isolated footing, wall footing, beam (tie beam/girder/lintel), column, slab, concrete wall, stairs, CHB wall (blocks, mortar, bars), cement plaster, concrete ground water tank, septic tank (CHB walls, baffles, slabs, plaster), steel stand for an overhead tank, lumber board feet. Each has a dimensioned parametric sketch, Fajardo presets (editable, highlighted), per-unit material snapshot, key results, BOM, cutting list, step-by-step working, CSV and print. Rebar counted bar by bar from spacing and cover, cut from 6–12 m stock with 40db laps beyond stock length; tie wire No. 16 per intersection; formwork contact area and plywood sheets. All 13 defaults matched an independent Python implementation.
+- **Projects / BOM** (`/estimate/projects`): add calculator results to a project (quantities recomputed on the server), aggregated bill of materials with unit prices and totals, item list, CSV export and print. Private per user (RLS).
+- Migration `v1_1_0_organize_estimate`: `entries.category`, `entry_tombstones`, `estimate_projects`.
+- Dashboard: Estimate entry point and a "Browse by topic" grid replace the specialization chips.
+
 ## v1.0.0-rc.2: Speed and progress feedback (2026-11-22)
 - **Functions now run in Singapore** (`vercel.json` → `sin1`), next to the Supabase database (ap-southeast-1). Before, every query crossed from the US default region (~200 ms each).
 - **One auth check per request**: `lib/auth.ts` (`getMe`, `getDb`) caches the session and role for the layout and page together; `getClaims()` replaces `getUser()` in pages and middleware (local JWT verification with asymmetric keys; forged cookies still rejected).

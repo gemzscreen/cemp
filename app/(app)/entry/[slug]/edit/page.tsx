@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getMe } from "@/lib/auth";
 import EntryEditor from "@/components/EntryEditor";
+import { categoryOf } from "@/lib/taxonomy";
 
 export const metadata = { title: "Edit entry" };
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null);
@@ -12,7 +13,7 @@ export default async function EditPage({ params }: { params: Promise<{ slug: str
   if (me?.role !== "admin" && me?.role !== "editor") redirect(`/entry/${slug}`);
 
   const { data: e } = await supabase.from("entries")
-    .select(`slug,title,summary,status,module,
+    .select(`slug,title,summary,status,module,category, specializations(slug),
       current:entry_revisions!entries_current_revision_fk(rev_no,body,diagram,code_edition,source),
       entry_clause_refs(note, code_clauses(section_no, code_documents(short_name))),
       entry_tags(tags(slug))`)
@@ -23,7 +24,9 @@ export default async function EditPage({ params }: { params: Promise<{ slug: str
     const c = one(r.code_clauses) as any; const d = one(c?.code_documents) as any;
     return [d?.short_name ?? "NSCP", c?.section_no, r.note].filter(Boolean).join(" | ");
   }).join("\n");
-  const tags = ((e.entry_tags as any[]) ?? []).map((t) => (one(t.tags) as any)?.slug).filter(Boolean).join(", ");
+  const tagList = ((e.entry_tags as any[]) ?? []).map((t) => (one(t.tags) as any)?.slug).filter(Boolean) as string[];
+  const tags = tagList.join(", ");
+  const category = categoryOf({ slug: e.slug, category: (e as any).category, spec: (one((e as any).specializations) as any)?.slug, tags: tagList });
 
   return (
     <>
@@ -35,7 +38,7 @@ export default async function EditPage({ params }: { params: Promise<{ slug: str
       </p>
       <EntryEditor init={{
         slug: e.slug, title: e.title, summary: e.summary ?? "", code_edition: rev?.code_edition ?? "", status: e.status, module: e.module,
-        sections: rev?.body?.sections ?? [], diagram: rev?.diagram ? JSON.stringify(rev.diagram, null, 2) : "", refs, tags,
+        sections: rev?.body?.sections ?? [], diagram: rev?.diagram ? JSON.stringify(rev.diagram, null, 2) : "", refs, tags, category,
       }} />
     </>
   );
