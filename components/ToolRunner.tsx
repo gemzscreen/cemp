@@ -1,0 +1,74 @@
+"use client";
+import { useMemo, useState } from "react";
+import { CALCS, defaults, type Inputs } from "@/lib/calc";
+
+type HandCheck = { inputs: Inputs; results: { label: string; value: number | string; unit?: string }[]; verified_by?: string; note?: string };
+
+export default function ToolRunner({ calcKey, handCheck }: { calcKey: string; handCheck?: HandCheck | null }) {
+  const calc = CALCS[calcKey];
+  const [vals, setVals] = useState<Inputs>(() => (calc ? defaults(calc) : {}));
+  const out = useMemo(() => {
+    if (!calc) return null;
+    try {
+      const bad = calc.fields.some((f) => f.type === "number" && !Number.isFinite(Number(vals[f.key])));
+      return bad ? null : calc.compute(vals);
+    } catch { return null; }
+  }, [calc, vals]);
+  if (!calc) return <div className="msg err">Unknown calculator: {calcKey}</div>;
+
+  return (
+    <div className="tool">
+      <div className="panel">
+        <h2>Inputs</h2>
+        <div className="tool-grid">
+          {calc.fields.map((f) => (
+            <label key={f.key} className="fld">
+              <span>{f.label}{f.unit ? <span className="muted"> ({f.unit})</span> : null}</span>
+              {f.type === "number" ? (
+                <input inputMode="decimal" value={String(vals[f.key])} onChange={(e) => setVals({ ...vals, [f.key]: e.target.value })} />
+              ) : (
+                <select value={String(vals[f.key])} onChange={(e) => setVals({ ...vals, [f.key]: e.target.value })}>
+                  {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              )}
+              {f.help && <small className="muted">{f.help}</small>}
+            </label>
+          ))}
+        </div>
+        <button type="button" className="btn ghost" style={{ width: "auto" }} onClick={() => setVals(defaults(calc))}>Reset to example</button>
+      </div>
+
+      {out ? (
+        <>
+          <div className="panel results">
+            <h2>Results</h2>
+            <div className="res-grid">
+              {out.results.map((x) => (
+                <div key={x.label} className={`res ${x.main ? "main" : ""}`}>
+                  <span className="lbl">{x.label}</span>
+                  <span className="val">{x.value} <small>{x.unit}</small></span>
+                </div>
+              ))}
+            </div>
+            <ul className="checks">
+              {out.checks.map((c) => <li key={c.label} className={c.ok ? "ok" : "bad"}>{c.ok ? "✓" : "✕"} <strong>{c.label}</strong>: {c.detail}</li>)}
+            </ul>
+          </div>
+          <details className="panel" open>
+            <summary><strong>Step-by-step (for hand checking)</strong></summary>
+            <ol className="steps">{out.steps.map((s, i) => <li key={i}><code>{s}</code></li>)}</ol>
+          </details>
+        </>
+      ) : <div className="msg err">Enter valid numbers in all fields.</div>}
+
+      {handCheck && (
+        <details className="panel">
+          <summary><strong>Recorded hand-check example</strong>{handCheck.verified_by ? ` · ${handCheck.verified_by}` : ""}</summary>
+          <p className="fine">Inputs: {Object.entries(handCheck.inputs).map(([k, v]) => `${k} = ${v}`).join(", ")}</p>
+          <ul>{handCheck.results.map((r) => <li key={r.label}>{r.label}: <strong>{r.value} {r.unit}</strong></li>)}</ul>
+          {handCheck.note && <p className="fine">{handCheck.note}</p>}
+        </details>
+      )}
+    </div>
+  );
+}

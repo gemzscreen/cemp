@@ -158,3 +158,27 @@ button.chip { cursor: pointer; font: inherit; font-size: .8rem; }
 /* v0.2.0: diagrams + admin */
 .panel.diagram { padding: .75rem; background: #fff; }
 .admin-bar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: 1rem; border-color: var(--gold); background: #fffbef; }
+
+/* v0.3.0: tools + codes */
+.tool { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .5rem 1rem; }
+.fld { display: flex; flex-direction: column; gap: .25rem; font-size: .84rem; font-weight: 600; margin: 0; }
+.fld input, .fld select { width: 100%; padding: .5rem .6rem; border: 1px solid #cbd2d9; border-radius: 7px; font: inherit; font-weight: 400; background: #fff; }
+.fld small { font-weight: 400; }
+.res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .5rem; }
+.res { display: flex; flex-direction: column; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.res.main { background: var(--safe-bg); border-color: var(--safe); }
+.res .lbl { font-size: .76rem; color: var(--ink-2); }
+.res .val { font-family: var(--mono); font-size: 1.2rem; font-weight: 800; }
+.res .val small { font-size: .75rem; font-weight: 600; color: var(--ink-2); }
+.checks { list-style: none; padding: 0; margin: .9rem 0 0; font-size: .86rem; }
+.checks li { padding: .3rem 0; border-bottom: 1px dashed var(--line); }
+.checks li.ok { color: #1d4e83; } .checks li.bad { color: #8a4310; }
+.steps { font-size: .82rem; } .steps li { margin: .3rem 0; }
+.steps code { font-family: var(--mono); white-space: pre-wrap; }
+details.panel summary { cursor: pointer; }
+.doc { margin-bottom: 1rem; }
+.doc h2 { display: flex; gap: .5rem; align-items: baseline; flex-wrap: wrap; }
+.clause { padding: .6rem 0; border-top: 1px solid var(--line); }
+.clause .sec { font-family: var(--mono); background: var(--safe-bg); color: var(--safe); padding: .05rem .4rem; border-radius: 4px; margin-right: .4rem; }
+.clause p { margin: .3rem 0; color: var(--ink-2); font-size: .9rem; }

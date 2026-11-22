@@ -18,6 +18,7 @@ export default async function Dashboard() {
     supabase.from("units").select("id", { count: "exact", head: true }),
     supabase.from("ref_tables").select("id", { count: "exact", head: true }),
   ]);
+  const { count: clauseCount } = await supabase.from("code_clauses").select("id", { count: "exact", head: true });
 
   const counts: Record<string, number> = {};
   (entries ?? []).forEach((e) => { counts[e.module] = (counts[e.module] ?? 0) + 1; });
@@ -52,6 +53,7 @@ export default async function Dashboard() {
             <span className="meta">
               <span>{m.kind === "conversion"
                 ? `${unitCount ?? 0} units · ${tableCount ?? 0} tables`
+                : m.kind === "code" ? `${clauseCount ?? 0} clauses indexed`
                 : `${counts[m.kind] ?? 0} entries`}</span>
               <span>first batch {m.batch}</span>
             </span>
