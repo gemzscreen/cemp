@@ -7,6 +7,7 @@ import ToolRunner from "@/components/ToolRunner";
 import Sections from "@/components/Sections";
 import type { Section } from "@/content/types";
 import { reviewAndPublish, sendBackToDraft } from "./actions";
+import { toggleBookmark, addNote, deleteNote } from "./saved-actions";
 
 
 export default async function EntryPage({
@@ -36,6 +37,10 @@ export default async function EntryPage({
   const spec = one(entry.specializations as any) as any;
   const mod = moduleByKind(entry.module);
   const sections: Section[] = rev?.body?.sections ?? [];
+  const [{ data: bm }, { data: notes }] = await Promise.all([
+    supabase.from("bookmarks").select("entry_id").eq("entry_id", entry.id).eq("user_id", user?.id ?? "").maybeSingle(),
+    supabase.from("user_notes").select("id,body,updated_at").eq("entry_id", entry.id).eq("user_id", user?.id ?? "").order("created_at"),
+  ]);
   const { data: tool } = entry.module === "tool"
     ? await supabase.from("tools").select("calc_key,hand_check").eq("entry_id", entry.id).maybeSingle()
     : { data: null };
@@ -46,6 +51,11 @@ export default async function EntryPage({
         <Link href={`/${mod?.slug}`}>{mod?.name}</Link>{spec?.name ? ` · ${spec.name}` : ""}
       </p>
       <h1>{entry.title} <span className={`badge b-${entry.status}`}>{entry.status}</span></h1>
+      <form action={toggleBookmark} className="no-print" style={{ margin: "-.3rem 0 .6rem" }}>
+        <input type="hidden" name="entry_id" value={entry.id} /><input type="hidden" name="slug" value={entry.slug} />
+        <input type="hidden" name="on" value={bm ? "1" : "0"} />
+        <button className="btn ghost" style={{ width: "auto", marginTop: 0 }}>{bm ? "★ Saved (remove)" : "☆ Save to my list"}</button>
+      </form>
       {entry.summary && <p className="sub">{entry.summary}</p>}
 
       {(entry.entry_tags as any[])?.length > 0 && (
@@ -78,6 +88,29 @@ export default async function EntryPage({
           </ul>
         </div>
       )}
+
+      <div className="panel no-print" style={{ marginBottom: ".8rem" }}>
+        <h2>My notes <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>(private to you)</span></h2>
+        {(notes ?? []).length > 0 && (
+          <ul className="notes">
+            {(notes ?? []).map((nt) => (
+              <li key={nt.id}>
+                <span style={{ whiteSpace: "pre-wrap" }}>{nt.body}</span>{" "}
+                <span className="fine">· {new Date(nt.updated_at).toLocaleDateString()}</span>
+                <form action={deleteNote} style={{ display: "inline" }}>
+                  <input type="hidden" name="id" value={nt.id} /><input type="hidden" name="slug" value={entry.slug} />
+                  <button className="linkbtn" title="Delete note">delete</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form action={addNote} className="note-form">
+          <input type="hidden" name="entry_id" value={entry.id} /><input type="hidden" name="slug" value={entry.slug} />
+          <textarea name="body" rows={2} maxLength={4000} placeholder="Add a note: site experience, project reference, a reminder…" required />
+          <button className="btn" style={{ width: "auto", marginTop: ".4rem" }}>Add note</button>
+        </form>
+      </div>
 
       {isAdmin && (
         <div className="panel admin-bar">

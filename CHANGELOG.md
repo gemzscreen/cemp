@@ -2,6 +2,15 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v0.8.0: Integration API, search, bookmarks, export (2026-11-22)
+- **Integration API** `/api/v1` (route handlers, `lib/api.ts`): entries (filter by module, `updated_since`, paging), single entry, clause index, calc catalog, calc detail with worked example, `POST` compute with input validation, `?format=csv`. Bearer/`x-api-key` auth; optional CORS allow-list. In-app docs at `/api-docs`.
+- Migration `v0_8_0_integration_api`: `api_clients` (admin-only RLS; SHA-256 key hashes, scopes `content`/`calc`, active flag, last-used stamp), key-gated security-definer functions `api_check`, `api_entries`, `api_clauses` (published content only), internal `api_client_ok` (not executable by clients), and `search_entries` (security invoker, so RLS applies).
+- Admin: create API keys (shown once), revoke / re-activate, last-used time.
+- **Search** page + header search box: entry titles, summaries and card bodies; code clauses; calculator titles.
+- **Bookmarks & private notes** on every entry; new **Saved** page.
+- **Export**: "Download CSV (Excel)" on every tool and checklist (inputs, results, checks, table, steps; UTF-8 BOM for Excel). Shared `lib/export.ts` also powers the API CSV output.
+- Tested: DB functions with a temporary key (scope enforcement, published-only, clause index; key deleted after), route handlers for 401/403/400/404/200/CSV.
+
 ## v0.7.0: Education, CELE + PH ↔ Global (2026-11-22)
 - New section kinds (`content/types.ts`, `components/Sections.tsx`): comparison **tables**, **flashcard** decks (tap to reveal, no client JS) and **worked problems** (given/find, hidden solution, answer, link to the calculator). Any section can carry `verified: false` → "verify" badge. Entry page now renders sections through the shared component.
 - Worked problems are generated from `lib/calc` inside the batch (`problem()` helper), so answers always equal the tool output. All 10 matched an independent Python check.

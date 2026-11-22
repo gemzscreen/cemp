@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BATCHES } from "@/content";
-import { syncBatch } from "./actions";
+import { syncBatch, setApiClientActive } from "./actions";
+import ApiKeyForm from "@/components/ApiKeyForm";
 
 export const metadata = { title: "Admin" };
 
@@ -13,9 +14,10 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
   if (me?.role !== "admin") redirect("/");
 
-  const [{ data: releases }, { data: queue }] = await Promise.all([
+  const [{ data: releases }, { data: queue }, { data: clients }] = await Promise.all([
     supabase.from("releases").select("version,released_at"),
     supabase.from("entries").select("title,slug,module,status").in("status", ["review", "draft"]).order("module").order("title"),
+    supabase.from("api_clients").select("id,name,key_prefix,scopes,active,created_at,last_used_at").order("created_at"),
   ]);
   const synced = new Set((releases ?? []).filter((r) => r.released_at).map((r) => r.version));
 
@@ -42,6 +44,28 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="panel" style={{ marginBottom: "1.25rem" }}>
+        <h2>Integration API keys</h2>
+        <p className="fine" style={{ marginTop: 0 }}>For darkwizscroll, DARKWIZ CT and other apps. The API serves <strong>published</strong> content only. See <Link href="/api-docs">API docs</Link>.</p>
+        {(clients ?? []).length > 0 && (
+          <div className="list" style={{ marginBottom: ".8rem" }}>
+            {(clients ?? []).map((c) => (
+              <div key={c.id} className="row">
+                <div>
+                  <div className="t">{c.name} <code className="muted">{c.key_prefix}…</code></div>
+                  <div className="s">scopes: {c.scopes.join(", ")} · created {new Date(c.created_at).toLocaleDateString()} · last used {c.last_used_at ? new Date(c.last_used_at).toLocaleString() : "never"}</div>
+                </div>
+                <form action={setApiClientActive}>
+                  <input type="hidden" name="id" value={c.id} /><input type="hidden" name="active" value={c.active ? "0" : "1"} />
+                  <button className={`btn ${c.active ? "ghost" : ""}`} style={{ width: "auto", marginTop: 0 }}>{c.active ? "Revoke" : "Re-activate"}</button>
+                </form>
+              </div>
+            ))}
+          </div>
+        )}
+        <ApiKeyForm />
       </section>
 
       <section className="panel">

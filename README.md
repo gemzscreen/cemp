@@ -46,6 +46,13 @@ npm run dev                  # http://localhost:3000
 ]}
 ```
 
+## Integration API (v0.8.0)
+Read-only, key-authenticated API at `/api/v1` for darkwizscroll, DARKWIZ CT and other apps. Published content only.
+- Keys: Admin → Integration API keys (shown once; only a SHA-256 hash is stored in `api_clients`). Send `Authorization: Bearer <key>`.
+- Endpoints: `GET /api/v1/entries`, `/entries/{slug}`, `/clauses`, `/calcs`, `/calcs/{key}`, `POST /calcs/{key}` (`?format=csv`). Full docs in-app at `/api-docs`.
+- DB access goes through `api_entries`, `api_clauses`, `api_check` (security definer, key-gated); no service-role key on Vercel.
+- Browser callers need their origin in `CEMP_API_CORS_ORIGINS`.
+
 ## Roadmap
 | Version | Batch |
 |---|---|
@@ -57,6 +64,6 @@ npm run dev                  # http://localhost:3000
 | v0.5.0 | CM I: PERT/CPM, QS, Cost Estimating ✅ |
 | v0.6.0 | CM II: QA/QC, Safety ✅ |
 | v0.7.0 | Education: CELE + PH ↔ Global ✅ |
-| v0.8.0 | Integration API (darkwizscroll, DARKWIZ CT), search, bookmarks, Excel/PDF export |
+| v0.8.0 | Integration API (darkwizscroll, DARKWIZ CT), search, bookmarks, Excel/PDF export ✅ |
 | v0.9.0 | Admin editor, review queue, revision diffs, offline/PWA |
 | v1.0.0 | Content audit → stable release |

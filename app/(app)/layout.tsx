@@ -16,9 +16,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Link href="/" className="brand"><span className="logo">CE</span>CEMP <span className="ver">{APP_VERSION}</span></Link>
         <nav className="nav">
           {MODULES.map((m) => <Link key={m.slug} href={`/${m.slug}`}>{m.name}</Link>)}
+          <Link href="/saved">Saved</Link>
           <Link href="/releases">Releases</Link>
           {profile?.role === "admin" && <Link href="/admin">Admin</Link>}
         </nav>
+        <form action="/search" className="nav-search"><input name="q" placeholder="Search…" aria-label="Search CEMP" /></form>
         <div className="user">
           <span>{profile?.full_name ?? user.email}</span>
           <span className="role">{profile?.role ?? "viewer"}</span>

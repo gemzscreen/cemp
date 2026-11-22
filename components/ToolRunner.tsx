@@ -1,6 +1,7 @@
 "use client";
 import { Fragment, useMemo, useState } from "react";
 import { CALCS, defaults, type Inputs } from "@/lib/calc";
+import { toCsv } from "@/lib/export";
 
 type HandCheck = { inputs: Inputs; results: { label: string; value: number | string; unit?: string }[]; verified_by?: string; note?: string };
 
@@ -43,6 +44,13 @@ export default function ToolRunner({ calcKey, handCheck }: { calcKey: string; ha
         <div className="no-print" style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
           <button type="button" className="btn ghost" style={{ width: "auto" }} onClick={() => setVals(defaults(calc))}>Reset to example</button>
           <button type="button" className="btn ghost" style={{ width: "auto" }} onClick={() => window.print()}>Print / save as PDF</button>
+          <button type="button" className="btn ghost" style={{ width: "auto" }} disabled={!out} onClick={() => {
+            if (!out) return;
+            const blob = new Blob([toCsv(calc, vals, out, { source: window.location.href })], { type: "text/csv;charset=utf-8" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob); a.download = `${calc.key}-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+            URL.revokeObjectURL(a.href);
+          }}>Download CSV (Excel)</button>
         </div>
       </div>
 

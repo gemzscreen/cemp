@@ -4,6 +4,8 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/login", "/auth/callback"];
 
 export async function middleware(request: NextRequest) {
+  // Integration API: key-authenticated in the route handlers, no session or login redirect.
+  if (request.nextUrl.pathname.startsWith("/api/v1")) return NextResponse.next();
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

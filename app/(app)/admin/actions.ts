@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BATCHES } from "@/content";
 import { DOCS, type BatchEntry } from "@/content/types";
 import { CALCS, defaults } from "@/lib/calc";
+import { newApiKey, sha256 } from "@/lib/api";
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
@@ -113,4 +114,31 @@ export async function syncBatch(formData: FormData) {
 
   revalidatePath("/", "layout");
   redirect("/admin?ok=" + encodeURIComponent(`${version}: ${log.join(" · ")}`));
+}
+
+/* ---------- v0.8.0: integration API keys ---------- */
+
+export type KeyState = { key?: string; name?: string; error?: string };
+
+/** Create an API client. The plain key is returned once to the admin's browser; only its hash is stored. */
+export async function createApiClient(_prev: KeyState, formData: FormData): Promise<KeyState> {
+  const name = String(formData.get("name") ?? "").trim().slice(0, 60);
+  const scopes = ["content", "calc"].filter((s) => formData.get(`scope_${s}`) === "on");
+  if (!name) return { error: "Name the client app (e.g. darkwizscroll)" };
+  if (!scopes.length) return { error: "Pick at least one scope" };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
+  if (me?.role !== "admin") return { error: "Admin only" };
+  const key = newApiKey();
+  const { error } = await supabase.from("api_clients").insert({ name, key_prefix: key.slice(0, 12), key_hash: sha256(key), scopes });
+  if (error) return { error: error.message.includes("duplicate") ? "A client with that name already exists" : error.message };
+  revalidatePath("/admin");
+  return { key, name };
+}
+
+export async function setApiClientActive(formData: FormData) {
+  const supabase = await createClient();
+  await supabase.from("api_clients").update({ active: formData.get("active") === "1" }).eq("id", Number(formData.get("id")));
+  revalidatePath("/admin");
 }
