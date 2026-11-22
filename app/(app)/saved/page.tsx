@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { moduleByKind } from "@/lib/modules";
+import { moduleByKind, MODULES } from "@/lib/modules";
+import OfflineButton from "@/components/OfflineButton";
 
 export const metadata = { title: "Saved" };
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null);
@@ -17,6 +18,13 @@ export default async function SavedPage() {
     <>
       <h1>Saved</h1>
       <p className="sub">Your bookmarks and private notes. Only you can see them.</p>
+      <div className="panel" style={{ marginBottom: "1rem" }}>
+        <strong>Going to site with weak signal?</strong>{" "}
+        <span className="fine">Save your bookmarked entries, the module lists and the dashboard on this device. Calculators keep working offline once saved.</span>
+        <div style={{ marginTop: ".5rem" }}>
+          <OfflineButton urls={["/", "/saved", ...MODULES.map((m) => `/${m.slug}`), ...((bms ?? []).map((b) => (one(b.entries as any) as any)?.slug).filter(Boolean).map((s: string) => `/entry/${s}`))]} />
+        </div>
+      </div>
       <section className="panel" style={{ marginBottom: "1rem" }}>
         <h2>Bookmarks ({bms?.length ?? 0})</h2>
         {bms?.length ? (

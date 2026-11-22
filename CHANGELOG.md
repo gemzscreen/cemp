@@ -2,6 +2,15 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v0.9.0: Editor, review queue, revision diffs, offline/PWA (2026-11-22)
+- **In-app editor** (`/entry/<slug>/edit`, editors + admin): title, summary, code-edition stamp, clause refs (`DOC | section | note`), tags, and every section kind (text, list, safe, avoid, table, flashcards, problem JSON, diagram JSON) with add/move/remove, "verify" flag and live preview. Each save = new revision (`source = 'app'`) with a required change note; published entries go back to review. Shared validation in `lib/sections.ts` (also used by `check-content`).
+- **New entry** (`/entry/new`): practice, code or education drafts.
+- **History & diff** (`/entry/<slug>/history`): all revisions with source, author, change note, reviewer; line diff between any two (LCS); restore an old revision as a new one.
+- **Review queue** (`/admin/review`): filter by module, status, source, title; gate status per entry (missing clause ref / hand-check); bulk "mark reviewed & publish", "send drafts to review", "back to draft"; failures reported per entry.
+- **Sync** keeps in-app edits (skips entries whose current revision is `source = 'app'`, lists them in the log).
+- Migration `v0_9_0_editor_guards`: `entry_revisions.source`; trigger stopping a published entry from pointing to an unreviewed revision (tested); trigger allowing only the admin to stamp reviews (on insert and update).
+- **PWA / offline**: web manifest + icons, service worker (`public/sw.js`): cache-first static assets, network-first pages with offline fallback, no caching of API/admin/auth/edit pages, caches wiped on sign-out. Saved page: "Make available offline" stores bookmarked entries, module lists and their scripts, so calculators run without signal.
+
 ## v0.8.0: Integration API, search, bookmarks, export (2026-11-22)
 - **Integration API** `/api/v1` (route handlers, `lib/api.ts`): entries (filter by module, `updated_since`, paging), single entry, clause index, calc catalog, calc detail with worked example, `POST` compute with input validation, `?format=csv`. Bearer/`x-api-key` auth; optional CORS allow-list. In-app docs at `/api-docs`.
 - Migration `v0_8_0_integration_api`: `api_clients` (admin-only RLS; SHA-256 key hashes, scopes `content`/`calc`, active flag, last-used stamp), key-gated security-definer functions `api_check`, `api_entries`, `api_clauses` (published content only), internal `api_client_ok` (not executable by clients), and `search_entries` (security invoker, so RLS applies).

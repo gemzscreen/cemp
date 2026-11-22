@@ -3,6 +3,7 @@
 import { BATCHES } from "../content";
 import { CALCS, defaults } from "../lib/calc";
 import { DOCS } from "../content/types";
+import { validateSections } from "../lib/sections";
 
 // Clauses seeded before content-as-code (v0.2.0–v0.3.0 migrations)
 const SEEDED = ["425.5.2","426.5.6","418.6.3","418.7.4","418.7.5","418.6.4","420.6.1","425.2","425.3","426.5.3","426.12",
@@ -31,6 +32,7 @@ for (const b of BATCHES) {
     e.tags.forEach((t) => TAGS.includes(t) || err(`${e.slug}: unknown tag ${t}`));
     if ((e.module === "practice" || e.module === "code") && e.refs.length === 0) err(`${e.slug}: needs ≥1 clause ref`);
     e.refs.forEach((r) => known.has(key(r.doc, r.section)) || err(`${e.slug}: clause ${r.doc ?? "NSCP"} ${r.section} not defined in this or an earlier batch`));
+    validateSections(e.sections).forEach((m) => err(`${e.slug}: ${m}`));
     e.sections.forEach((s, k) => {
       const at = `${e.slug} §${k + 1}`;
       if (s.kind === "table" && (!s.columns?.length || (s.rows ?? []).some((r) => r.length !== s.columns!.length))) err(`${at}: table rows must match ${s.columns?.length} columns`);

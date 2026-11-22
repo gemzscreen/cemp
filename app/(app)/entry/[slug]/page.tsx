@@ -19,6 +19,7 @@ export default async function EntryPage({
   const { data: { user } } = await supabase.auth.getUser();
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").maybeSingle();
   const isAdmin = me?.role === "admin";
+  const canEdit = isAdmin || me?.role === "editor";
 
   const { data: entry } = await supabase
     .from("entries")
@@ -55,6 +56,8 @@ export default async function EntryPage({
         <input type="hidden" name="entry_id" value={entry.id} /><input type="hidden" name="slug" value={entry.slug} />
         <input type="hidden" name="on" value={bm ? "1" : "0"} />
         <button className="btn ghost" style={{ width: "auto", marginTop: 0 }}>{bm ? "★ Saved (remove)" : "☆ Save to my list"}</button>
+        {" "}<Link href={`/entry/${entry.slug}/history`} className="btn ghost" style={{ width: "auto", marginTop: 0 }}>History</Link>
+        {canEdit && <>{" "}<Link href={`/entry/${entry.slug}/edit`} className="btn ghost" style={{ width: "auto", marginTop: 0 }}>✎ Edit</Link></>}
       </form>
       {entry.summary && <p className="sub">{entry.summary}</p>}
 

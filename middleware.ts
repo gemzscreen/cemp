@@ -6,6 +6,8 @@ const PUBLIC_PATHS = ["/login", "/auth/callback"];
 export async function middleware(request: NextRequest) {
   // Integration API: key-authenticated in the route handlers, no session or login redirect.
   if (request.nextUrl.pathname.startsWith("/api/v1")) return NextResponse.next();
+  // PWA files must load without a session (service worker updates, install prompt, offline page).
+  if (["/sw.js", "/manifest.webmanifest", "/offline.html"].includes(request.nextUrl.pathname) || request.nextUrl.pathname.startsWith("/icons/")) return NextResponse.next();
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

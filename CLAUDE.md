@@ -21,5 +21,10 @@ Stack: Next.js 15 App Router + Supabase (project `CEMP`, ref `qzbcgwjnzwockhvimu
 - Practice diagrams = JSON diagram spec rendered to SVG in-app (engine arrives v0.2.0). No uploaded infographics from other engineers.
 - Calculation/conversion math lives in shared `lib/*.ts` so the v0.8.0 integration API reuses it (darkwizscroll, DARKWIZ CT read from CEMP).
 
+## In-app edits (v0.9.0)
+- Editors/admins can edit entries in the app (`/entry/<slug>/edit`). Each save is a new revision with `source = 'app'`.
+- **Sync never overwrites an in-app edit**: it skips entries whose current revision has `source = 'app'` and lists them in the sync log. Before changing such an entry in a batch file, copy the in-app version into the batch (use History → diff), then re-sync.
+- DB guards: a published entry can only point to a reviewed revision; only the admin can stamp `reviewed_by/reviewed_at`.
+
 ## Roles
 first account = admin (Gemz). Others viewer by default; editor promoted via SQL. Sign-ups disabled; users added by invite.

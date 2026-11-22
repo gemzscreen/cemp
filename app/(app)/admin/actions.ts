@@ -48,10 +48,11 @@ export async function syncBatch(formData: FormData) {
   const clauseId = (doc: string | undefined, sec: string) => clauses?.find((c) => c.code_document_id === docId(doc) && c.section_no === sec)?.id;
 
   let created = 0, revised = 0, unchanged = 0;
+  const keptApp: string[] = [];
   for (const e of batch!.entries as BatchEntry[]) {
     const body = { sections: e.sections };
     const { data: existing } = await supabase.from("entries")
-      .select("id,status,current:entry_revisions!entries_current_revision_fk(body,diagram)").eq("slug", e.slug).maybeSingle();
+      .select("id,status,current:entry_revisions!entries_current_revision_fk(body,diagram,source)").eq("slug", e.slug).maybeSingle();
     let entryId = existing?.id as string | undefined;
     const cur = Array.isArray(existing?.current) ? existing?.current[0] : existing?.current;
 
@@ -66,13 +67,17 @@ export async function syncBatch(formData: FormData) {
     } else if (same(cur?.body, body) && same(cur?.diagram, e.diagram)) {
       unchanged++;
       continue;
+    } else if (cur?.source === "app") {
+      // Edited in the app since the last sync: the in-app revision wins. Re-sync after copying the edit into the batch file.
+      keptApp.push(e.slug);
+      continue;
     } else {
       await supabase.from("entries").update({ title: e.title, summary: e.summary, status: "review" }).eq("id", entryId);
       revised++;
     }
 
     const { data: rev, error: re } = await supabase.from("entry_revisions").insert({
-      entry_id: entryId, body, diagram: e.diagram ?? null, code_edition: e.code_edition ?? "NSCP 2015",
+      entry_id: entryId, body, diagram: e.diagram ?? null, code_edition: e.code_edition ?? "NSCP 2015", source: "batch",
       change_note: existing ? `Updated from content ${version}` : `Initial (${version}): needs review`,
     }).select("id").single();
     if (re) fail(`revision ${e.slug}: ${re.message}`);
@@ -105,6 +110,7 @@ export async function syncBatch(formData: FormData) {
     }
   }
   log.push(`${created} new, ${revised} updated, ${unchanged} unchanged entries`);
+  if (keptApp.length) log.push(`kept ${keptApp.length} in-app edit(s): ${keptApp.join(", ")}`);
 
   const { error: rle } = await supabase.from("releases").upsert(
     { version, batch_name: batch!.batch_name, notes_md: batch!.notes.map((x) => `- ${x}`).join("\n"), released_at: new Date().toISOString() },
