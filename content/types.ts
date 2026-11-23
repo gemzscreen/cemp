@@ -32,8 +32,20 @@ export type BatchDocument = {
   short_name: string; title: string; edition: string; publisher?: string; year?: number;
   jurisdiction?: string; status: "current" | "superseded" | "reference"; notes?: string;
 };
+/** v1.2.0: one standard's take on an entry (PH = NSCP/DPWH, BN = Brunei BS practice, INTL = current ACI/AISC/ASTM). */
+export type StdKey = "ph" | "bn" | "intl";
+export type StdPanel = { code: string; points: string[]; refs?: string; verified?: boolean };
+export type BatchStandards = { slug: string } & Partial<Record<StdKey, StdPanel>>;
+export const STD_LABEL: Record<StdKey, { name: string; short: string; flag: string }> = {
+  ph: { name: "Philippines", short: "PH", flag: "🇵🇭" },
+  bn: { name: "Brunei (BS practice)", short: "BN", flag: "🇧🇳" },
+  intl: { name: "International", short: "INTL", flag: "🌐" },
+};
+export const STD_KEYS: StdKey[] = ["ph", "bn", "intl"];
+
 export type Batch = {
   version: string;
+  standards?: BatchStandards[];
   documents?: BatchDocument[];
   batch_name: string;
   notes: string[];
@@ -51,4 +63,6 @@ export const DOCS: Record<string, { short_name: string; edition: string | null }
   "RA 11058": { short_name: "RA 11058", edition: null },
   "DOLE DO 198": { short_name: "DOLE DO 198", edition: "2018" },
   "DOLE DO 252": { short_name: "DOLE DO 252", edition: "2025" },
+  "BS 8110": { short_name: "BS 8110", edition: "8110-1:1997" },
+  "BS 5950": { short_name: "BS 5950", edition: "5950-1:2000" },
 };

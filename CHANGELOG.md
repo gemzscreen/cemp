@@ -2,6 +2,19 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v1.2.0: Standards side by side (2026-11-24)
+- Entries can show **PH · Brunei · International** panels next to each other (stacked on phones). Your **home standard** (Profile) is shown first and outlined.
+- Panels on 8 entries: concrete cover, bar spacing, hooks and bends, curing, strength sampling and acceptance, column confinement zone (ℓo), bolt holes and edge distance, fillet weld sizes. Every Brunei panel carries a "verify" badge until checked against the BS copies.
+- Codes: filter by standard (All / Philippines / Brunei / International). BS 8110-1:1997, BS 5950-1:2000 and SMM2 added as Brunei reference documents with a 6-clause index.
+- Merged duplicate: the concrete testing plan card no longer repeats the sampling frequency rules; they live in "Concrete strength sampling and acceptance".
+- DB: `entry_standards` (RLS: read follows the entry, write editor/admin) and `profiles.home_standard` (migration v1_2_0_standards).
+
+### Fixes from v1.1.1 feedback
+- Dashboard greeting and header name skip a leading title: "Good morning, Engr. Gemz" and "Welcome, Gemz" (was "Engr.").
+- Library/Admin menu: the highlighted item stays readable (navy text; the header's white hover colour leaked into the dropdown).
+- Login page: one-line description of the app and a "Powered by Darkwiz Lab" footer.
+- Estimating factor labels no longer name an individual author ("PH practice" presets; values unchanged).
+
 ## v1.1.1: Profile, mobile, fixes (2026-11-22)
 - Header: new ⌂ Dashboard link; Library/Admin menus no longer clipped (the nav had overflow-x:auto) and use larger, wrapping text.
 - "Welcome, <name>" chip with avatar and role badge (QS CRM style). Names fall back to a readable form of the e-mail ("gem.tubalado" → "Gem Tubalado").
@@ -18,7 +31,7 @@ All notable changes to CEMP Web App. Versions follow SemVer: each content batch 
 - **Navigation**: Library ▾ (Tools, Practices, Codes, Conversions) · Estimate · Learn · search · account menu (Saved, My estimates, Change password, Help, Sign out) · Admin menu (Review, Audit, Sync & API keys, New entry, Releases, API docs).
 - **Change password** page (`/account`).
 - **Archive / delete entries** (admin): archive hides an entry everywhere and is restorable; delete (type DELETE) removes it with its revisions and leaves a tombstone so content sync never recreates it. Sync also skips archived entries. CELE exam overview removed from the v0.7.0 batch.
-- **Estimate workspace** (`/estimate`): 13 quantity calculators: isolated footing, wall footing, beam (tie beam/girder/lintel), column, slab, concrete wall, stairs, CHB wall (blocks, mortar, bars), cement plaster, concrete ground water tank, septic tank (CHB walls, baffles, slabs, plaster), steel stand for an overhead tank, lumber board feet. Each has a dimensioned parametric sketch, Fajardo presets (editable, highlighted), per-unit material snapshot, key results, BOM, cutting list, step-by-step working, CSV and print. Rebar counted bar by bar from spacing and cover, cut from 6–12 m stock with 40db laps beyond stock length; tie wire No. 16 per intersection; formwork contact area and plywood sheets. All 13 defaults matched an independent Python implementation.
+- **Estimate workspace** (`/estimate`): 13 quantity calculators: isolated footing, wall footing, beam (tie beam/girder/lintel), column, slab, concrete wall, stairs, CHB wall (blocks, mortar, bars), cement plaster, concrete ground water tank, septic tank (CHB walls, baffles, slabs, plaster), steel stand for an overhead tank, lumber board feet. Each has a dimensioned parametric sketch, PH practice presets (editable, highlighted), per-unit material snapshot, key results, BOM, cutting list, step-by-step working, CSV and print. Rebar counted bar by bar from spacing and cover, cut from 6–12 m stock with 40db laps beyond stock length; tie wire No. 16 per intersection; formwork contact area and plywood sheets. All 13 defaults matched an independent Python implementation.
 - **Projects / BOM** (`/estimate/projects`): add calculator results to a project (quantities recomputed on the server), aggregated bill of materials with unit prices and totals, item list, CSV export and print. Private per user (RLS).
 - Migration `v1_1_0_organize_estimate`: `entries.category`, `entry_tombstones`, `estimate_projects`.
 - Dashboard: Estimate entry point and a "Browse by topic" grid replace the specialization chips.

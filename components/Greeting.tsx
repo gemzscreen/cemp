@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { firstName } from "@/lib/names";
 
 /** "Good morning/afternoon/evening, Name" using the viewer's own clock, plus today's date. */
 export default function Greeting({ name }: { name: string }) {
@@ -9,7 +10,7 @@ export default function Greeting({ name }: { name: string }) {
   const part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
   return (
     <div className="greet">
-      <h1>{now ? part : "Welcome"}, {name.split(" ")[0]}</h1>
+      <h1>{now ? part : "Welcome"}, {firstName(name, true)}</h1>
       <p>{now ? now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : " "}</p>
     </div>
   );

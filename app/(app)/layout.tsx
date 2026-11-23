@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getMe, displayName, roleName } from "@/lib/auth";
+import { getMe, displayName, firstName, roleName } from "@/lib/auth";
 import { Suspense } from "react";
 import { MODULES, APP_VERSION } from "@/lib/modules";
 import NavMenu from "@/components/NavMenu";
@@ -43,7 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <form action="/search" className="nav-search"><input name="q" placeholder="Search…" aria-label="Search CEMP" /></form>
         </HeaderNav>
         <Suspense fallback={<span className="navmenu-fallback">Account ▾</span>}>
-          <NavMenu className="me" align="right" label={<span className="acct"><Avatar name={name} src={avatar} /><span className="hi">Welcome, <b>{name.split(" ")[0]}</b></span><i className="rolechip">{roleName(role)}</i></span>}>
+          <NavMenu className="me" align="right" label={<span className="acct"><Avatar name={name} src={avatar} /><span className="hi">Welcome, <b>{firstName(name)}</b></span><i className="rolechip">{roleName(role)}</i></span>}>
             <div className="menu-head">
               <Avatar name={name} src={avatar} size={42} />
               <div><b>{name}</b><small>{jobTitle ?? user.email}</small><small>{user.email} · {roleName(role)}</small></div>

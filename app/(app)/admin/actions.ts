@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BATCHES } from "@/content";
-import { DOCS, type BatchEntry } from "@/content/types";
+import { DOCS, STD_KEYS, type BatchEntry } from "@/content/types";
 import { CALCS, defaults } from "@/lib/calc";
 import { newApiKey, sha256 } from "@/lib/api";
 
@@ -139,6 +139,20 @@ export async function syncBatch(formData: FormData) {
   log.push(`${created} new, ${revised} updated, ${unchanged} unchanged entries`);
   if (keptApp.length) log.push(`kept ${keptApp.length} in-app edit(s): ${keptApp.join(", ")}`);
   if (skipped.length) log.push(`skipped ${skipped.length} archived/deleted: ${skipped.join(", ")}`);
+
+  // v1.2.0: standards side by side (stored per entry + standard; not part of the revision body)
+  if (batch!.standards?.length) {
+    const { data: ids } = await supabase.from("entries").select("id,slug").in("slug", batch!.standards.map((x) => x.slug));
+    const rows = batch!.standards.flatMap((x) => {
+      const id = ids?.find((r) => r.slug === x.slug)?.id;
+      if (!id) { failures.push(`standards: entry ${x.slug} not found`); return []; }
+      return STD_KEYS.filter((k) => x[k]).map((k) => ({ entry_id: id, std: k, code: x[k]!.code, points: x[k]!.points, refs: x[k]!.refs ?? null, verified: x[k]!.verified ?? true }));
+    });
+    if (failures.length) fail(failures.join(" | "));
+    const { error } = await supabase.from("entry_standards").upsert(rows, { onConflict: "entry_id,std" });
+    if (error) fail(`standards: ${error.message}`);
+    log.push(`${rows.length} standard panel(s) on ${batch!.standards.length} entries`);
+  }
 
   const { error: rle } = await supabase.from("releases").upsert(
     { version, batch_name: batch!.batch_name, notes_md: batch!.notes.map((x) => `- ${x}`).join("\n"), released_at: new Date().toISOString() },

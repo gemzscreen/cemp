@@ -132,15 +132,7 @@ batch.entries.push(
       { kind: "safe", heading: "Typical hold points", items: ["Excavation bottom before blinding", "Rebar and formwork before pouring", "Pre-pour sign-off", "Pressure test before covering pipes", "Bolt pretension and weld visual before painting/fireproofing"] },
       { kind: "avoid", heading: "Avoid", items: ["Pouring or covering work past a hold point without written release", "Inspection requests submitted after the work is done", "Checklists signed without being on site"] },
     ] }),
-  P({ slug: "concrete-testing-plan", specialization: "qa-qc",
-    title: "Concrete testing plan on site", summary: "Who samples, how often, what is recorded, and what to do with low results.",
-    tags: ["concreting", "inspection", "curing"], refs: [{ section: "426.12" }, { section: "426.5.3" }, { doc: BB, section: "Item 405" }],
-    sections: [
-      { kind: "list", heading: "Each sample", items: ["Taken at the point of discharge from a randomly chosen batch", "Slump and concrete temperature recorded with the sample", "Cylinders molded, labeled (date, member, truck, class) and kept undisturbed in the first 24 h", "Moved to standard moist curing; never cured beside the structure unless they are field-cured extras", "Tested at 7 days (indicative) and 28 days (acceptance)"] },
-      { kind: "safe", heading: "Frequency", items: ["NSCP: at least once a day, once per 110 m³ and once per 460 m² of slab or wall, per class", "DPWH practice: 1 set of 3 cylinders per 75 m³ or fraction of each day's pour", "Use the larger when both apply"] },
-      { kind: "avoid", heading: "Avoid", items: ["Sampling only the first truck", "Leaving cylinders in the sun or moving them while fresh", "Accepting by 7-day results alone", "Adding water to trucks after sampling"] },
-      { kind: "text", heading: "Low results", text: "Check sampling and lab procedures first. If the acceptance criteria are not met, take cores from the area represented and refer the evaluation to the structural engineer of record." },
-    ] }),
+  // concrete-testing-plan moved to v1_2_0 (merged duplicate frequency rules into concrete-strength-sampling-and-acceptance)
   P({ slug: "cshp-outline", specialization: "safety-health", code_edition: OSH_ED,
     title: "Construction Safety and Health Program (CSHP): outline", summary: "What a CSHP contains before it is submitted for approval.",
     tags: ["safety", "pre-construction"], refs: [{ doc: RA, section: "Sec. 12" }, { doc: RA, section: "Sec. 13" }, { doc: DO, section: "Sec. 22" }],

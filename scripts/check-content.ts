@@ -50,4 +50,20 @@ for (const b of BATCHES) {
   }
   console.log(`${b.version}: ${b.entries.length} entries, ${b.clauses.length} clauses checked`);
 }
+// v1.2.0: standards panels must point at a known entry (batch-defined or SQL-seeded v0.2.0 practices)
+const SEEDED_ENTRIES = new Set(["concrete-cover-cast-in-place","minimum-clear-spacing-of-bars","standard-hooks-and-bend-diameters","curing-of-concrete",
+  "concrete-strength-sampling-and-acceptance","construction-joints-beams","construction-joints-slabs","lap-splice-zones-continuous-slabs",
+  "lap-splice-zones-smf-beams","lap-splice-location-smf-columns","beam-hoop-zone-smf","concrete-classes-dpwh"]);
+let panels = 0;
+for (const b of BATCHES) for (const x of b.standards ?? []) {
+  if (!slugs.has(x.slug) && !SEEDED_ENTRIES.has(x.slug)) err(`${b.version}: standards for unknown entry ${x.slug}`);
+  for (const k of ["ph", "bn", "intl"] as const) {
+    const p = x[k]; if (!p) continue; panels++;
+    if (!p.code || p.code.length > 120) err(`${x.slug}/${k}: code label missing or > 120 chars`);
+    if (!p.points.length) err(`${x.slug}/${k}: no points`);
+    if ((p.refs ?? "").length > 300) err(`${x.slug}/${k}: refs > 300 chars`);
+    if (k === "bn" && p.verified !== false) err(`${x.slug}/bn: Brunei panels stay verified:false until checked`);
+  }
+}
+console.log(`standards: ${panels} panels checked`);
 if (errors) { console.log(`${errors} error(s)`); process.exit(1); } else console.log("✓ content OK");

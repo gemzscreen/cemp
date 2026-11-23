@@ -102,7 +102,9 @@ a.chip:hover { border-color: var(--safe); color: var(--safe); text-decoration: n
 pre.json { font-family: var(--mono); font-size: .78rem; background: #f6f4ee; padding: .75rem; border-radius: 8px; overflow-x: auto; }
 
 /* login */
-.login { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
+.login { min-height: 100vh; display: grid; place-items: center; align-content: center; gap: 1rem; padding: 1.5rem; }
+.login-about { margin: -.5rem 0 1rem; color: #4b5563; font-size: .9rem; line-height: 1.45; }
+.login-foot { color: #6b7785; font-size: .82rem; text-align: center; }
 .login-card { width: 100%; max-width: 380px; background: var(--card); border: 1.5px solid var(--ink);
   border-radius: 12px; box-shadow: 5px 5px 0 var(--ink); padding: 1.75rem; }
 .login-card .brand { color: var(--ink); margin-bottom: 1.25rem; }
@@ -459,3 +461,20 @@ img.avatar.pic { border: 2px solid rgba(255,255,255,.6); }
 .navmenu-body { max-width: min(440px, calc(100vw - 1rem)); }
 .navmenu-body a, .navmenu-body a small { white-space: normal; }
 @media (max-width: 860px) { .nav .navmenu-body { max-width: none; } .nav .nav-search { display: block; } }
+
+/* v1.1.2: menu items keep navy text on hover (the .nav a:hover white rule leaked into dropdowns) */
+.nav .navmenu-body a, .nav .navmenu-body a:hover, .nav .navmenu-body a.active, .navmenu-body a:hover strong { color: var(--navy); }
+.nav .navmenu-body a:hover { background: #eef2f7; }
+
+/* v1.2.0: standards side by side */
+.std-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .7rem; }
+.std-card { border: 1.5px solid #d8dee6; border-radius: 10px; padding: .75rem .85rem; background: #fff; min-width: 0; }
+.std-card.std-home { border-color: var(--navy); box-shadow: 3px 3px 0 var(--navy); }
+.std-head { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .3rem; }
+.std-flag { font-size: 1.1rem; }
+.std-chip { font-style: normal; font-size: .7rem; background: #f3d98b; color: var(--navy); border-radius: 999px; padding: .05rem .5rem; font-weight: 650; }
+.std-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; color: #8a6d1a; margin-bottom: .35rem; }
+.std-card ul { margin: 0; padding-left: 1.1rem; font-size: .9rem; }
+.std-card li { margin: .15rem 0; }
+.std-refs { margin-top: .45rem; font-size: .78rem; color: #6b7785; }
+.std-filter { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1rem; }

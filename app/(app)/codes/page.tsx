@@ -12,7 +12,7 @@ type Row = Clause & { doc: Doc };
 
 const secKey = (s: string) => s.replace(/^\D+/, "").split(".").map((p) => p.padStart(4, "0")).join(".");
 
-export default async function CodesPage({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string }> }) {
+export default async function CodesPage({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string; std?: string }> }) {
   const sp = await searchParams;
   const supabase = await getDb();
   const { data, error } = await supabase
@@ -24,10 +24,12 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
     .sort((a, b) => a.doc.short_name.localeCompare(b.doc.short_name) || secKey(a.section_no).localeCompare(secKey(b.section_no)));
   const cat = (r: Row) => clauseCategory(r.doc.short_name, r.section_no);
   const needle = (sp.q ?? "").trim().toLowerCase();
-  const filtered = rows.filter((r) => (!sp.cat || cat(r) === sp.cat || cat(r).startsWith(`${sp.cat}-`))
+  const stdOf = (j: string) => (j === "PH" ? "ph" : j === "BN" ? "bn" : "intl");
+  const std = ["ph", "bn", "intl"].includes(sp.std ?? "") ? sp.std : undefined;
+  const filtered = rows.filter((r) => (!std || stdOf(r.doc.jurisdiction) === std) && (!sp.cat || cat(r) === sp.cat || cat(r).startsWith(`${sp.cat}-`))
     && (!needle || `${r.doc.short_name} ${r.section_no} ${r.title} ${r.summary ?? ""}`.toLowerCase().includes(needle)));
   const tree = groupByCategory(rows, cat), groups = groupByCategory(filtered, cat);
-  const href = (c?: string) => `/codes${c ? `?cat=${c}` : ""}`;
+  const href = (c?: string, s = std) => { const q = new URLSearchParams(); if (c) q.set("cat", c); if (s) q.set("std", s); const t = q.toString(); return `/codes${t ? `?${t}` : ""}`; };
 
   return (
     <div className="lib">
@@ -48,7 +50,12 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
             <h1>Codes</h1>
             <p className="sub" style={{ margin: 0 }}>A clause <strong>index</strong>, not a copy: section numbers, titles and summaries in our own words, linked to the cards and tools that use them. Open your own copy of the code for the full text.</p>
           </div>
-          <form className="lib-filter">{sp.cat && <input type="hidden" name="cat" value={sp.cat} />}<input name="q" defaultValue={sp.q ?? ""} placeholder="Filter: 425.4, lap, welding…" /></form>
+          <form className="lib-filter">{sp.cat && <input type="hidden" name="cat" value={sp.cat} />}{std && <input type="hidden" name="std" value={std} />}<input name="q" defaultValue={sp.q ?? ""} placeholder="Filter: 425.4, lap, welding…" /></form>
+        </div>
+        <div className="std-filter chips">
+          {([[undefined, "All standards"], ["ph", "🇵🇭 Philippines"], ["bn", "🇧🇳 Brunei (BS)"], ["intl", "🌐 International"]] as const).map(([k, label]) => (
+            <Link key={label} href={href(sp.cat, k)} className={`chip${std === k ? " on" : ""}`}>{label}</Link>
+          ))}
         </div>
         {error && <div className="msg err">{error.message}</div>}
         {groups.length === 0 && <div className="empty"><strong>No clauses match.</strong> <Link href={href()}>Show all</Link></div>}

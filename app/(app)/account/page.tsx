@@ -5,7 +5,7 @@ import ProfileForm from "@/components/ProfileForm";
 export const metadata = { title: "Profile" };
 
 export default async function Account() {
-  const { user, role, fullName, avatar, jobTitle } = await getMe();
+  const { user, role, fullName, avatar, jobTitle, homeStd } = await getMe();
   return (
     <>
       <h1>Profile</h1>
@@ -13,7 +13,7 @@ export default async function Account() {
       <div className="account-grid">
         <section>
           <h2 style={{ fontSize: "1.05rem" }}>Your details</h2>
-          <ProfileForm initial={{ fullName: fullName ?? displayName(null, user?.email), jobTitle: jobTitle ?? "", avatar, email: user?.email ?? "" }} />
+          <ProfileForm initial={{ fullName: fullName ?? displayName(null, user?.email), jobTitle: jobTitle ?? "", avatar, email: user?.email ?? "", homeStd }} />
         </section>
         <section>
           <h2 style={{ fontSize: "1.05rem" }}>Change password</h2>

@@ -15,7 +15,7 @@ export default async function EstimateHome() {
       <div className="lib-head">
         <div>
           <h1>Estimate</h1>
-          <p className="sub" style={{ margin: 0 }}>{ESTIMATOR_META.length} quantity calculators with dimensioned sketches, Fajardo factors (editable) and bar-by-bar rebar cutting. Add each result to a project to build its bill of materials.</p>
+          <p className="sub" style={{ margin: 0 }}>{ESTIMATOR_META.length} quantity calculators with dimensioned sketches, PH practice factors (editable) and bar-by-bar rebar cutting. Add each result to a project to build its bill of materials.</p>
         </div>
         <Link href="/estimate/projects" className="btn" style={{ width: "auto", marginTop: 0 }}>∑ My estimates ({projects?.length ?? 0}{(projects?.length ?? 0) >= 6 ? "+" : ""})</Link>
       </div>
@@ -46,7 +46,7 @@ export default async function EstimateHome() {
           ) : <p className="fine">No estimates yet. Open a calculator and use “Add to BOM”, or create a project first.</p>}
           <Link href="/estimate/projects" className="fine">All estimates & new project →</Link>
           <hr />
-          <p className="fine"><strong>Factors:</strong> concrete per m³ and mortar per m² follow Fajardo, <em>Simplified Construction Estimate</em> (40 kg bags). Change them per job if your mix design, supplier or Brunei 50 kg bags differ.</p>
+          <p className="fine"><strong>Factors:</strong> concrete per m³ and mortar per m² follow common PH estimating practice (40 kg bags). Change them per job if your mix design, supplier or Brunei 50 kg bags differ.</p>
         </aside>
       </div>
     </div>

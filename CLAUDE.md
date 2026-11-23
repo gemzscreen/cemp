@@ -33,7 +33,7 @@ Stack: Next.js 15 App Router + Supabase (project `CEMP`, ref `qzbcgwjnzwockhvimu
 
 ## Organize & Estimate (v1.1.0)
 - **Topic tree** in `lib/taxonomy.ts` (10 numbered groups → leaves). `entries.category` stores a leaf slug; null = inferred by `categoryOf` (explicit slug map → specialization → tags). New batch entries should set `category`. Codes use `clauseCategory(doc, section)`; reference tables use `TABLE_CATEGORY`.
-- **Estimating calculators** in `lib/calc/estimate.ts` (keys `est-*`, registered in CALCS so the API/CSV reuse them). Each returns `materials[]` for the project BOM. Factors default to Fajardo (editable presets via `Calc.presets`). Verify defaults vs an independent Python calc; render-check `components/Sketch.tsx` with rsvg-convert/Chrome.
+- **Estimating calculators** in `lib/calc/estimate.ts` (keys `est-*`, registered in CALCS so the API/CSV reuse them). Each returns `materials[]` for the project BOM. Factors default to common PH estimating practice (editable presets via `Calc.presets`). Do not name individual authors (Gemz's rule). Verify defaults vs an independent Python calc; render-check `components/Sketch.tsx` with rsvg-convert/Chrome.
 - **Projects**: `estimate_projects` (RLS: owner only). `addToProject` recomputes quantities server-side from calc key + inputs.
 - **Archive/delete**: archive = status `deprecated` (hidden everywhere, restorable). Delete = row removed + `entry_tombstones` row; sync skips tombstoned and archived slugs.
 - Brunei reference for the standards release: BS 8110 / BS 5950 + SMM2 (Gemz's choice).
@@ -45,3 +45,9 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 - `profiles.avatar` (data URL, ≤200 kB, resized client-side to 192 px) and `profiles.job_title`; users edit their own row on `/account`; role and e-mail stay admin-only (trigger).
 - Header = QS CRM style "Welcome, <first name>" + avatar + role chip; footer = live clock (`components/Clock.tsx`) + version. Names via `displayName()` in `lib/auth.ts`.
 - Mobile breakpoint 860 px: `HeaderNav` hamburger, `TopicNav` collapsible sidebar. Never put `overflow` on `.nav` (it clips the dropdowns).
+
+## Standards side by side (v1.2.0)
+- Batch field `standards: [{ slug, ph?, bn?, intl? }]` → table `entry_standards` (entry_id + std). Not part of the revision body, so in-app edits don't touch it; sync upserts it every time.
+- `profiles.home_standard` (ph|bn|intl) orders the panels (`components/StandardsCompare.tsx`). Codes page filters by `code_documents.jurisdiction` (PH / BN / other = International).
+- Brunei panels must stay `verified: false` until Gemz checks them against his BS copies (check-content enforces this).
+- Names: `firstName()` in `lib/names.ts` skips a leading title (Engr., Arch., Dr. …).

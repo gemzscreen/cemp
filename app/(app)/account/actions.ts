@@ -29,7 +29,9 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
   const fullName = String(formData.get("full_name") ?? "").trim().replace(/\s+/g, " ");
   const jobTitle = String(formData.get("job_title") ?? "").trim();
   const avatar = String(formData.get("avatar") ?? "");
+  const homeStd = String(formData.get("home_standard") ?? "ph");
   if (fullName.length < 2 || fullName.length > 80) return { error: "Name: 2 to 80 characters." };
+  if (!["ph", "bn", "intl"].includes(homeStd)) return { error: "Choose a home standard." };
   if (jobTitle.length > 120) return { error: "Title: up to 120 characters." };
   if (avatar && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(avatar)) return { error: "Photo must be a PNG, JPEG or WebP image." };
   if (avatar.length > 200000) return { error: "Photo is too large: choose a smaller image." };
@@ -37,7 +39,7 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Your session expired. Sign in again." };
   const { error } = await supabase.from("profiles").update({
-    full_name: fullName, job_title: jobTitle || null, avatar: formData.get("remove_avatar") === "1" ? null : avatar || undefined,
+    full_name: fullName, job_title: jobTitle || null, home_standard: homeStd, avatar: formData.get("remove_avatar") === "1" ? null : avatar || undefined,
   }).eq("id", user.id);
   if (error) return { error: error.message };
   const { revalidatePath } = await import("next/cache");

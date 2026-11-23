@@ -1,5 +1,5 @@
 // Estimating calculators (v1.1.0): quantity takeoff of materials for common PH building work.
-// Factors default to Max Fajardo, "Simplified Construction Estimate" (40 kg cement bags) and stay editable.
+// Factors default to common PH estimating practice (40 kg cement bags) and stay editable.
 // Rebar is counted bar by bar from spacing/cover, then cut from commercial stock lengths.
 import { type Calc, type Field, type Inputs, type Material, type Preset, n, r } from "./core";
 
@@ -10,12 +10,12 @@ export const MIX: Record<string, { label: string; c: number; s: number; g: numbe
   B: { label: "Class B 1:2.5:5", c: 7.5, s: 0.5, g: 1.0 },
   C: { label: "Class C 1:3:6", c: 6.0, s: 0.5, g: 1.0 },
 };
-/** Mortar per m³ (Fajardo): bags of 40 kg cement, m³ sand. */
+/** Mortar per m³ (PH practice): bags of 40 kg cement, m³ sand. */
 export const MORTAR: Record<string, { label: string; c: number; s: number }> = {
   A: { label: "Class A 1:2", c: 18.0, s: 1.0 }, B: { label: "Class B 1:3", c: 12.0, s: 1.0 },
   C: { label: "Class C 1:4", c: 9.0, s: 1.0 }, D: { label: "Class D 1:5", c: 7.5, s: 1.0 },
 };
-/** CHB laying mortar per m² of wall (Fajardo table): cement bags by class, sand m³. */
+/** CHB laying mortar per m² of wall (PH practice table): cement bags by class, sand m³. */
 export const CHB_MORTAR: Record<string, { A: number; B: number; C: number; D: number; sand: number }> = {
   "100": { A: 0.792, B: 0.522, C: 0.394, D: 0.328, sand: 0.0435 },
   "150": { A: 1.526, B: 1.018, C: 0.763, D: 0.633, sand: 0.0844 },
@@ -30,14 +30,14 @@ const up = (x: number, d = 2) => Math.ceil(x * 10 ** d - 1e-9) / 10 ** d;
 /* ---------------- shared field builders ---------------- */
 const STOCKS = ["6", "7.5", "9", "10.5", "12"].map((v) => ({ value: v, label: `${v} m` }));
 const DIAS = [8, 10, 12, 16, 20, 25, 28].map((d) => ({ value: String(d), label: `${d} mm` }));
-const mixFields = (g = "Concrete mix (Fajardo, editable)"): Field[] => [
+const mixFields = (g = "Concrete mix (PH practice, editable)"): Field[] => [
   { key: "mix", label: "Concrete class", type: "select", default: "A", group: g, options: Object.entries(MIX).map(([k, v]) => ({ value: k, label: v.label })) },
   { key: "cf", label: "Cement per m³", unit: "bags", type: "number", default: 9, group: g },
   { key: "sf", label: "Sand per m³", unit: "m³", type: "number", default: 0.5, group: g },
   { key: "gf", label: "Gravel per m³", unit: "m³", type: "number", default: 1.0, group: g },
   { key: "waste", label: "Concrete waste", unit: "%", type: "number", default: 5, group: g },
 ];
-const mixPreset: Preset = { from: ["mix"], label: "Fajardo Table: concrete per m³", map: Object.fromEntries(Object.entries(MIX).map(([k, v]) => [k, { cf: v.c, sf: v.s, gf: v.g }])) };
+const mixPreset: Preset = { from: ["mix"], label: "PH practice: concrete per m³", map: Object.fromEntries(Object.entries(MIX).map(([k, v]) => [k, { cf: v.c, sf: v.s, gf: v.g }])) };
 const stockField = (g = "Reinforcement"): Field => ({ key: "stock", label: "Commercial bar length", type: "select", default: "6", group: g, options: STOCKS });
 const diaField = (key: string, label: string, def: number, g = "Reinforcement"): Field => ({ key, label, type: "select", default: String(def), group: g, options: DIAS });
 const tieField = (g = "Reinforcement"): Field => ({ key: "tie", label: "Tie wire per intersection", unit: "m", type: "number", default: 0.3, group: g, help: "No. 16 GI wire" });
@@ -458,7 +458,7 @@ const stairs: Calc = {
 };
 
 /* 8. CHB wall with mortar and reinforcement */
-const chbPreset: Preset = { from: ["size", "mclass"], label: "Fajardo Table: CHB mortar per m²",
+const chbPreset: Preset = { from: ["size", "mclass"], label: "PH practice: CHB mortar per m²",
   map: Object.fromEntries(Object.entries(CHB_MORTAR).flatMap(([size, v]) => (["A", "B", "C", "D"] as const).map((cl) => [`${size}|${cl}`, { mcf: v[cl], msf: v.sand }]))) };
 export function chbParts(area: number, L: number, H: number, size: string, i: Inputs) {
   const chb = Math.ceil(area * CHB_PER_M2 * (1 + n(i.waste) / 100) - 1e-9);
@@ -473,7 +473,7 @@ export function chbParts(area: number, L: number, H: number, size: string, i: In
   ];
   return { chb, cement, sand, nv, nh, courses, groups, inter: Math.ceil(nv * nh * ratio - 1e-9), size };
 }
-const chbFields = (g = "CHB & mortar (Fajardo, editable)"): Field[] => [
+const chbFields = (g = "CHB & mortar (PH practice, editable)"): Field[] => [
   { key: "size", label: "CHB size", type: "select", default: "100", group: g, options: [{ value: "100", label: "4\" (100 mm)" }, { value: "150", label: "6\" (150 mm)" }, { value: "200", label: "8\" (200 mm)" }] },
   { key: "mclass", label: "Mortar class", type: "select", default: "B", group: g, options: Object.entries(MORTAR).map(([k, v]) => ({ value: k, label: v.label })) },
   { key: "mcf", label: "Mortar cement per m² of wall", unit: "bags", type: "number", default: 0.522, group: g },
@@ -515,7 +515,7 @@ const chbWall: Calc = {
         ...buyResults(bars, stock), { label: "Tie wire No. 16", value: wire, unit: "kg" },
       ],
       checks: [
-        { label: "Fajardo factors", ok: true, detail: `${CHB_PER_M2} CHB/m²; mortar ${n(i.mcf)} bags + ${n(i.msf)} m³ sand per m² (${sizeIn}, Class ${i.mclass}). Edit if your supplier or spec differs.` },
+        { label: "Mix/mortar factors", ok: true, detail: `${CHB_PER_M2} CHB/m²; mortar ${n(i.mcf)} bags + ${n(i.msf)} m³ sand per m² (${sizeIn}, Class ${i.mclass}). Edit if your supplier or spec differs.` },
         { label: "Plaster is separate", ok: true, detail: "Use the Cement plaster calculator for both faces" },
       ],
       steps: [`Net area = (${L} × ${H} − ${n(i.open)}) × ${N} = ${r(area1 * N, 3)} m²`,
@@ -535,7 +535,7 @@ const chbWall: Calc = {
 };
 
 /* 9. Cement plaster */
-const mortarPreset: Preset = { from: ["mclass"], label: "Fajardo Table: mortar per m³", map: Object.fromEntries(Object.entries(MORTAR).map(([k, v]) => [k, { pcf: v.c, psf: v.s }])) };
+const mortarPreset: Preset = { from: ["mclass"], label: "PH practice: mortar per m³", map: Object.fromEntries(Object.entries(MORTAR).map(([k, v]) => [k, { pcf: v.c, psf: v.s }])) };
 const plaster: Calc = {
   key: "est-plaster", title: "Cement plaster", clauses: [],
   presets: [mortarPreset],
@@ -543,10 +543,10 @@ const plaster: Calc = {
     { key: "area", label: "Wall area to plaster (one face)", unit: "m²", type: "number", default: 50, group: "Dimensions" },
     { key: "faces", label: "Faces", type: "select", default: "2", group: "Dimensions", options: [{ value: "1", label: "One face" }, { value: "2", label: "Both faces" }] },
     { key: "th", label: "Plaster thickness", unit: "mm", type: "number", default: 16, group: "Dimensions" },
-    { key: "mclass", label: "Mortar class", type: "select", default: "B", group: "Mortar (Fajardo, editable)", options: Object.entries(MORTAR).map(([k, v]) => ({ value: k, label: v.label })) },
-    { key: "pcf", label: "Cement per m³ of mortar", unit: "bags", type: "number", default: 12, group: "Mortar (Fajardo, editable)" },
-    { key: "psf", label: "Sand per m³ of mortar", unit: "m³", type: "number", default: 1.0, group: "Mortar (Fajardo, editable)" },
-    { key: "waste", label: "Waste allowance", unit: "%", type: "number", default: 5, group: "Mortar (Fajardo, editable)" },
+    { key: "mclass", label: "Mortar class", type: "select", default: "B", group: "Mortar (PH practice, editable)", options: Object.entries(MORTAR).map(([k, v]) => ({ value: k, label: v.label })) },
+    { key: "pcf", label: "Cement per m³ of mortar", unit: "bags", type: "number", default: 12, group: "Mortar (PH practice, editable)" },
+    { key: "psf", label: "Sand per m³ of mortar", unit: "m³", type: "number", default: 1.0, group: "Mortar (PH practice, editable)" },
+    { key: "waste", label: "Waste allowance", unit: "%", type: "number", default: 5, group: "Mortar (PH practice, editable)" },
   ],
   compute(i) {
     const A = n(i.area) * n(i.faces), V = A * (n(i.th) / 1000) * (1 + n(i.waste) / 100);
@@ -648,7 +648,7 @@ const septic: Calc = {
     { key: "tf", label: "Floor slab thickness", unit: "m", type: "number", default: 0.1, group: "Slabs" },
     { key: "tc", label: "Cover slab thickness", unit: "m", type: "number", default: 0.1, group: "Slabs" },
     ...mixFields(),
-    ...chbFields("CHB walls & mortar (Fajardo, editable)").map((f) => (f.key === "size" ? { ...f, default: "150" } : f.key === "mcf" ? { ...f, default: 1.018 } : f.key === "msf" ? { ...f, default: 0.0844 } : f.key === "waste" ? { ...f, key: "chbwaste" } : f)) as Field[],
+    ...chbFields("CHB walls & mortar (PH practice, editable)").map((f) => (f.key === "size" ? { ...f, default: "150" } : f.key === "mcf" ? { ...f, default: 1.018 } : f.key === "msf" ? { ...f, default: 0.0844 } : f.key === "waste" ? { ...f, key: "chbwaste" } : f)) as Field[],
     ...chbBarFields("CHB wall reinforcement"),
     diaField("d", "Slab bar Ø", 10, "Slab reinforcement"), { key: "s", label: "Slab bar spacing both ways", unit: "m", type: "number", default: 0.2, group: "Slab reinforcement" },
     { key: "cover", label: "Slab edge cover", unit: "m", type: "number", default: 0.025, group: "Slab reinforcement" },

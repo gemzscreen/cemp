@@ -23,7 +23,7 @@ export default function Help() {
         <h2>Estimating a job</h2>
         <ol>
           <li>Open <Link href="/estimate">Estimate</Link> and pick a calculator (footing, beam, column, slab, wall, stairs, CHB, plaster, water tank, septic tank, tank stand, lumber).</li>
-          <li>Enter dimensions. Mix and mortar factors start from Fajardo&apos;s tables (orange fields) and can be changed for your job, e.g. for 50 kg bags.</li>
+          <li>Enter dimensions. Mix and mortar factors start from common PH practice tables (orange fields) and can be changed for your job, e.g. for 50 kg bags.</li>
           <li>Rebar is counted bar by bar from spacing and cover and cut from 6–12 m stock; bars longer than stock get 40db laps. The cutting list and step-by-step working are under the results.</li>
           <li>Give the item a label (e.g. “F-1 footings”) and <strong>Add to BOM</strong> of a project. The project page sums all items, lets you enter unit prices, and exports CSV or prints.</li>
         </ol>

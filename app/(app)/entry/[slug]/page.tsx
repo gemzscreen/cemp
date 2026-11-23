@@ -6,6 +6,7 @@ import { moduleByKind } from "@/lib/modules";
 import Diagram from "@/components/Diagram";
 import ToolRunner from "@/components/ToolRunner";
 import Sections from "@/components/Sections";
+import StandardsCompare, { type StdRow } from "@/components/StandardsCompare";
 import type { Section } from "@/content/types";
 import { reviewAndPublish, sendBackToDraft, archiveEntry, restoreEntry, deleteEntry } from "./actions";
 import { toggleBookmark, addNote, deleteNote } from "./saved-actions";
@@ -16,7 +17,7 @@ export default async function EntryPage({
 }: { params: Promise<{ slug: string }>; searchParams: Promise<{ ok?: string; err?: string }> }) {
   const { slug } = await params;
   const { ok, err } = await searchParams;
-  const { supabase, user, role } = await getMe();
+  const { supabase, user, role, homeStd } = await getMe();
   const me = { role };
   const isAdmin = me?.role === "admin";
   const canEdit = isAdmin || me?.role === "editor";
@@ -29,7 +30,8 @@ export default async function EntryPage({
         current:entry_revisions!entries_current_revision_fk(rev_no,body,diagram,code_edition,reviewed_at,change_note,created_at),
         entry_clause_refs(note, code_clauses(section_no,title,code_documents(short_name,edition))),
         entry_tags(tags(name,kind)),
-        tools(calc_key,hand_check)`)
+        tools(calc_key,hand_check),
+        entry_standards(std,code,points,refs,verified)`)
       .eq("slug", slug)
       .maybeSingle(),
     supabase.from("bookmarks").select("entry_id, entries!inner(slug)").eq("entries.slug", slug).eq("user_id", user?.id ?? "").maybeSingle(),
@@ -78,6 +80,8 @@ export default async function EntryPage({
       {tool?.calc_key && <ToolRunner calcKey={tool.calc_key} handCheck={tool.hand_check} />}
 
       {sections.length > 0 ? <Sections sections={sections} /> : !tool && <div className="empty"><strong>No content in this revision yet.</strong></div>}
+
+      <StandardsCompare rows={((entry as any).entry_standards ?? []) as StdRow[]} home={homeStd} />
 
       {(entry.entry_clause_refs as any[])?.length > 0 && (
         <div className="panel">

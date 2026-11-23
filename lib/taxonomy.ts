@@ -150,6 +150,8 @@ export function clauseCategory(doc: string, sec: string): string {
   }
   if (doc === "AISC 360") return sec.startsWith("N") ? "quality-inspection" : "steel-members";
   if (doc === "AWS D1.1") return "steel-welding";
+  if (doc === "BS 8110") return sec.startsWith("6.2") ? "concrete-curing-testing" : sec.startsWith("3.3") || sec.startsWith("3.12") ? "concrete-rebar" : "concrete-design";
+  if (doc === "BS 5950") return sec.startsWith("6.8") ? "steel-welding" : sec.startsWith("6.2") ? "steel-bolting" : "steel-members";
   if (doc === "DPWH Blue Book") return sec.includes("404") ? "concrete-rebar" : sec.includes("405") ? "concrete-materials" : "estimating-takeoff";
   if (doc.startsWith("RA 11058") || doc.startsWith("DOLE")) return "safety-program";
   if (doc === "RA 1378" || doc === "PD 856") return "water-plumbing";
