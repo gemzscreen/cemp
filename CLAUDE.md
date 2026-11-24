@@ -53,3 +53,9 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 - `profiles.home_standard` (ph|bn|intl) orders the panels (`components/StandardsCompare.tsx`). Codes page filters by `code_documents.jurisdiction` (PH / BN / other = International).
 - Brunei panels must stay `verified: false` until Gemz checks them against his BS copies (check-content enforces this).
 - Names: `firstName()` in `lib/names.ts` skips a leading title (Engr., Arch., Dr. …).
+
+## Games (v2.0.0)
+- Engine `lib/truss/` (pure TS, reusable by the API): `sections.ts` (properties from plate geometry, fillets ignored), `solver.ts` (2D stiffness, N/mm), `index.ts` (`evaluate`, `checkMember` AISC 360-10 D/E, `template`), `levels.ts` (budgets ≈ 1.1 × cheapest auto-sized template; re-calibrate if loads, prices or JOINT_COST change). Verify engine changes against an independent numpy solve.
+- UI `components/TrussBuilder.tsx` on `/games/truss?l=N` (one page for all levels; level kept in client state so switching works offline). Hub `/games` reads `game_bests`.
+- Storage `lib/truss/store.ts`: drafts + local bests in localStorage; runs queued and upserted to `game_runs` (owner-only RLS, unique user_id+client_id).
+- Live load 4.3 kPa and L/360 are pedestrian-bridge practice (AASHTO guide used for DPWH footbridges), flagged "verify" in the UI. Connections are not designed (rupture uses Ae = 0.85 Ag).

@@ -2,6 +2,13 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.0.0: Games · Truss Builder (2026-11-24)
+- **Games** section (header ▲ Games, dashboard card) with **Truss Builder**: tap grid points to place joints, tap two joints to connect, pick a section per member (single/double angles, square tubes, round pipes), or start from a Pratt, Howe or Warren template.
+- **Real checks** run in the browser: 2D direct-stiffness analysis (`lib/truss/solver.ts`), loads from deck dead load, pedestrian live load and self-weight, combos 1.4D and 1.2D + 1.6L, members checked to AISC 360-10 / NSCP 2015 (tension yielding and rupture, compression buckling with Fcr, KL/r ≤ 200, L/r ≤ 300), live-load deflection ≤ L/360. Tap any member row for the step-by-step check. Results verified against an independent numpy solve and a method-of-sections hand check.
+- **6 levels** (6, 9, 12, 15, 18, 24 m), ₱ cost from steel weight and joint count, stars: 1 = pass, 2 = within budget, 3 = ≤ 90% of budget.
+- **Offline**: one page plays every level; drafts are kept on the device; runs queue locally and sync to the new `game_runs` table (owner-only RLS, de-duplicated by client id) when online. Personal bests via the `game_bests` view. "Save Truss Builder for offline" button on the Games page.
+- Zoom (100–400%) with horizontal scroll for phones.
+
 ## v1.3.0: Depth (2026-11-24)
 - **New name and logo.** CEMP now stands for **Construction Estimating and Management Platform**. New logo (truss over a dimension line, navy on gold) used in the header, login page, favicon and app icons. Header shows the full name on wide screens.
 - **5 new estimators** (Estimate → add to project BOM): floor & wall tiles (pieces, boxes, adhesive or mortar bed, grout), painting (primer/finish gallons, optional skim coat), gypsum ceiling on metal furring (boards, furring, carrying channels, wall angle, hangers, screws, tape, compound), waterproofing with wall upturns (kg, kits, corner tape), roof gutter & downspout (pieces, brackets, end caps, outlets, pipes, elbows, sealant). 18 estimators in total. Defaults checked against an independent Python calculation.

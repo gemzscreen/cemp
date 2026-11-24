@@ -71,5 +71,5 @@ Read-only, key-authenticated API at `/api/v1` for darkwizscroll, DARKWIZ CT and 
 | v1.1.1 | Profile (name, title, photo), welcome header + clock footer, Dashboard link, mobile menu, ℓo card rewrite ✅ |
 | v1.2.0 | Standards side by side: PH (NSCP/DPWH) · Brunei (BS 8110/5950 + SMM2) · International (ACI/AISC) panels per entry, home standard, codes filter ✅ |
 | v1.3.0 | Depth: new name & logo, 5 finishing/roof estimators, standards panels on 14 entries ✅ |
-| v2.0.0 | Games: Truss Builder (real NSCP/AISC member checks, ₱ cost, offline) |
+| v2.0.0 | Games: Truss Builder (real NSCP/AISC member checks, ₱ cost, offline) ✅ |
 | v2.1.0 | DARKWIZ CT features in Estimate: quotations with Excel/PDF export, project costing |

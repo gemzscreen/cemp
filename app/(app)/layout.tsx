@@ -28,6 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Suspense>
           <Link href="/estimate" className="nav-cta">∑ Estimate</Link>
           <Link href="/education">✎ Learn</Link>
+          <Link href="/games">▲ Games</Link>
           {canReview && (
             <Suspense fallback={<span className="navmenu-fallback">Admin ▾</span>}>
               <NavMenu label="Admin">

@@ -1,6 +1,6 @@
 # CEMP content audit (repo)
 
-Generated 2026-11-24T09:05:21.776Z by `scripts/audit.ts`. Batches: v0.4.0, v0.5.0, v0.6.0, v0.7.0, v1.1.1, v1.2.0, v1.3.0 · entries: 56 · calculators: 47.
+Generated 2026-11-24T10:41:44.801Z by `scripts/audit.ts`. Batches: v0.4.0, v0.5.0, v0.6.0, v0.7.0, v1.1.1, v1.2.0, v1.3.0, v2.0.0 · entries: 56 · calculators: 47.
 
 **0 errors · 3 warnings · 0 notes.** Database state (sync, review, publish, hand-check drift) is audited live at /admin/audit.
 

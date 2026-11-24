@@ -43,6 +43,12 @@ export default async function Dashboard() {
         <span className="go">Open →</span>
       </Link>
 
+      <Link href="/games" className="est-hero game-hero">
+        <span className="calc-ico"><svg width="44" height="44" viewBox="0 0 64 64" aria-hidden><g fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round"><path d="M9 40 L19 22 H45 L55 40 Z" /><path d="M19 22 L27 40 L32 22 L37 40 L45 22" /></g><path d="M6 50 H58" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg></span>
+        <span><strong>Games: Truss Builder</strong><small>Span the gap with steel angles, tubes and pipes. Real NSCP / AISC member checks, ₱ budget, stars. Works offline.</small></span>
+        <span className="go">Play →</span>
+      </Link>
+
       <div className="grid">
         {MODULES.map((m) => (
           <Link key={m.slug} href={`/${m.slug}`} className="tile">

@@ -4,7 +4,7 @@
  * - never cached: /api, /admin, /auth, /login, non-GET, other origins, Next.js RSC fetches
  * - sign-out wipes all CEMP caches (pages may contain the user's notes)
  */
-const VERSION = "cemp-v1.3.0";
+const VERSION = "cemp-v2.0.0";
 const STATIC = `${VERSION}-static`, PAGES = `${VERSION}-pages`;
 const NO_CACHE = [/^\/api\//, /^\/admin/, /^\/auth\//, /^\/login/, /\/edit$/, /^\/entry\/new/];
 
