@@ -2,6 +2,10 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.0.2: Formulas in notes, Conversions on phones (2026-11-24)
+- **Math in notes:** `components/MathText.tsx` typesets `$…$`, `$$…$$`, `\(…\)` and `\[…\]` with KaTeX on the server (no KaTeX JavaScript sent to the browser; CSS only). Bad TeX shows in red instead of breaking the page. Money amounts like "$5 and $10" are left as text. Used on the Saved page (inside Read more) and on entry notes.
+- **Phone layout:** library grids (`.lib`) use `minmax(0, 1fr)` so a wide table can't stretch the page (the Conversions page was twice the screen width, shrinking the header). Tables scroll inside their card with edge shadows; slightly tighter table padding on phones.
+
 ## v2.0.1: Play-test fixes (2026-11-24)
 - **Truss Builder on phones:** tool modes (✚ Joints / ⟋ Members / ☝ Select) so a tap only does one thing; taps act on release and are ignored if the finger moved more than 10 px (scrolling and swiping no longer add joints); hit areas sized in screen pixels (about a fingertip); arrow buttons move a selected joint one grid step; Done ends a member chain; starting zoom 150–200% on phones for spans of 9 m and up; dashed preview of the joint under the mouse on desktop. Templates switch to Select mode.
 - **Read more:** dashboard What's new (3 lines) and saved Notes (2 lines) are clamped with Read more / Show less; What's new stacks on phones instead of a narrow column.

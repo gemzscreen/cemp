@@ -6,6 +6,7 @@ import { moduleByKind } from "@/lib/modules";
 import Diagram from "@/components/Diagram";
 import ToolRunner from "@/components/ToolRunner";
 import Sections from "@/components/Sections";
+import MathText from "@/components/MathText";
 import StandardsCompare, { type StdRow } from "@/components/StandardsCompare";
 import type { Section } from "@/content/types";
 import { reviewAndPublish, sendBackToDraft, archiveEntry, restoreEntry, deleteEntry } from "./actions";
@@ -101,7 +102,7 @@ export default async function EntryPage({
           <ul className="notes">
             {(notes ?? []).map((nt) => (
               <li key={nt.id}>
-                <span style={{ whiteSpace: "pre-wrap" }}>{nt.body}</span>{" "}
+                <span style={{ whiteSpace: "pre-wrap" }}><MathText text={nt.body} /></span>{" "}
                 <span className="fine">· {new Date(nt.updated_at).toLocaleDateString()}</span>
                 <form action={deleteNote} style={{ display: "inline" }}>
                   <input type="hidden" name="id" value={nt.id} /><input type="hidden" name="slug" value={entry.slug} />

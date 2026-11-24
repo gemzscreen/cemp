@@ -62,3 +62,7 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 
 ## Printing
 - Print CSS hides `form` by default; wrap printable content in `<form className="print-keep">` if it must live in a form. Panels may break across pages in print; keep rows whole (`tr { break-inside: avoid }`).
+
+## Layout & text (v2.0.2)
+- Grid/flex children holding tables need `min-width: 0` (`.lib` uses `minmax(0,1fr)`); wrap tables in `.tbl-wrap`.
+- User text with TeX: render through `MathText` (server component, KaTeX). Long text: `ReadMore` (accepts children).

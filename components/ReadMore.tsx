@@ -2,7 +2,7 @@
 // Clamps long text to a few lines with a "Read more / Show less" toggle (only shown when the text overflows).
 import { useEffect, useRef, useState } from "react";
 
-export default function ReadMore({ text, lines = 3, className = "" }: { text: string; lines?: number; className?: string }) {
+export default function ReadMore({ text, children, lines = 3, className = "" }: { text: string; children?: React.ReactNode; lines?: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false), [over, setOver] = useState(false);
   useEffect(() => {
@@ -14,7 +14,7 @@ export default function ReadMore({ text, lines = 3, className = "" }: { text: st
   }, [text]);
   return (
     <>
-      <div ref={ref} className={`readmore ${className}`} style={open ? undefined : { WebkitLineClamp: lines, lineClamp: lines } as React.CSSProperties} data-open={open || undefined}>{text}</div>
+      <div ref={ref} className={`readmore ${className}`} style={open ? undefined : { WebkitLineClamp: lines, lineClamp: lines } as React.CSSProperties} data-open={open || undefined}>{children ?? text}</div>
       {(over || open) && <button type="button" className="readmore-btn no-print" onClick={() => setOpen(!open)}>{open ? "Show less" : "Read more"}</button>}
     </>
   );

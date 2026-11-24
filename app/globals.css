@@ -561,3 +561,23 @@ img.avatar.pic { border: 2px solid rgba(255,255,255,.6); }
 .tb-nudge { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin-bottom: .5rem; }
 .tb-nudge button { min-width: 2.6rem; height: 2.4rem; border: 1px solid #c9d3df; border-radius: 8px; background: #fff; font: inherit; font-size: 1rem; font-weight: 700; color: var(--navy); cursor: pointer; padding: 0 .6rem; }
 .tb-nudge .tb-del { color: #b4352c; font-size: .85rem; }
+
+/* v2.0.2: wide tables never widen the page (grid items default to min-width:auto) */
+.lib { grid-template-columns: 260px minmax(0, 1fr); }
+.lib-main, .lib-main > *, .panel { min-width: 0; }
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+@media (max-width: 860px) {
+  .lib { grid-template-columns: minmax(0, 1fr); }
+  .tbl th, .tbl td { padding: .35rem .45rem; }
+  .tbl { font-size: .82rem; }
+  .tbl-wrap { margin: 0 -.2rem; }
+  .tbl-wrap::after { content: ""; }
+}
+.mtx .katex { font-size: 1.05em; } .mtx .katex-display { margin: .4rem 0; overflow-x: auto; overflow-y: hidden; }
+/* scroll shadows: show there is more table to the left/right */
+.tbl-wrap { background:
+  linear-gradient(to right, var(--card, #fff) 30%, rgba(255,255,255,0)) 0 0 / 28px 100% no-repeat local,
+  linear-gradient(to left, var(--card, #fff) 30%, rgba(255,255,255,0)) 100% 0 / 28px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%, rgba(30,43,60,.18), transparent) 0 0 / 12px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%, rgba(30,43,60,.18), transparent) 100% 0 / 12px 100% no-repeat scroll; }
+@media print { .tbl-wrap { background: none; overflow: visible; } }
