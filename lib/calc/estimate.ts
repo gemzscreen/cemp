@@ -825,6 +825,11 @@ export const ESTIMATOR_META: EstimatorMeta[] = [
   { key: "est-septic", group: "Tanks & sanitary", category: "water-septic", icon: "septic", sketch: "septic", blurb: "CHB walls, baffles, floor & cover slabs, plaster" },
   { key: "est-tank-stand", group: "Tanks & sanitary", category: "steel-stands", icon: "stand", sketch: "stand", blurb: "Angle-bar stand for an overhead tank" },
   { key: "est-lumber", group: "Lumber", category: "lumber-general", icon: "lumber", sketch: "lumber", blurb: "Board feet and cost from a cutting list" },
+  { key: "est-tiles", group: "Masonry & finishes", category: "masonry-finishes", icon: "tiles", sketch: "tiles", blurb: "Tiles, boxes, adhesive or mortar bed, grout" },
+  { key: "est-paint", group: "Masonry & finishes", category: "masonry-finishes", icon: "paint", sketch: "paint", blurb: "Primer and finish paint by coats and coverage" },
+  { key: "est-ceiling", group: "Masonry & finishes", category: "masonry-finishes", icon: "ceiling", sketch: "ceiling", blurb: "Gypsum boards, furring, channels, hangers, screws" },
+  { key: "est-waterproof", group: "Masonry & finishes", category: "masonry-finishes", icon: "waterproof", sketch: "waterproof", blurb: "Floors and decks with wall upturns, kits, corner tape" },
+  { key: "est-gutter", group: "Roof drainage", category: "water-plumbing", icon: "gutter", sketch: "gutter", blurb: "Gutter pieces, brackets, downspouts, elbows, sealant" },
 ];
 
 export const ESTIMATE_CALCS: Calc[] = [footing, wallFooting, beam, column, slab, wall, stairs, chbWall, plaster, tank, septic, stand, lumber];

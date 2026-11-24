@@ -39,7 +39,7 @@ export default async function Dashboard() {
 
       <Link href="/estimate" className="est-hero">
         <span className="calc-ico"><EstimateIcon kind="tank" size={44} /></span>
-        <span><strong>Estimate a job</strong><small>{ESTIMATOR_META.length} quantity calculators: footings, beams, columns, slabs, walls, stairs, CHB, plaster, water tank, septic tank, tank stand, lumber. Build a project BOM with prices.</small></span>
+        <span><strong>Estimate a job</strong><small>{ESTIMATOR_META.length} quantity calculators: concrete work, CHB, plaster, tiles, paint, ceilings, waterproofing, gutters, tanks and lumber. Build a project BOM with prices.</small></span>
         <span className="go">Open →</span>
       </Link>
 

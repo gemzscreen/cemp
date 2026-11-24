@@ -163,6 +163,51 @@ export default function Sketch({ kind, i }: { kind: string; i: Inputs }) {
       note = "Side view: steps on an inclined waist slab; orange = main bars";
       break;
     }
+    case "tiles": {
+      const sz = String(i.size ?? "600x600").split("x").map(Number), a = sz[0] || 600, b = sz[1] || 600, jw = num(i.jw, 3);
+      const cell = 34 * Math.sqrt((a * b) / 360000), cw = cell * Math.sqrt(a / b), ch = cell * Math.sqrt(b / a), x0 = 70, y0 = 40, cols = Math.floor(200 / cw), rows = Math.floor(170 / ch), g = Math.max(1.5, jw * 0.8);
+      body = <g><rect x={x0 - 4} y={y0 - 4} width={cols * cw + 8} height={rows * ch + 8} fill="#8e9bab" />
+        {Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => <rect key={`${r}-${c}`} x={x0 + c * cw + g / 2} y={y0 + r * ch + g / 2} width={cw - g} height={ch - g} fill={C.top} stroke={C.line} strokeWidth=".6" />))}
+        <DimLine a={[x0, y0 + rows * ch + 4]} b={[x0 + cw, y0 + rows * ch + 4]} t={`${a} mm`} off={14} /><DimLine a={[x0 + cols * cw + 4, y0]} b={[x0 + cols * cw + 4, y0 + ch]} t={`${b}`} off={-14} />
+        <Label x={x0 + cols * cw + 26} y={y0 + rows * ch - 10} t={`joint ${jw} mm`} anchor="start" /></g>;
+      note = `Plan: ${a} × ${b} mm tiles, ${i.method === "mortar" ? "cement mortar bed" : "adhesive"}, ${jw} mm grout joints`;
+      break;
+    }
+    case "paint": {
+      const pc = Math.round(num(i.pcoats, 1)), fc = Math.round(num(i.fcoats, 2)), x0 = 120, y0 = 40, h = 180;
+      const layers = [...Array(pc).fill({ c: "#dfe5ec", t: "primer" }), ...Array(fc).fill({ c: C.top, t: "finish" })];
+      body = <g><rect x={x0} y={y0} width={80} height={h} fill="#b9c4d1" stroke={C.line} /><Label x={x0 + 40} y={y0 - 8} t="wall" />
+        {layers.map((l, k) => <rect key={k} x={x0 + 80 + k * 12} y={y0} width={12} height={h} fill={l.c} stroke={C.line} strokeWidth=".8" />)}
+        {layers.map((l, k) => { const lx = x0 + 86 + k * 12, ly = y0 + 30 + k * 30, tx = x0 + 80 + layers.length * 12 + 30; return <g key={`t${k}`}><line x1={lx} y1={ly} x2={tx - 4} y2={ly} stroke={C.dim} strokeWidth=".8" /><circle cx={lx} cy={ly} r="2" fill={C.dim} /><Label x={tx} y={ly + 4} t={`${k + 1}. ${l.t}`} anchor="start" /></g>; })}</g>;
+      note = `Section: ${pc} primer + ${fc} finish coat(s), exaggerated thickness`;
+      break;
+    }
+    case "ceiling": {
+      const L = num(i.L, 6), Wd = num(i.W, 4), sf = num(i.sf, .4), sc = num(i.sc, 1.2);
+      const s = Math.min((W - 120) / L, (H - 80) / Wd), x0 = (W - L * s) / 2, y0 = (H - Wd * s) / 2;
+      const nf = Math.min(40, Math.ceil(Wd / sf) + 1), nc = Math.min(30, Math.ceil(L / sc) + 1);
+      body = <g><rect x={x0} y={y0} width={L * s} height={Wd * s} fill="#2c3d52" stroke={C.dim} />
+        {Array.from({ length: nc }, (_, k) => { const x = x0 + Math.min(L, k * sc) * s; return <line key={`c${k}`} x1={x} x2={x} y1={y0} y2={y0 + Wd * s} stroke={C.water} strokeWidth="2.5" />; })}
+        {Array.from({ length: nf }, (_, k) => { const y = y0 + Math.min(Wd, k * sf) * s; return <line key={`f${k}`} x1={x0} x2={x0 + L * s} y1={y} y2={y} stroke={C.top} strokeWidth="1.2" />; })}
+        <DimLine a={[x0, y0 + Wd * s]} b={[x0 + L * s, y0 + Wd * s]} t={`L ${fmt(L)} m`} off={16} /><DimLine a={[x0 + L * s, y0]} b={[x0 + L * s, y0 + Wd * s]} t={`W ${fmt(Wd)} m`} off={-16} /></g>;
+      note = `Reflected plan: furring @ ${sf} m (gold) on carrying channels @ ${sc} m (blue)`;
+      break;
+    }
+    case "waterproof": {
+      const L = num(i.L, 2.4), Wd = num(i.W, 1.5), u = num(i.up, .3);
+      body = <IsoBox a={L} b={Wd} c={Math.max(u, 0.05)} la={`L ${fmt(L)} m`} lb={`W ${fmt(Wd)} m`} lc={`upturn ${fmt(u)} m`} />;
+      note = "Membrane on the floor and turned up the walls (box shows the coated area)";
+      break;
+    }
+    case "gutter": {
+      const E = num(i.eave, 24), nd = Math.max(Math.round(num(i.runs, 2)), Math.ceil(E / Math.max(1, num(i.ds, 12)))), x0 = 40, x1 = W - 40, y = 80;
+      body = <g><polygon points={`${x0},${y} ${(x0 + x1) / 2},${y - 50} ${x1},${y}`} fill="#8e9bab" stroke={C.line} />
+        <rect x={x0 - 6} y={y} width={x1 - x0 + 12} height={10} rx="3" fill={C.top} stroke={C.line} />
+        {Array.from({ length: nd }, (_, k) => { const x = nd === 1 ? x1 - 10 : x0 + 4 + (k * (x1 - x0 - 8)) / (nd - 1); return <g key={k}><rect x={x - 5} y={y + 10} width={10} height={120} fill={C.water} stroke={C.line} /><path d={`M${x - 5} ${y + 130} h22 v8 h-22 z`} fill={C.water} stroke={C.line} /></g>; })}
+        <DimLine a={[x0, y + 150]} b={[x1, y + 150]} t={`gutter ${fmt(E)} m`} off={10} /><Label x={(x0 + x1) / 2} y={y - 18} t="roof" /></g>;
+      note = `Elevation: ${nd} downspout(s) shown; gutter falls to the outlets`;
+      break;
+    }
     case "lumber": {
       body = <g><polygon points="70,150 300,90 350,110 120,170" fill={C.top} stroke={C.line} /><polygon points="120,170 350,110 350,140 120,200" fill={C.right} stroke={C.line} /><polygon points="70,150 120,170 120,200 70,180" fill={C.left} stroke={C.line} />
         <Label x={210} y={95} t="L (ft)" /><Label x={60} y={200} t="t × w (in)" anchor="start" /><Label x={240} y={225} t="Board feet = pcs × t × w × L / 12" /></g>;

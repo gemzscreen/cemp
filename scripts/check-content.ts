@@ -53,7 +53,8 @@ for (const b of BATCHES) {
 // v1.2.0: standards panels must point at a known entry (batch-defined or SQL-seeded v0.2.0 practices)
 const SEEDED_ENTRIES = new Set(["concrete-cover-cast-in-place","minimum-clear-spacing-of-bars","standard-hooks-and-bend-diameters","curing-of-concrete",
   "concrete-strength-sampling-and-acceptance","construction-joints-beams","construction-joints-slabs","lap-splice-zones-continuous-slabs",
-  "lap-splice-zones-smf-beams","lap-splice-location-smf-columns","beam-hoop-zone-smf","concrete-classes-dpwh"]);
+  "lap-splice-zones-smf-beams","lap-splice-location-smf-columns","beam-hoop-zone-smf","concrete-classes-dpwh",
+  "tool-development-length-and-lap-splice","tool-hooked-bar-development-length","tool-one-way-slab-thickness-and-temperature-bars","tool-beam-flexural-capacity","tool-beam-required-steel","tool-column-maximum-axial-strength"]);
 let panels = 0;
 for (const b of BATCHES) for (const x of b.standards ?? []) {
   if (!slugs.has(x.slug) && !SEEDED_ENTRIES.has(x.slug)) err(`${b.version}: standards for unknown entry ${x.slug}`);

@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <>
       <header className="topbar">
-        <Link href="/" className="brand"><span className="logo">CE</span><span className="brand-name">CEMP</span></Link>
+        <Link href="/" className="brand"><img src="/icons/logo.svg" alt="" className="logo" width={34} height={34} /><span className="brand-text"><span className="brand-name">CEMP</span><span className="brand-sub">Construction Estimating &amp; Management</span></span></Link>
         <HeaderNav>
           <Suspense fallback={<span className="navmenu-fallback">Library ▾</span>}>
             <NavMenu label="Library">
@@ -59,7 +59,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="wrap">{children}</main>
       <footer className="foot">
         <div className="fl"><Clock /></div>
-        <div className="fc"><b>CEMP</b> · Civil Engineering practices library · Powered by <a href="https://darkwizlab.com" target="_blank" rel="noopener">Darkwiz Lab</a> 2026</div>
+        <div className="fc"><b>CEMP</b> · Construction Estimating and Management Platform · Powered by <a href="https://darkwizlab.com" target="_blank" rel="noopener">Darkwiz Lab</a> 2026</div>
         <div className="fr"><Link href="/releases" className="ver-pill">{APP_VERSION}</Link></div>
       </footer>
     </>

@@ -12,7 +12,7 @@ export default function Help() {
       <section className="panel" style={{ marginBottom: "1rem" }} id="trust">
         <h2>Read this first: what CEMP is (and isn't)</h2>
         <ul>
-          <li>CEMP is a practice library and calculator set for Philippine civil engineering work. It is <strong>not</strong> a copy of the codes: the Codes module indexes section numbers, formulas and limits with summaries in our own words. Always design from your own copy of the code in force.</li>
+          <li>CEMP (Construction Estimating and Management Platform) is an estimating, design-check and site-practice toolkit for construction and civil engineering work. It is <strong>not</strong> a copy of the codes: the Codes module indexes section numbers, formulas and limits with summaries in our own words. Always design from your own copy of the code in force.</li>
           <li>Every tool shows its step-by-step substitutions and a recorded hand-check, so you can verify the result by hand.</li>
           <li>A yellow <span className="badge b-review">verify</span> badge means the data still has to be confirmed against an official source. Treat it as a lead, not a fact.</li>
           <li>Each entry shows its revision, code-edition stamp and review date at the bottom.</li>

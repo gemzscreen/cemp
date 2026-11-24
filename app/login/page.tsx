@@ -42,8 +42,8 @@ function LoginForm() {
 
   return (
     <form className="login-card" onSubmit={signIn}>
-      <div className="brand"><span className="logo">CE</span> CEMP <span className="ver">{APP_VERSION}</span></div>
-      <p className="login-about">A private Civil Engineering practices library: code index (NSCP, DPWH, ACI/AISC), design tools with hand-checks, site practice cards, conversions and quantity estimating.</p>
+      <div className="brand"><img src="/icons/logo.svg" alt="" className="logo" width={40} height={40} /> CEMP <span className="ver">{APP_VERSION}</span></div>
+      <p className="login-about"><b>Construction Estimating and Management Platform.</b> Quantity estimates and project BOMs, design checks with step-by-step working, site practice cards and an engineering reference library, in one place.</p>
       <h1>Sign in</h1>
       <label htmlFor="email">Email</label>
       <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />

@@ -1,5 +1,7 @@
 # CEMP Web App: working notes for Claude
 
+CEMP = **Construction Estimating and Management Platform** (name decided 2026-11-24; never expand it as "Civil Engineering Master Plumber"). Logo: truss over a dimension line, navy on gold, `public/icons/logo.svg` (also `app/icon.svg`).
+
 Owner: Gemz (licensed CE, Master Plumber). Live: https://cemp.darkwizlab.com
 Stack: Next.js 15 App Router + Supabase (project `CEMP`, ref `qzbcgwjnzwockhvimupr`, ap-southeast-1). Hosted on Vercel from `gemzscreen/cemp` (main auto-deploys).
 

@@ -17,6 +17,11 @@ export default function EstimateIcon({ kind, size = 40 }: { kind: string; size?:
       case "septic": return <><rect {...S} x="4" y="12" width="40" height="24" /><path {...S} d="M30 12 V36" /><path {...S} strokeWidth={1.2} d="M8 26 q4 -3 8 0 t8 0 t8 0" /><path {...S} d="M1 18 h5 M42 30 h5" /></>;
       case "stand": return <><ellipse {...S} cx="24" cy="8" rx="9" ry="3" /><path {...S} d="M15 8 V18 Q24 22 33 18 V8" /><path {...S} d="M12 20 L10 44 M36 20 L38 44 M12 20 H36 M11 32 H37 M12 20 L37 32 M36 20 L11 32" /></>;
       case "lumber": return <><path {...S} d="M4 28 L34 14 L44 18 L14 32 Z" /><path {...S} d="M4 28 V34 L14 38 L44 24 V18" /><path {...S} d="M14 32 V38" /><path {...S} strokeWidth={1} d="M18 26 q6 -3 12 -6" /></>;
+      case "tiles": return <>{[6, 18, 30].map((y) => [6, 18, 30].map((x) => <rect key={`${x}${y}`} {...S} strokeWidth={1.5} x={x} y={y} width={11} height={11} />))}</>;
+      case "paint": return <><rect {...S} x="8" y="6" width="26" height="10" rx="2" /><path {...S} d="M34 11 h6 v10 H22 v6" /><rect {...S} x="19" y="27" width="6" height="15" rx="1" /></>;
+      case "ceiling": return <><path {...S} d="M4 10 H44" /><path {...S} strokeWidth={1.2} d="M12 10 V22 M24 10 V22 M36 10 V22" /><path {...S} d="M6 22 H42 M6 26 H42" /><path {...S} strokeWidth={1.2} d="M14 22 v4 M24 22 v4 M34 22 v4" /><path {...S} d="M8 36 H40" strokeDasharray="3 3" /></>;
+      case "waterproof": return <><path {...S} d="M6 18 V38 H42 V18" /><path {...S} strokeWidth={1.2} d="M9 18 V35 H39 V18" /><path {...S} d="M24 6 C 20 12 18 15 18 18 a6 6 0 0 0 12 0 C 30 15 28 12 24 6 Z" /></>;
+      case "gutter": return <><path {...S} d="M4 14 L30 6 L30 12" /><path {...S} d="M26 14 h14 v4 a4 4 0 0 1 -4 4 h-6 a4 4 0 0 1 -4 -4 Z" /><path {...S} d="M34 22 V38 q0 4 -4 4 h-6" /><path {...S} strokeWidth={1.2} d="M18 44 q2 -2 4 0" /></>;
       default: return <rect {...S} x="8" y="8" width="32" height="32" />;
     }
   })();

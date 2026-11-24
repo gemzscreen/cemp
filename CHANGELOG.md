@@ -2,6 +2,12 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v1.3.0: Depth (2026-11-24)
+- **New name and logo.** CEMP now stands for **Construction Estimating and Management Platform**. New logo (truss over a dimension line, navy on gold) used in the header, login page, favicon and app icons. Header shows the full name on wide screens.
+- **5 new estimators** (Estimate → add to project BOM): floor & wall tiles (pieces, boxes, adhesive or mortar bed, grout), painting (primer/finish gallons, optional skim coat), gypsum ceiling on metal furring (boards, furring, carrying channels, wall angle, hangers, screws, tape, compound), waterproofing with wall upturns (kg, kits, corner tape), roof gutter & downspout (pieces, brackets, end caps, outlets, pipes, elbows, sealant). 18 estimators in total. Defaults checked against an independent Python calculation.
+- **Standards side by side on 6 more entries:** development length & lap splice, slab lap zones, one-way slab thickness & shrinkage steel, steel plate in tension, steel W-column compression, quantity takeoff measurement (DPWH pay items vs SMM2 vs NRM2/CESMM4). 14 entries now have panels.
+- 5 more BS clauses in the index (BS 8110 3.12.8, 3.4.6, 3.12.5; BS 5950 4.6, 4.7), all marked to verify.
+
 ## v1.2.0: Standards side by side (2026-11-24)
 - Entries can show **PH · Brunei · International** panels next to each other (stacked on phones). Your **home standard** (Profile) is shown first and outlined.
 - Panels on 8 entries: concrete cover, bar spacing, hooks and bends, curing, strength sampling and acceptance, column confinement zone (ℓo), bolt holes and edge distance, fillet weld sizes. Every Brunei panel carries a "verify" badge until checked against the BS copies.

@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "CEMP: Civil Engineering practices library",
+    name: "CEMP: Construction Estimating and Management Platform",
     short_name: "CEMP",
-    description: "Codes, tools, conversions, practices and CELE review for Philippine civil engineers.",
+    description: "Estimating, design checks, site practices and an engineering reference library in one place.",
     start_url: "/",
     scope: "/",
     display: "standalone",
