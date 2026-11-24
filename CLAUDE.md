@@ -56,6 +56,9 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 
 ## Games (v2.0.0)
 - Engine `lib/truss/` (pure TS, reusable by the API): `sections.ts` (properties from plate geometry, fillets ignored), `solver.ts` (2D stiffness, N/mm), `index.ts` (`evaluate`, `checkMember` AISC 360-10 D/E, `template`), `levels.ts` (budgets ≈ 1.1 × cheapest auto-sized template; re-calibrate if loads, prices or JOINT_COST change). Verify engine changes against an independent numpy solve.
-- UI `components/TrussBuilder.tsx` on `/games/truss?l=N` (one page for all levels; level kept in client state so switching works offline). Hub `/games` reads `game_bests`.
+- UI `components/TrussBuilder.tsx` on `/games/truss?l=N`. Touch rules (v2.0.1): act on pointerup only if moved < 10 px; modes joint/member/select; hit radius in screen px via `ppm` (CTM scale); svg `touch-action: pan-x pan-y pinch-zoom`. (one page for all levels; level kept in client state so switching works offline). Hub `/games` reads `game_bests`.
 - Storage `lib/truss/store.ts`: drafts + local bests in localStorage; runs queued and upserted to `game_runs` (owner-only RLS, unique user_id+client_id).
 - Live load 4.3 kPa and L/360 are pedestrian-bridge practice (AASHTO guide used for DPWH footbridges), flagged "verify" in the UI. Connections are not designed (rupture uses Ae = 0.85 Ag).
+
+## Printing
+- Print CSS hides `form` by default; wrap printable content in `<form className="print-keep">` if it must live in a form. Panels may break across pages in print; keep rows whole (`tr { break-inside: avoid }`).

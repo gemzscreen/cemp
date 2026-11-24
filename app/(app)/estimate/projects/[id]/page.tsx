@@ -25,6 +25,7 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
   return (
     <>
       <p className="sub no-print" style={{ marginBottom: ".5rem" }}><Link href="/estimate/projects">← My estimates</Link> · <Link href="/estimate">Calculators</Link></p>
+      <p className="print-only fine" style={{ margin: "0 0 .3rem" }}>CEMP · Construction Estimating and Management Platform · printed {new Date().toLocaleDateString("en-PH")}</p>
       <div className="lib-head">
         <div>
           <h1>{p.name}</h1>
@@ -38,7 +39,7 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
       {sp.ok && <div className="msg ok no-print" style={{ marginBottom: "1rem" }}>Saved.</div>}
       {sp.err && <div className="msg err" style={{ marginBottom: "1rem" }}>{sp.err}</div>}
 
-      <form action={updateProject}>
+      <form action={updateProject} className="print-keep">
         <input type="hidden" name="id" value={id} />
         <section className="panel" style={{ marginBottom: "1rem" }}>
           <h2>Bill of materials</h2>

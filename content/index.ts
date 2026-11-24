@@ -7,6 +7,7 @@ import v111 from "./batches/v1_1_1";
 import v120 from "./batches/v1_2_0";
 import v130 from "./batches/v1_3_0";
 import v200 from "./batches/v2_0_0";
+import v201 from "./batches/v2_0_1";
 
 /** All content batches managed as code. Older batches (v0.1–v0.3) were seeded by SQL migrations. */
-export const BATCHES: Batch[] = [v040, v050, v060, v070, v111, v120, v130, v200];
+export const BATCHES: Batch[] = [v040, v050, v060, v070, v111, v120, v130, v200, v201];

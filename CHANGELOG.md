@@ -2,6 +2,11 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.0.1: Play-test fixes (2026-11-24)
+- **Truss Builder on phones:** tool modes (✚ Joints / ⟋ Members / ☝ Select) so a tap only does one thing; taps act on release and are ignored if the finger moved more than 10 px (scrolling and swiping no longer add joints); hit areas sized in screen pixels (about a fingertip); arrow buttons move a selected joint one grid step; Done ends a member chain; starting zoom 150–200% on phones for spans of 9 m and up; dashed preview of the joint under the mouse on desktop. Templates switch to Select mode.
+- **Read more:** dashboard What's new (3 lines) and saved Notes (2 lines) are clamped with Read more / Show less; What's new stacks on phones instead of a narrow column.
+- **Printing an estimate:** the bill of materials was inside a form, and print mode hid every form, so the BOM didn't print and the Items list was pushed to page 2. The BOM form now prints, panels may break across pages (rows stay whole), table headers repeat, and page margins are tighter. A small "CEMP · printed <date>" line heads the printout.
+
 ## v2.0.0: Games · Truss Builder (2026-11-24)
 - **Games** section (header ▲ Games, dashboard card) with **Truss Builder**: tap grid points to place joints, tap two joints to connect, pick a section per member (single/double angles, square tubes, round pipes), or start from a Pratt, Howe or Warren template.
 - **Real checks** run in the browser: 2D direct-stiffness analysis (`lib/truss/solver.ts`), loads from deck dead load, pedestrian live load and self-weight, combos 1.4D and 1.2D + 1.6L, members checked to AISC 360-10 / NSCP 2015 (tension yielding and rupture, compression buckling with Fcr, KL/r ≤ 200, L/r ≤ 300), live-load deflection ≤ L/360. Tap any member row for the step-by-step check. Results verified against an independent numpy solve and a method-of-sections hand check.

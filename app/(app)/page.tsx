@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ReadMore from "@/components/ReadMore";
 import { getMe, displayName } from "@/lib/auth";
 import Greeting from "@/components/Greeting";
 import { MODULES } from "@/lib/modules";
@@ -31,7 +32,7 @@ export default async function Dashboard() {
           <span className="tag">What&apos;s new · {release.version}</span>
           <div>
             <strong>{release.batch_name}</strong>
-            <pre>{release.notes_md.replace(/\\n/g, "\n")}</pre>
+            <ReadMore text={release.notes_md.replace(/\\n/g, "\n")} lines={3} className="wn-text" />
             <Link href="/releases" className="fine">All releases →</Link>
           </div>
         </div>

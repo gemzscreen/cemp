@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ReadMore from "@/components/ReadMore";
 import { getMe } from "@/lib/auth";
 import { moduleByKind, MODULES } from "@/lib/modules";
 import OfflineButton from "@/components/OfflineButton";
@@ -41,7 +42,7 @@ export default async function SavedPage() {
         {notes?.length ? (
           <ul className="notes">
             {notes.map((nt) => { const e = one(nt.entries as any) as any; return (
-              <li key={nt.id}><Link href={`/entry/${e?.slug}`}><strong>{e?.title}</strong></Link>: <span style={{ whiteSpace: "pre-wrap" }}>{nt.body}</span> <span className="fine">· {new Date(nt.updated_at).toLocaleDateString()}</span></li>); })}
+              <li key={nt.id}><Link href={`/entry/${e?.slug}`}><strong>{e?.title}</strong></Link> <span className="fine">· {new Date(nt.updated_at).toLocaleDateString()}</span><ReadMore text={nt.body} lines={2} className="note-text" /></li>); })}
           </ul>
         ) : <p className="fine">No notes yet. Add them at the bottom of any entry.</p>}
       </section>

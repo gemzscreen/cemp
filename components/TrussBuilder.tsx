@@ -32,6 +32,10 @@ export default function TrussBuilder() {
   const [check, setCheck] = useState<string | null>(null);
   const [queued, setQueued] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [mode, setMode] = useState<"joint" | "member" | "select">("joint");
+  const [ppm, setPpm] = useState(40); // screen pixels per metre (for touch-friendly hit areas)
+  const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
+  const down = useRef<{ x: number; y: number; t: number; id: number } | null>(null);
   const [best, setBest] = useState<{ stars: number; best_cost: number | null } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const counter = useRef(1);
@@ -44,12 +48,21 @@ export default function TrussBuilder() {
     setDesign(ok ? d! : { nodes: base, members: [] });
     counter.current = 1 + Math.max(0, ...((ok ? d!.nodes : []).map((n) => Number(n.id.replace(/\D/g, "")) || 0)), ...((ok ? d!.members : []).map((m) => Number(m.id.replace(/\D/g, "")) || 0)));
     setHist([]); setSel(null); setResult(null); setCheck(null);
+    if (!d?.members.length) setMode("joint");
+    setZoom(window.innerWidth < 600 && lv.span >= 9 ? (lv.span >= 18 ? 2 : 1.5) : 1);
     setBest(localBests()[lv.id] ?? null);
     flush().then(setQueued);
     const on = () => flush().then(setQueued);
     window.addEventListener("online", on);
     return () => window.removeEventListener("online", on);
   }, [lv.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const m = () => { const ctm = svgRef.current?.getScreenCTM(); if (ctm && ctm.a > 0) setPpm(ctm.a * S); };
+    m(); const t = setTimeout(m, 120);
+    window.addEventListener("resize", m);
+    return () => { clearTimeout(t); window.removeEventListener("resize", m); };
+  }, [zoom, lv.id]);
 
   const res = result && result.ok ? result : null;
   const byId = useMemo(() => new Map(design.nodes.map((n) => [n.id, n])), [design]);
@@ -63,8 +76,8 @@ export default function TrussBuilder() {
   const nid = (p: string) => `${p}${counter.current++}`;
 
   // --- geometry helpers (world metres) ---
-  const tol = Math.max(lv.grid * 0.45, lv.span * 0.025);
-  function toWorld(e: React.PointerEvent) {
+  const tol = Math.max(lv.grid * 0.35, 24 / ppm); // ≈ fingertip radius on screen
+  function toWorld(e: { clientX: number; clientY: number }) {
     const svg = svgRef.current!, pt = svg.createSVGPoint();
     pt.x = e.clientX; pt.y = e.clientY;
     const p = pt.matrixTransform(svg.getScreenCTM()!.inverse());
@@ -76,7 +89,7 @@ export default function TrussBuilder() {
     return best;
   }
   function nearestMember(x: number, y: number) {
-    let best: string | null = null, d = tol * 0.6;
+    let best: string | null = null, d = Math.max(lv.grid * 0.25, 16 / ppm);
     for (const m of design.members) {
       const a = byId.get(m.a), b = byId.get(m.b); if (!a || !b) continue;
       const vx = b.x - a.x, vy = b.y - a.y, t = Math.max(0, Math.min(1, ((x - a.x) * vx + (y - a.y) * vy) / (vx * vx + vy * vy)));
@@ -87,27 +100,56 @@ export default function TrussBuilder() {
   }
   const hasMember = (a: string, b: string) => design.members.find((m) => (m.a === a && m.b === b) || (m.a === b && m.b === a));
 
-  function onTap(e: React.PointerEvent) {
-    const { x, y } = toWorld(e);
+  const snap = (x: number, y: number) => ({ x: +(Math.round(x / lv.grid) * lv.grid).toFixed(3), y: +(Math.round(y / lv.grid) * lv.grid).toFixed(3) });
+  const inArea = (p: { x: number; y: number }) => p.x >= -1e-9 && p.x <= lv.span + 1e-9 && p.y <= lv.above + 1e-9 && p.y >= -lv.below - 1e-9 && Math.abs(p.y) > 1e-9;
+  const occupied = (p: { x: number; y: number }) => design.nodes.some((n) => Math.abs(n.x - p.x) < 1e-6 && Math.abs(n.y - p.y) < 1e-6);
+
+  function handleTap(x: number, y: number) {
     const node = nearestNode(x, y);
-    if (node) {
+    if (mode === "joint") {
+      if (node) { setSel({ kind: "node", id: node.id }); return; }
+      const p = snap(x, y);
+      if (!inArea(p) || occupied(p)) { setSel(null); return; }
+      const n: DNode = { id: nid("n"), ...p };
+      commit({ ...design, nodes: [...design.nodes, n] }, { kind: "node", id: n.id });
+      return;
+    }
+    if (mode === "member") {
+      if (!node) { setSel(null); return; } // tapping empty space ends the chain
       if (sel?.kind === "node" && sel.id !== node.id) {
         const ex = hasMember(sel.id, node.id);
-        if (ex) { setSel({ kind: "member", id: ex.id }); return; }
+        if (ex) { setSel({ kind: "node", id: node.id }); return; }
         commit({ ...design, members: [...design.members, { id: nid("m"), a: sel.id, b: node.id, sec }] }, { kind: "node", id: node.id });
         return;
       }
       setSel(sel?.kind === "node" && sel.id === node.id ? null : { kind: "node", id: node.id });
       return;
     }
+    // select mode
+    if (node) { setSel({ kind: "node", id: node.id }); return; }
     const mem = nearestMember(x, y);
     if (mem) { setSel({ kind: "member", id: mem }); const m = design.members.find((q) => q.id === mem); if (m) setSec(m.sec); return; }
-    const gx = Math.round(x / lv.grid) * lv.grid, gy = Math.round(y / lv.grid) * lv.grid;
-    if (gx < 0 || gx > lv.span + 1e-9 || gy > lv.above + 1e-9 || gy < -lv.below - 1e-9) { setSel(null); return; }
-    if (Math.abs(gy) < 1e-9) { setSel(null); return; } // deck line: only the given panel points
-    const n: DNode = { id: nid("n"), x: +gx.toFixed(3), y: +gy.toFixed(3) };
-    const members = sel?.kind === "node" ? [...design.members, { id: nid("m"), a: sel.id, b: n.id, sec }] : design.members;
-    commit({ nodes: [...design.nodes, n], members }, { kind: "node", id: n.id });
+    setSel(null);
+  }
+  // A tap acts on release, and only if the finger did not move: scrolling or panning never adds joints.
+  function onDown(e: React.PointerEvent) {
+    down.current = e.isPrimary ? { x: e.clientX, y: e.clientY, t: Date.now(), id: e.pointerId } : null;
+  }
+  function onMove(e: React.PointerEvent) {
+    if (down.current && Math.hypot(e.clientX - down.current.x, e.clientY - down.current.y) > 10) down.current = null;
+    if (e.pointerType === "mouse" && mode === "joint") { const w = toWorld(e), p = snap(w.x, w.y); setHover(inArea(p) && !occupied(p) && !nearestNode(w.x, w.y) ? p : null); }
+  }
+  function onUp(e: React.PointerEvent) {
+    const d = down.current; down.current = null;
+    if (!d || d.id !== e.pointerId || Date.now() - d.t > 700 || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 10) return;
+    const w = toWorld(e); handleTap(w.x, w.y);
+  }
+  function nudge(dx: number, dy: number) {
+    if (sel?.kind !== "node") return;
+    const n = byId.get(sel.id); if (!n || n.kind) return;
+    const p = { x: +(n.x + dx * lv.grid).toFixed(3), y: +(n.y + dy * lv.grid).toFixed(3) };
+    if (!inArea(p) || occupied(p)) return;
+    commit({ ...design, nodes: design.nodes.map((q) => (q.id === n.id ? { ...q, ...p } : q)) });
   }
 
   function del() {
@@ -123,7 +165,7 @@ export default function TrussBuilder() {
     if (sel?.kind === "member") commit({ ...design, members: design.members.map((m) => (m.id === sel.id ? { ...m, sec: k } : m)) });
   }
   function applyAll() { commit({ ...design, members: design.members.map((m) => ({ ...m, sec })) }); }
-  function useTemplate(k: "warren" | "pratt" | "howe") { const t = template(lv, k, sec); counter.current = 1000; commit(t, null); }
+  function useTemplate(k: "warren" | "pratt" | "howe") { const t = template(lv, k, sec); counter.current = 1000; commit(t, null); setMode("select"); }
   function clearAll() { commit({ nodes: baseNodes(lv), members: [] }, null); clearDraft(lv.id); }
 
   async function test() {
@@ -138,7 +180,7 @@ export default function TrussBuilder() {
   // --- drawing ---
   const x0 = -1.2, x1 = lv.span + 1.2, yTop = lv.above + 0.8, yBot = -(lv.below + 1.4);
   const vb = `${x0 * S} ${-yTop * S} ${(x1 - x0) * S} ${(yTop - yBot) * S}`;
-  const nr = Math.max(0.09, lv.span * 0.012) * S, sw = Math.max(0.05, lv.span * 0.006) * S;
+  const nr = Math.max(0.09, lv.span * 0.012, 7 / ppm) * S, sw = Math.max(0.05, lv.span * 0.006) * S;
   const maxU = res ? Math.max(1e-9, ...Object.values(res.disp).map(([ux, uy]) => Math.hypot(ux, uy))) : 1;
   const k = res ? (lv.span * 0.05) / maxU : 0;
   const pos = (n: DNode, defl = false) => {
@@ -194,6 +236,24 @@ export default function TrussBuilder() {
         </div>
       </div>
 
+      <div className="tb-modes" role="tablist" aria-label="Tool">
+        {([["joint", "✚ Joints", "add joints"], ["member", "⟋ Members", "connect joints"], ["select", "☝ Select", "edit or delete"]] as const).map(([k, label, sub]) => (
+          <button key={k} type="button" role="tab" aria-selected={mode === k} className={mode === k ? "on" : ""} onClick={() => { setMode(k); setSel(null); setHover(null); }}>
+            <span>{label}</span><small>{sub}</small>
+          </button>
+        ))}
+      </div>
+      {sel?.kind === "node" && !byId.get(sel.id)?.kind && (
+        <div className="tb-nudge">
+          <span className="fine">Move joint:</span>
+          <button type="button" onClick={() => nudge(-1, 0)} aria-label="Move left">←</button>
+          <button type="button" onClick={() => nudge(0, 1)} aria-label="Move up">↑</button>
+          <button type="button" onClick={() => nudge(0, -1)} aria-label="Move down">↓</button>
+          <button type="button" onClick={() => nudge(1, 0)} aria-label="Move right">→</button>
+          <button type="button" className="tb-del" onClick={del}>Delete joint</button>
+        </div>
+      )}
+      {mode === "member" && sel?.kind === "node" && <div className="tb-nudge"><span className="fine">Chain from the highlighted joint. Tap a joint to add a member.</span><button type="button" onClick={() => setSel(null)}>Done</button></div>}
       <div className="tb-canvas">
         <div className="tb-zoom" aria-label="Zoom">
           <button type="button" onClick={() => setZoom((z) => Math.max(1, z - 0.5))} disabled={zoom <= 1} aria-label="Zoom out">−</button>
@@ -201,7 +261,7 @@ export default function TrussBuilder() {
           <button type="button" onClick={() => setZoom((z) => Math.min(4, z + 0.5))} disabled={zoom >= 4} aria-label="Zoom in">+</button>
         </div>
         <div className="tb-scroll">
-        <svg ref={svgRef} style={{ width: `${zoom * 100}%`, maxHeight: zoom > 1 ? "none" : undefined }} viewBox={vb} preserveAspectRatio="xMidYMid meet" onPointerDown={onTap} role="img" aria-label="Truss canvas">
+        <svg ref={svgRef} style={{ width: `${zoom * 100}%`, maxHeight: zoom > 1 ? "none" : undefined }} viewBox={vb} preserveAspectRatio="xMidYMid meet" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => (down.current = null)} onPointerLeave={() => setHover(null)} role="img" aria-label="Truss canvas">
           {/* banks and gap */}
           <rect x={x0 * S} y={-yTop * S} width={(x1 - x0) * S} height={(yTop - yBot) * S} fill="#eef3f8" />
           <path d={`M${x0 * S} 0 H0 L${-0.4 * S} ${-yBot * S} H${x0 * S} Z`} fill="#c9b79a" />
@@ -212,6 +272,7 @@ export default function TrussBuilder() {
           {gridPts.map(([gx, gy]) => <circle key={`${gx}_${gy}`} cx={gx * S} cy={-gy * S} r={nr * 0.22} fill="#b9c6d6" />)}
           {/* deck line */}
           <line x1={0} y1={0} x2={lv.span * S} y2={0} stroke="#8e9bab" strokeWidth={sw * 2.2} strokeLinecap="round" opacity=".35" />
+          {hover && <circle cx={hover.x * S} cy={-hover.y * S} r={nr} fill="none" stroke="#1e2b3c" strokeWidth={sw * 0.5} strokeDasharray={`${sw} ${sw}`} />}
           {/* members */}
           {design.members.map((m) => {
             const a = byId.get(m.a), b = byId.get(m.b); if (!a || !b) return null;
@@ -242,9 +303,9 @@ export default function TrussBuilder() {
         </svg>
         </div>
         <div className="tb-hint">
-          {sel?.kind === "node" ? "Tap another joint to connect, or an empty grid point to add a joint and a member." :
-            sel?.kind === "member" ? "Member selected: change its section above, or Delete." :
-              "Tap a grid point to add a joint. Tap two joints to connect them. Dark joints are the deck and supports."}
+          {mode === "joint" ? "Tap a grid point to add a joint. Drag or swipe to scroll; it won't add anything." :
+            mode === "member" ? (sel?.kind === "node" ? "Tap the next joint to connect. Tap empty space or Done to stop." : "Tap a joint, then another joint, to add a member.") :
+              sel?.kind === "member" ? "Member selected: change its section above, or Delete." : "Tap a member to change its section, or a joint to move or delete it."}
         </div>
       </div>
 
