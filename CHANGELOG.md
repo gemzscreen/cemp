@@ -2,6 +2,12 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.1.1: Truss Builder live cost meter (2026-11-25)
+- **Live cost:** `costOf(design)` in `lib/truss/index.ts` is the one cost formula, used by the meter and by `evaluate`, so the live figure always equals the load-test cost. The meter at the top of the canvas updates on every joint, member, section change, delete, undo and template, and flashes the change (+₱ / −₱).
+- **Budget bar** with 3★ (≤ 90%) and 2★ (budget) marks; green → amber → red; ₱ left / ₱ over; breakdown of steel (kg, ₱) and joints (count × ₱1,200 for both trusses).
+- **Rule change:** every joint on the canvas now costs money as soon as it is placed (before, loose joints were free). Loose joints are flagged in the meter and in the results. The 18 calibration templates give the same cost as before, so level budgets are unchanged.
+- Members mode with a mouse: hovering the next joint previews "next member +₱". A selected member shows id, section, length, kg and ₱. The section list shows ₱/m; the results table has a cost column. Zoom controls moved into the meter bar.
+
 ## v2.1.0: Projects, Games and darkwizscroll on the dashboard (2026-11-25)
 - **Dashboard cards:** the Games hero is gone; **Games** and **Projects** are dark navy cards in the card grid, and **darkwizscroll** has its own blueprint card (navy grid, hi-vis yellow). Library menu lists Projects, Games and darkwizscroll under the modules. Account menu: "My estimates" → "My projects".
 - **Games hub** (`/games`): one dark card per game from `lib/games.ts` (Truss Builder live with ★ total; Splice Zone, Pipe Puzzle, Guess the Quantity, Critical Path Rush, Spot the Hazard, Beam Optimizer marked Coming soon), then the Truss Builder level list. Icons in `components/GameIcon.tsx`.

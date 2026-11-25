@@ -634,3 +634,27 @@ a.item-link:hover { color: var(--safe); }
 .bom-combined { margin-top: .8rem; }
 .bom-combined > summary { cursor: pointer; padding: .3rem 0; }
 @media print { .bom-grouped .grp-head td { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } tbody.bom-group { break-inside: auto; } }
+
+/* v2.1.1: Truss Builder live cost meter (top of the canvas) */
+.tb-meter { padding: .5rem .7rem .45rem; background: #fff; border-bottom: 1px solid #d6dfe9; --tm: #2e9d5b; }
+.tb-meter.g2 { --tm: #c98a12; }
+.tb-meter.over { --tm: #d9443a; background: #fff6f5; }
+.tm-top { display: flex; justify-content: space-between; align-items: center; gap: .6rem; }
+.tm-main { display: flex; align-items: baseline; flex-wrap: wrap; gap: .2rem .6rem; min-width: 0; }
+.tm-lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.tm-cost { font-size: 1.35rem; font-variant-numeric: tabular-nums; color: var(--tm); transition: color .2s; }
+.tm-delta { font-weight: 800; font-size: .9rem; font-variant-numeric: tabular-nums; animation: tm-pop 1.8s ease forwards; }
+.tm-delta.up { color: #b4352c; } .tm-delta.down { color: #2e7d4f; }
+@keyframes tm-pop { 0% { opacity: 0; transform: translateY(6px); } 12% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-6px); } }
+.tm-preview { font-size: .78rem; color: var(--navy); background: #fdf6dd; border: 1px dashed #e0c76a; border-radius: 999px; padding: .05rem .5rem; }
+.tm-bar { position: relative; height: 10px; margin: .45rem 0 1.05rem; border-radius: 999px; background: #e6ecf3; overflow: visible; }
+.tm-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--tm); transition: width .25s ease, background .2s; }
+.tm-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--navy); opacity: .7; }
+.tm-mark em { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); font-style: normal; font-size: .62rem; font-weight: 700; color: var(--navy); line-height: 1.5; }
+.tm-sub { display: flex; flex-wrap: wrap; gap: .15rem .9rem; font-size: .76rem; color: var(--muted); margin-top: 0; font-variant-numeric: tabular-nums; }
+.tm-zone { font-weight: 700; color: var(--tm); }
+.tm-warn { color: #b4352c; font-weight: 600; }
+.tb-meter .tb-zoom { position: static; flex: none; }
+.tb-meminfo { font-size: .85rem; background: #fdf6dd; border: 1px solid #ecd58a; border-radius: 8px; padding: .35rem .6rem; justify-content: space-between; }
+.tb-notes { color: #8a6400; margin: .2rem 0 .6rem; padding-left: 1.1rem; font-size: .86rem; }
+@media (max-width: 600px) { .tm-cost { font-size: 1.2rem; } .tm-sub { gap: .1rem .7rem; font-size: .72rem; } }

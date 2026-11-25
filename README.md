@@ -73,4 +73,5 @@ Read-only, key-authenticated API at `/api/v1` for darkwizscroll, DARKWIZ CT and 
 | v1.3.0 | Depth: new name & logo, 5 finishing/roof estimators, standards panels on 14 entries ✅ |
 | v2.0.0 | Games: Truss Builder (real NSCP/AISC member checks, ₱ cost, offline) ✅ |
 | v2.1.0 | Dashboard cards (Games, Projects, darkwizscroll), Games hub, darkwizscroll merged at /scroll, revise saved items, BOM grouped by item ✅ |
+| v2.1.1 | Truss Builder live cost meter ✅ |
 | v2.2.0 | DARKWIZ CT features in Estimate: quotations with Excel/PDF export, project costing |

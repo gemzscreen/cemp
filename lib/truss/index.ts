@@ -16,9 +16,32 @@ export type MemberResult = {
 export type Result =
   | { ok: false; reason: string }
   | { ok: true; passed: boolean; members: MemberResult[]; maxRatio: number; defl: number; deflLimit: number; deflOk: boolean;
-      weight: number; steelCost: number; jointCost: number; cost: number; stars: number; issues: string[]; disp: Record<string, [number, number]>; loads: string[] };
+      weight: number; steelCost: number; jointCost: number; cost: number; stars: number; issues: string[]; notes: string[]; disp: Record<string, [number, number]>; loads: string[] };
 
 const r = (x: number, d = 1) => Math.round(x * 10 ** d) / 10 ** d;
+
+/** v2.1.1: live cost of a design, the same figure the load test scores (both trusses).
+ *  Steel = Σ kg/m × L × ₱/kg; joints = every joint on the canvas × ₱JOINT_COST (a loose joint is still paid for:
+ *  delete it if it carries nothing). Deck joints and supports are always counted because every bridge needs them. */
+export type CostLine = { key: string; name: string; count: number; len: number; kg: number; cost: number };
+export type Cost = { weight: number; steelCost: number; jointCost: number; cost: number; joints: number; loose: number; members: number; bySection: CostLine[] };
+export function memberCost(sec: Section, Lm: number) { return { kg: sec.kgm * Lm * 2, cost: sec.kgm * Lm * sec.pricekg * 2 }; }
+export function costOf(d: Design): Cost {
+  const at = new Map(d.nodes.map((n) => [n.id, n]));
+  const mem = d.members.filter((m) => at.has(m.a) && at.has(m.b) && m.a !== m.b);
+  const lines = new Map<string, CostLine>();
+  let weight = 0, steelCost = 0;
+  for (const m of mem) {
+    const a = at.get(m.a)!, b = at.get(m.b)!, L = Math.hypot(b.x - a.x, b.y - a.y), sec = sectionByKey(m.sec), c = memberCost(sec, L);
+    weight += c.kg; steelCost += c.cost;
+    const ln = lines.get(sec.key) ?? { key: sec.key, name: sec.name, count: 0, len: 0, kg: 0, cost: 0 };
+    ln.count++; ln.len += L; ln.kg += c.kg; ln.cost += c.cost; lines.set(sec.key, ln);
+  }
+  const connected = new Set(mem.flatMap((m) => [m.a, m.b]));
+  const jointCost = d.nodes.length * 2 * JOINT_COST;
+  return { weight, steelCost, jointCost, cost: steelCost + jointCost, joints: d.nodes.length, loose: d.nodes.filter((n) => !connected.has(n.id)).length,
+    members: mem.length, bySection: [...lines.values()].sort((x, y) => y.cost - x.cost) };
+}
 
 /** Deck nodes (panel points) and supports a level always starts with. */
 export function baseNodes(lv: Level): DNode[] {
@@ -101,10 +124,7 @@ export function evaluate(lv: Level, d: Design): Result {
   // deflection: max vertical live-load displacement of deck joints
   const defl = Math.max(...[...Array(lv.panels + 1).keys()].map((i) => Math.abs(svc.u[2 * ix.get(`d${i}`)! + 1])));
   const deflLimit = (lv.span * 1000) / 360;
-  const weight = secs.reduce((s, sc, i) => s + sc.kgm * len[i], 0) * 2; // two trusses
-  const steelCost = secs.reduce((s, sc, i) => s + sc.kgm * len[i] * sc.pricekg, 0) * 2;
-  const jointCost = nodes.length * 2 * JOINT_COST;
-  const cost = steelCost + jointCost;
+  const { weight, steelCost, jointCost, cost, loose: looseN } = costOf(d); // same figure as the live cost meter
   const maxRatio = Math.max(...members.map((m) => m.ratio));
   const issues: string[] = [];
   const over = members.filter((m) => m.ratio > 1).length, slim = members.filter((m) => !m.slenderOk).length;
@@ -113,10 +133,11 @@ export function evaluate(lv: Level, d: Design): Result {
   const deflOk = defl <= deflLimit;
   if (!deflOk) issues.push(`Deflection ${r(defl)} mm > L/360 = ${r(deflLimit)} mm: make the truss deeper or the chords bigger`);
   const passed = !issues.length;
+  const notes = looseN ? [`${looseN} loose joint(s) connected to nothing still cost ₱${(looseN * 2 * JOINT_COST).toLocaleString("en-PH")}: delete them to save money`] : [];
   const stars = !passed ? 0 : cost <= 0.9 * lv.budget ? 3 : cost <= lv.budget ? 2 : 1;
   const disp: Record<string, [number, number]> = {};
   nodes.forEach((n, i) => (disp[n.id] = [svc.u[2 * i] / 1000, svc.u[2 * i + 1] / 1000]));
-  return { ok: true, passed, members, maxRatio, defl, deflLimit, deflOk, weight, steelCost, jointCost, cost, stars, issues, disp, loads };
+  return { ok: true, passed, members, maxRatio, defl, deflLimit, deflOk, weight, steelCost, jointCost, cost, stars, issues, notes, disp, loads };
 }
 
 /** Starter templates (through truss above the deck). */

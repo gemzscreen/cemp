@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  evaluate, template, baseNodes, levelById, LEVELS, SECTIONS, FAMILY_LABEL, sectionByKey, LIVE_NOTE, JOINT_COST,
+  evaluate, template, baseNodes, levelById, LEVELS, SECTIONS, FAMILY_LABEL, sectionByKey, LIVE_NOTE, JOINT_COST, costOf, memberCost,
   type Design, type DNode, type Result, type MemberResult,
 } from "@/lib/truss";
 import { loadDraft, saveDraft, clearDraft, recordRun, flush, pending, localBests } from "@/lib/truss/store";
@@ -38,6 +38,11 @@ export default function TrussBuilder() {
   const down = useRef<{ x: number; y: number; t: number; id: number } | null>(null);
   const [best, setBest] = useState<{ stars: number; best_cost: number | null } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  // v2.1.1 live cost meter: updates on every joint, member and section change; flashes the change
+  const live = useMemo(() => costOf(design), [design]);
+  const prevCost = useRef<number | null>(null);
+  const [delta, setDelta] = useState<{ v: number; k: number } | null>(null);
+  const [preview, setPreview] = useState<number | null>(null); // mouse: cost of the member about to be added
   const counter = useRef(1);
 
   // load draft for this level
@@ -47,6 +52,7 @@ export default function TrussBuilder() {
     const ok = d && base.every((b) => d.nodes.some((n) => n.id === b.id && Math.abs(n.x - b.x) < 1e-6));
     setDesign(ok ? d! : { nodes: base, members: [] });
     counter.current = 1 + Math.max(0, ...((ok ? d!.nodes : []).map((n) => Number(n.id.replace(/\D/g, "")) || 0)), ...((ok ? d!.members : []).map((m) => Number(m.id.replace(/\D/g, "")) || 0)));
+    prevCost.current = null; setDelta(null); setPreview(null);
     setHist([]); setSel(null); setResult(null); setCheck(null);
     if (!d?.members.length) setMode("joint");
     setZoom(window.innerWidth < 600 && lv.span >= 9 ? (lv.span >= 18 ? 2 : 1.5) : 1);
@@ -64,13 +70,21 @@ export default function TrussBuilder() {
     return () => { clearTimeout(t); window.removeEventListener("resize", m); };
   }, [zoom, lv.id]);
 
+  useEffect(() => {
+    const p = prevCost.current; prevCost.current = live.cost;
+    if (p == null || Math.abs(live.cost - p) < 0.5) return;
+    setDelta({ v: live.cost - p, k: Date.now() });
+    const t = setTimeout(() => setDelta(null), 1800);
+    return () => clearTimeout(t);
+  }, [live.cost]);
+
   const res = result && result.ok ? result : null;
   const byId = useMemo(() => new Map(design.nodes.map((n) => [n.id, n])), [design]);
   const mres = useMemo(() => new Map((res?.members ?? []).map((m) => [m.id, m])), [res]);
 
   function commit(next: Design, s: Sel = sel) {
     setHist((h) => [...h.slice(-49), design]);
-    setDesign(next); setSel(s); setResult(null); setCheck(null);
+    setDesign(next); setSel(s); setResult(null); setCheck(null); setPreview(null);
     saveDraft(lv.id, next);
   }
   const nid = (p: string) => `${p}${counter.current++}`;
@@ -138,6 +152,10 @@ export default function TrussBuilder() {
   function onMove(e: React.PointerEvent) {
     if (down.current && Math.hypot(e.clientX - down.current.x, e.clientY - down.current.y) > 10) down.current = null;
     if (e.pointerType === "mouse" && mode === "joint") { const w = toWorld(e), p = snap(w.x, w.y); setHover(inArea(p) && !occupied(p) && !nearestNode(w.x, w.y) ? p : null); }
+    if (e.pointerType === "mouse" && mode === "member") {
+      const w = toWorld(e), n = nearestNode(w.x, w.y), a = sel?.kind === "node" ? byId.get(sel.id) : null;
+      setPreview(a && n && n.id !== a.id && !hasMember(a.id, n.id) ? memberCost(sectionByKey(sec), Math.hypot(n.x - a.x, n.y - a.y)).cost : null);
+    }
   }
   function onUp(e: React.PointerEvent) {
     const d = down.current; down.current = null;
@@ -192,6 +210,8 @@ export default function TrussBuilder() {
   const selMember = sel?.kind === "member" ? design.members.find((m) => m.id === sel.id) : null;
   const checkM = check ? mres.get(check) : null;
   const families = Array.from(new Set(SECTIONS.map((s) => s.family)));
+  const barMax = lv.budget * 1.25;
+  const meterState = live.cost <= 0.9 * lv.budget ? "g3" : live.cost <= lv.budget ? "g2" : "over";
 
   return (
     <div className="tb">
@@ -218,7 +238,7 @@ export default function TrussBuilder() {
           <select value={sec} onChange={(e) => pickSection(e.target.value)}>
             {families.map((fam) => (
               <optgroup key={fam} label={FAMILY_LABEL[fam]}>
-                {SECTIONS.filter((s) => s.family === fam).map((s) => <option key={s.key} value={s.key}>{s.name} · {f(s.kgm, 1)} kg/m · r {f(s.rmin, 1)} mm</option>)}
+                {SECTIONS.filter((s) => s.family === fam).map((s) => <option key={s.key} value={s.key}>{s.name} · {f(s.kgm, 1)} kg/m · {peso(s.kgm * s.pricekg)}/m · r {f(s.rmin, 1)} mm</option>)}
               </optgroup>
             ))}
           </select>
@@ -238,7 +258,7 @@ export default function TrussBuilder() {
 
       <div className="tb-modes" role="tablist" aria-label="Tool">
         {([["joint", "✚ Joints", "add joints"], ["member", "⟋ Members", "connect joints"], ["select", "☝ Select", "edit or delete"]] as const).map(([k, label, sub]) => (
-          <button key={k} type="button" role="tab" aria-selected={mode === k} className={mode === k ? "on" : ""} onClick={() => { setMode(k); setSel(null); setHover(null); }}>
+          <button key={k} type="button" role="tab" aria-selected={mode === k} className={mode === k ? "on" : ""} onClick={() => { setMode(k); setSel(null); setHover(null); setPreview(null); }}>
             <span>{label}</span><small>{sub}</small>
           </button>
         ))}
@@ -254,14 +274,42 @@ export default function TrussBuilder() {
         </div>
       )}
       {mode === "member" && sel?.kind === "node" && <div className="tb-nudge"><span className="fine">Chain from the highlighted joint. Tap a joint to add a member.</span><button type="button" onClick={() => setSel(null)}>Done</button></div>}
+      {selMember && (() => {
+        const a = byId.get(selMember.a), b = byId.get(selMember.b), sc = sectionByKey(selMember.sec);
+        if (!a || !b) return null;
+        const L = Math.hypot(b.x - a.x, b.y - a.y), mc = memberCost(sc, L);
+        return <div className="tb-nudge tb-meminfo"><span><b>{selMember.id}</b> · {sc.name} · L {f(L)} m · {f(mc.kg, 1)} kg · <b>{peso(mc.cost)}</b> <span className="fine">(both trusses)</span></span><button type="button" className="tb-del" onClick={del}>Delete member</button></div>;
+      })()}
       <div className="tb-canvas">
-        <div className="tb-zoom" aria-label="Zoom">
-          <button type="button" onClick={() => setZoom((z) => Math.max(1, z - 0.5))} disabled={zoom <= 1} aria-label="Zoom out">−</button>
-          <span>{Math.round(zoom * 100)}%</span>
-          <button type="button" onClick={() => setZoom((z) => Math.min(4, z + 0.5))} disabled={zoom >= 4} aria-label="Zoom in">+</button>
+        <div className={`tb-meter ${meterState}`} aria-live="polite">
+          <div className="tm-top">
+            <div className="tm-main">
+              <span className="tm-lbl">Bridge cost</span>
+              <b className="tm-cost">{peso(live.cost)}</b>
+              {delta && <span key={delta.k} className={`tm-delta ${delta.v > 0 ? "up" : "down"}`}>{delta.v > 0 ? "+" : "−"}{peso(Math.abs(delta.v))}</span>}
+              {preview != null && <span className="tm-preview">next member +{peso(preview)}</span>}
+            </div>
+            <div className="tb-zoom" aria-label="Zoom">
+              <button type="button" onClick={() => setZoom((z) => Math.max(1, z - 0.5))} disabled={zoom <= 1} aria-label="Zoom out">−</button>
+              <span>{Math.round(zoom * 100)}%</span>
+              <button type="button" onClick={() => setZoom((z) => Math.min(4, z + 0.5))} disabled={zoom >= 4} aria-label="Zoom in">+</button>
+            </div>
+          </div>
+          <div className="tm-bar" role="meter" aria-valuemin={0} aria-valuemax={Math.round(lv.budget)} aria-valuenow={Math.round(live.cost)} aria-label="Cost against budget">
+            <i style={{ width: `${Math.min(100, (live.cost / barMax) * 100)}%` }} />
+            <span className="tm-mark" style={{ left: `${(0.9 * lv.budget / barMax) * 100}%` }} title={`3★ at ≤ ${peso(lv.budget * 0.9)}`}><em>3★</em></span>
+            <span className="tm-mark" style={{ left: `${(lv.budget / barMax) * 100}%` }} title={`Budget ${peso(lv.budget)}`}><em>2★</em></span>
+          </div>
+          <div className="tm-sub">
+            <span className="tm-zone">{live.cost <= 0.9 * lv.budget ? "3★ zone" : live.cost <= lv.budget ? "2★ zone" : "Over budget: 1★ max"}</span>
+            <span>{live.cost <= lv.budget ? `${peso(lv.budget - live.cost)} left of ${peso(lv.budget)}` : `${peso(live.cost - lv.budget)} over ${peso(lv.budget)}`}</span>
+            <span>Steel {Math.round(live.weight)} kg = {peso(live.steelCost)}</span>
+            <span>Joints {live.joints} × {peso(2 * JOINT_COST)} = {peso(live.jointCost)}</span>
+            {live.loose > 0 && <span className="tm-warn">{live.loose} loose joint{live.loose > 1 ? "s" : ""}</span>}
+          </div>
         </div>
         <div className="tb-scroll">
-        <svg ref={svgRef} style={{ width: `${zoom * 100}%`, maxHeight: zoom > 1 ? "none" : undefined }} viewBox={vb} preserveAspectRatio="xMidYMid meet" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => (down.current = null)} onPointerLeave={() => setHover(null)} role="img" aria-label="Truss canvas">
+        <svg ref={svgRef} style={{ width: `${zoom * 100}%`, maxHeight: zoom > 1 ? "none" : undefined }} viewBox={vb} preserveAspectRatio="xMidYMid meet" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => (down.current = null)} onPointerLeave={() => { setHover(null); setPreview(null); }} role="img" aria-label="Truss canvas">
           {/* banks and gap */}
           <rect x={x0 * S} y={-yTop * S} width={(x1 - x0) * S} height={(yTop - yBot) * S} fill="#eef3f8" />
           <path d={`M${x0 * S} 0 H0 L${-0.4 * S} ${-yBot * S} H${x0 * S} Z`} fill="#c9b79a" />
@@ -331,17 +379,18 @@ export default function TrussBuilder() {
             <div><small>Steel + joints</small><b>{peso(res.steelCost)} + {peso(res.jointCost)}</b></div>
           </div>
           {res.issues.length > 0 && <ul className="tb-issues">{res.issues.map((i) => <li key={i}>{i}</li>)}</ul>}
+          {res.notes.length > 0 && <ul className="tb-notes">{res.notes.map((i) => <li key={i}>{i}</li>)}</ul>}
           <p className="fine">Ratio = factored force ÷ design strength. Green &lt; 0.70, amber 0.70–1.00, red &gt; 1.00 or too slender (dashed). Tap a row for the full check.</p>
           <div className="tb-table">
             <table>
-              <thead><tr><th>Member</th><th>Section</th><th>L (m)</th><th>Pu (kN)</th><th>φPn (kN)</th><th>Ratio</th></tr></thead>
+              <thead><tr><th>Member</th><th>Section</th><th>L (m)</th><th>Pu (kN)</th><th>φPn (kN)</th><th>Ratio</th><th>Cost</th></tr></thead>
               <tbody>
                 {[...res.members].sort((a, b) => b.ratio - a.ratio).map((m) => (
                   <tr key={m.id} className={check === m.id ? "on" : ""} onClick={() => { setCheck(check === m.id ? null : m.id); setSel({ kind: "member", id: m.id }); }}>
                     <td><span className="tb-dot" style={{ background: colorOf(m) }} />{m.id}</td>
                     <td>{m.sec.name}</td><td>{f(m.L)}</td>
                     <td>{f(Math.abs(m.Pu), 1)} {m.mode === "tension" ? "T" : m.mode === "compression" ? "C" : "0"}</td>
-                    <td>{f(m.phiPn, 1)}</td><td><b>{f(m.ratio, 2)}</b>{!m.slenderOk && " ⚠"}</td>
+                    <td>{f(m.phiPn, 1)}</td><td><b>{f(m.ratio, 2)}</b>{!m.slenderOk && " ⚠"}</td><td>{peso(memberCost(m.sec, m.L).cost)}</td>
                   </tr>
                 ))}
               </tbody>
