@@ -66,3 +66,10 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 ## Layout & text (v2.0.2)
 - Grid/flex children holding tables need `min-width: 0` (`.lib` uses `minmax(0,1fr)`); wrap tables in `.tbl-wrap`.
 - User text with TeX: render through `MathText` (server component, KaTeX). Long text: `ReadMore` (accepts children).
+
+## Dashboard, Projects, Scroll (v2.1.0)
+- Dashboard grid = MODULES tiles + `.tile.dark` cards (Games, Projects) + `.tile.scroll` (darkwizscroll theme). Library menu lists the same three. Header icons: `components/NavIcon.tsx` (no unicode glyphs in the nav).
+- Games: registry `lib/games.ts` (add a row + route per new game); hub `/games` shows dark `.game-card`s then the Truss level list.
+- Projects: items are revised via `/estimate/<calc>?p=<project>&i=<item>` → `updateItem` (server recompute, same id/position). BOM is grouped by item (`groupByItem` + `components/BomTable.tsx`); prices stay one per material key (`price:<key>`), shared by every item.
+- darkwizscroll: source `content/scroll/darkwizscroll.html` (edit this, never `lib/scroll/html.ts`, which `npm run build-scroll`/prebuild generates). Served at `/scroll` behind login. Its `window.claude.use` shim talks to `/api/scroll` → table `scroll_docs` (collection cards|votes|ideas, one doc per user) + `scroll_names()`. The old claude.ai artifact (slug 72825dbc-…) is now legacy.
+- MathText: scanner, not regex (see the header comment). Keep the test cases in mind: `$a$$b$`, `$5 and $10`, `\$`, `$$…$$` on its own line.

@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { CALCS, type Inputs } from "@/lib/calc";
 
-export type EstItem = { id: string; calcKey: string; label: string; inputs: Inputs; materials: { key: string; name: string; unit: string; qty: number }[]; addedAt: string };
+export type EstItem = { id: string; calcKey: string; label: string; inputs: Inputs; materials: { key: string; name: string; unit: string; qty: number }[]; addedAt: string; updatedAt?: string };
 export type AddResult = { ok?: boolean; error?: string; projectId?: string; projectName?: string };
 
 /** Recompute on the server from calc key + inputs (never trust client-side quantities). */
@@ -41,6 +41,28 @@ export async function addToProject(p: { projectId?: string; newName?: string; la
   if (error) return { error: error.message };
   revalidatePath(`/estimate/projects/${id}`); revalidatePath("/estimate/projects");
   return { ok: true, projectId: id, projectName: name || proj.name };
+}
+
+/** Revise a saved item in place (v2.1.0): same id and position, quantities recomputed from the new inputs. */
+export async function updateItem(p: { projectId: string; itemId: string; label: string; calcKey: string; inputs: Inputs }): Promise<AddResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Sign in again." };
+  let calc;
+  try { calc = compute(p.calcKey, p.inputs); } catch (e) { return { error: (e as Error).message }; }
+  if (!calc.materials.length) return { error: "Nothing to save: check the inputs." };
+  const { data: proj, error: pe } = await supabase.from("estimate_projects").select("name,items").eq("id", p.projectId).single();
+  if (pe || !proj) return { error: "Project not found." };
+  const items = ((proj.items as EstItem[]) ?? []);
+  const k = items.findIndex((x) => x.id === p.itemId);
+  if (k < 0) return { error: "That item is no longer in the project (removed?). Use Add to BOM instead." };
+  if (items[k].calcKey !== p.calcKey) return { error: "This item belongs to another calculator." };
+  const next = items.slice();
+  next[k] = { ...items[k], label: (p.label || CALCS[p.calcKey].title).slice(0, 120), inputs: calc.clean, materials: calc.materials, updatedAt: new Date().toISOString() };
+  const { error } = await supabase.from("estimate_projects").update({ items: next }).eq("id", p.projectId);
+  if (error) return { error: error.message };
+  revalidatePath(`/estimate/projects/${p.projectId}`); revalidatePath("/estimate/projects");
+  return { ok: true, projectId: p.projectId, projectName: proj.name };
 }
 
 export async function createProject(formData: FormData) {

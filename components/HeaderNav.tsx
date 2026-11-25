@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import NavIcon from "@/components/NavIcon";
 
 /** Main navigation: inline on desktop, a slide-down panel behind a ☰ button on phones. */
 export default function HeaderNav({ children }: { children: React.ReactNode }) {
@@ -14,7 +15,7 @@ export default function HeaderNav({ children }: { children: React.ReactNode }) {
         <span /><span /><span />
       </button>
       <nav className={`nav ${open ? "open" : ""}`}>
-        <Link href="/" className={path === "/" ? "active" : ""}>⌂ Dashboard</Link>
+        <Link href="/" className={path === "/" ? "active" : ""}><NavIcon name="dashboard" /> Dashboard</Link>
         {children}
       </nav>
     </>

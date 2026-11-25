@@ -2,13 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMe } from "@/lib/auth";
 import { CALCS } from "@/lib/calc";
-import { aggregate, showQty } from "@/lib/bom";
+import { aggregate, groupByItem, showQty } from "@/lib/bom";
+import BomTable from "@/components/BomTable";
 import SubmitButton from "@/components/SubmitButton";
 import PrintButton from "@/components/PrintButton";
 import { updateProject, removeItem, deleteProject, type EstItem } from "../../actions";
 
 export const metadata = { title: "Estimate BOM" };
-const peso = (x: number) => `₱${x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default async function ProjectBom({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; err?: string }> }) {
   const { id } = await params;
@@ -19,8 +19,9 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
   const items = (p.items ?? []) as EstItem[];
   const prices = (p.prices ?? {}) as Record<string, number>;
   const bom = aggregate(items);
-  const total = bom.reduce((s, b) => s + (prices[b.key] ?? 0) * showQty(b.unit, b.qty), 0);
-  const priced = bom.filter((b) => prices[b.key] != null).length;
+  const revise = (it: EstItem) => `/estimate/${it.calcKey.replace(/^est-/, "")}?p=${id}&i=${it.id}`;
+  const groups = groupByItem(items);
+  const calcTitles = Object.fromEntries(items.map((it) => [it.calcKey, CALCS[it.calcKey]?.title ?? it.calcKey]));
 
   return (
     <>
@@ -36,32 +37,14 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
           <PrintButton />
         </div>
       </div>
-      {sp.ok && <div className="msg ok no-print" style={{ marginBottom: "1rem" }}>Saved.</div>}
+      {sp.ok && <div className="msg ok no-print" style={{ marginBottom: "1rem" }}>{sp.ok === "updated" ? "Item updated: quantities recomputed." : "Saved."}</div>}
       {sp.err && <div className="msg err" style={{ marginBottom: "1rem" }}>{sp.err}</div>}
 
       <form action={updateProject} className="print-keep">
         <input type="hidden" name="id" value={id} />
         <section className="panel" style={{ marginBottom: "1rem" }}>
-          <h2>Bill of materials</h2>
-          {bom.length ? (
-            <div className="tbl-wrap"><table className="tbl compact bom">
-              <thead><tr><th>#</th><th>Material</th><th className="num">Qty</th><th>Unit</th><th className="num">Unit price (₱)</th><th className="num">Amount</th><th className="no-print">From</th></tr></thead>
-              <tbody>
-                {bom.map((b, k) => {
-                  const q = showQty(b.unit, b.qty), pr = prices[b.key];
-                  return (
-                    <tr key={b.key}>
-                      <td>{k + 1}</td><td>{b.name}</td><td className="num">{q.toLocaleString("en-US")}</td><td>{b.unit}</td>
-                      <td className="num"><input className="price" name={`price:${b.key}`} defaultValue={pr ?? ""} inputMode="decimal" placeholder="0.00" aria-label={`Unit price of ${b.name}`} /></td>
-                      <td className="num">{pr != null ? peso(pr * q) : "–"}</td>
-                      <td className="fine no-print">{b.from.join(", ")}</td>
-                    </tr>
-                  );
-                })}
-                <tr className="hl"><td /><td><strong>Total materials</strong></td><td /><td /><td className="fine">{priced}/{bom.length} priced</td><td className="num"><strong>{peso(total)}</strong></td><td className="no-print" /></tr>
-              </tbody>
-            </table></div>
-          ) : <p className="fine">No items yet. <Link href="/estimate">Open a calculator</Link> and use “Add to BOM”.</p>}
+          <h2>Bill of materials <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>by item</span></h2>
+          <BomTable groups={groups} combined={bom} prices={prices} projectId={id} calcTitles={calcTitles} />
           <p className="fine">Countable items are rounded up. Quantities exclude labor, equipment, OCM, profit and VAT: use the Cost build-up tool for unit prices.</p>
         </section>
 
@@ -77,19 +60,23 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
       </form>
 
       <section className="panel" style={{ marginBottom: "1rem" }}>
-        <h2>Items ({items.length})</h2>
+        <h2>Items ({items.length}) <span className="muted no-print" style={{ fontWeight: 400, fontSize: ".8rem" }}>click an item to revise it</span></h2>
         {items.map((it, k) => {
           const c = CALCS[it.calcKey];
           const dims = c?.fields.filter((f) => f.group === "Dimensions" || f.group?.startsWith("Tank size") || f.group === "Stand").map((f) => `${f.label.replace(/\s*\(.*\)/, "")}: ${it.inputs[f.key]}${f.unit ? ` ${f.unit}` : ""}`).slice(0, 5).join(" · ");
           return (
-            <div key={it.id} className="bom-item">
+            <div key={it.id} id={`item-${it.id}`} className="bom-item">
               <div>
-                <strong>{k + 1}. {it.label}</strong> <span className="muted">({c?.title ?? it.calcKey})</span>
+                <Link className="item-link" href={revise(it)} title="Open in the calculator to revise"><strong>{k + 1}. {it.label}</strong></Link> <span className="muted">({c?.title ?? it.calcKey})</span>
+                {it.updatedAt && <span className="fine"> · revised {new Date(it.updatedAt).toLocaleDateString()}</span>}
                 <div className="fine">{dims}</div>
                 <div className="fine">{it.materials.map((m) => `${m.name}: ${showQty(m.unit, m.qty)} ${m.unit}`).join(" · ")}</div>
               </div>
-              <form action={removeItem} className="no-print"><input type="hidden" name="id" value={id} /><input type="hidden" name="item" value={it.id} />
+              <div className="item-acts no-print">
+              <Link className="linkbtn rv" href={revise(it)}>revise</Link>
+              <form action={removeItem}><input type="hidden" name="id" value={id} /><input type="hidden" name="item" value={it.id} />
                 <SubmitButton className="linkbtn" pending="…">remove</SubmitButton></form>
+              </div>
             </div>
           );
         })}

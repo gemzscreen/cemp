@@ -7,6 +7,7 @@ import NavMenu from "@/components/NavMenu";
 import HeaderNav from "@/components/HeaderNav";
 import Avatar from "@/components/Avatar";
 import Clock from "@/components/Clock";
+import NavIcon from "@/components/NavIcon";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, role, fullName, avatar, jobTitle } = await getMe();
@@ -17,18 +18,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <>
       <header className="topbar">
-        <Link href="/" className="brand"><img src="/icons/logo.svg" alt="" className="logo" width={34} height={34} /><span className="brand-text"><span className="brand-name">CEMP</span><span className="brand-sub">Construction Estimating &amp; Management</span></span></Link>
+        <Link href="/" className="brand" title="CEMP · Construction Estimating and Management Platform"><img src="/icons/logo.svg" alt="" className="logo" width={34} height={34} /><span className="brand-name">CEMP</span></Link>
         <HeaderNav>
           <Suspense fallback={<span className="navmenu-fallback">Library ▾</span>}>
             <NavMenu label="Library">
               {MODULES.filter((m) => m.kind !== "education").map((m) => (
                 <Link key={m.slug} href={`/${m.slug}`}><span className="ico">{m.icon}</span><span><strong>{m.name}</strong><small>{m.blurb}</small></span></Link>
               ))}
+              <span className="menu-sep" />
+              <Link href="/estimate/projects"><span className="ico"><NavIcon name="projects" size={16} /></span><span><strong>Projects</strong><small>Saved estimates and their bills of materials</small></span></Link>
+              <Link href="/games"><span className="ico"><NavIcon name="games" size={16} /></span><span><strong>Games</strong><small>Truss Builder and more to come</small></span></Link>
+              <a href="/scroll"><span className="ico"><NavIcon name="scroll" size={16} /></span><span><strong>darkwizscroll</strong><small>Learn by scrolling: site knowledge cards</small></span></a>
             </NavMenu>
           </Suspense>
           <Link href="/estimate" className="nav-cta">∑ Estimate</Link>
-          <Link href="/education">✎ Learn</Link>
-          <Link href="/games">▲ Games</Link>
+          <Link href="/education"><NavIcon name="learn" /> Learn</Link>
+          <Link href="/games"><NavIcon name="games" /> Games</Link>
           {canReview && (
             <Suspense fallback={<span className="navmenu-fallback">Admin ▾</span>}>
               <NavMenu label="Admin">
@@ -51,7 +56,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </div>
             <Link href="/account"><span className="ico">☺</span><span><strong>Profile &amp; password</strong><small>Name, title, photo, password</small></span></Link>
             <Link href="/saved"><span className="ico">★</span><span><strong>Saved &amp; notes</strong></span></Link>
-            <Link href="/estimate/projects"><span className="ico">∑</span><span><strong>My estimates</strong></span></Link>
+            <Link href="/estimate/projects"><span className="ico">∑</span><span><strong>My projects</strong></span></Link>
             <Link href="/help"><span className="ico">?</span><span><strong>Help</strong></span></Link>
             <form action="/auth/signout" method="post"><button className="menu-btn"><span className="ico">⏻</span><span><strong>Sign out</strong></span></button></form>
           </NavMenu>

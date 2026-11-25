@@ -6,6 +6,9 @@ import { MODULES } from "@/lib/modules";
 import { CATEGORIES } from "@/lib/taxonomy";
 import { ESTIMATOR_META } from "@/lib/calc/estimate";
 import EstimateIcon from "@/components/EstimateIcon";
+import NavIcon from "@/components/NavIcon";
+import { GAMES } from "@/lib/games";
+import { LEVELS } from "@/lib/truss/levels";
 
 
 
@@ -18,7 +21,12 @@ export default async function Dashboard() {
     supabase.from("units").select("id", { count: "exact", head: true }),
     supabase.from("ref_tables").select("id", { count: "exact", head: true }),
   ]);
-  const { count: clauseCount } = await supabase.from("code_clauses").select("id", { count: "exact", head: true });
+  const [{ count: clauseCount }, { count: projectCount }, { data: bests }] = await Promise.all([
+    supabase.from("code_clauses").select("id", { count: "exact", head: true }),
+    supabase.from("estimate_projects").select("id", { count: "exact", head: true }),
+    supabase.from("game_bests").select("stars").eq("game", "truss"),
+  ]);
+  const stars = (bests ?? []).reduce((s, b) => s + Number(b.stars ?? 0), 0);
 
   const counts: Record<string, number> = {};
   (entries ?? []).forEach((e) => { counts[e.module] = (counts[e.module] ?? 0) + 1; });
@@ -44,12 +52,6 @@ export default async function Dashboard() {
         <span className="go">Open →</span>
       </Link>
 
-      <Link href="/games" className="est-hero game-hero">
-        <span className="calc-ico"><svg width="44" height="44" viewBox="0 0 64 64" aria-hidden><g fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round"><path d="M9 40 L19 22 H45 L55 40 Z" /><path d="M19 22 L27 40 L32 22 L37 40 L45 22" /></g><path d="M6 50 H58" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg></span>
-        <span><strong>Games: Truss Builder</strong><small>Span the gap with steel angles, tubes and pipes. Real NSCP / AISC member checks, ₱ budget, stars. Works offline.</small></span>
-        <span className="go">Play →</span>
-      </Link>
-
       <div className="grid">
         {MODULES.map((m) => (
           <Link key={m.slug} href={`/${m.slug}`} className="tile">
@@ -65,6 +67,24 @@ export default async function Dashboard() {
             </span>
           </Link>
         ))}
+        <Link href="/games" className="tile dark">
+          <span className="icon"><NavIcon name="games" size={22} /></span>
+          <span className="name">Games</span>
+          <span className="blurb">Truss Builder and more to come: real member checks, ₱ budgets and stars. Plays offline.</span>
+          <span className="meta"><span>{GAMES.filter((g) => g.live).length} live · ★ {stars} / {LEVELS.length * 3}</span></span>
+        </Link>
+        <Link href="/estimate/projects" className="tile dark">
+          <span className="icon"><NavIcon name="projects" size={22} /></span>
+          <span className="name">Projects</span>
+          <span className="blurb">Your saved estimates: bill of materials per item, prices, CSV and print.</span>
+          <span className="meta"><span>{projectCount ?? 0} project{projectCount === 1 ? "" : "s"}</span></span>
+        </Link>
+        <a href="/scroll" className="tile scroll">
+          <span className="icon"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden><rect width="32" height="32" rx="7" fill="#ffcf1f" /><path d="M8 7H24V11H18V21H24V25H8V21H14V11H8Z" fill="#0a1524" /></svg></span>
+          <span className="name">darkwiz<b>scroll</b></span>
+          <span className="blurb">Doomscroll that teaches: site knowledge one card at a time, quizzes, streaks and sparks.</span>
+          <span className="meta"><span>Feed · library · creator</span></span>
+        </a>
       </div>
 
       <section className="section">
