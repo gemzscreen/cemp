@@ -3,18 +3,20 @@
 // equipment per item, then OCM, profit and VAT on the project. Live totals; Save stores it in estimate_projects.costing.
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import type { Material } from "@/lib/calc";
-import { computeCost, DEFAULT_ITEM, peso, type Costing, type ItemCosting } from "@/lib/costing";
+import type { Material, Inputs } from "@/lib/calc";
+import { computeCost, DEFAULT_ITEM, DEFAULT_LABOUR, peso, type Costing, type ItemCosting } from "@/lib/costing";
+import { crewLabel } from "@/lib/labour";
+import { TRADES, type Trade } from "@/lib/rates";
 import { saveCosting } from "@/app/(app)/estimate/actions";
 
-type Item = { id: string; label: string; calcKey: string; materials: Material[] };
+type Item = { id: string; label: string; calcKey: string; materials: Material[]; inputs?: Inputs };
 
-export default function CostingPanel({ projectId, items, prices, initial }: { projectId: string; items: Item[]; prices: Record<string, number>; initial: Costing }) {
+export default function CostingPanel({ projectId, items, prices, initial, labour = DEFAULT_LABOUR }: { projectId: string; items: Item[]; prices: Record<string, number>; initial: Costing; labour?: Record<Trade, number> }) {
   const [c, setC] = useState<Costing>(initial);
   const [dirty, setDirty] = useState(false);
   const [msg, setMsg] = useState<{ ok?: boolean; error?: string } | null>(null);
   const [pending, start] = useTransition();
-  const r = useMemo(() => computeCost(items, prices, c), [items, prices, c]);
+  const r = useMemo(() => computeCost(items, prices, c, labour), [items, prices, c, labour]);
 
   const setItem = (id: string, patch: Partial<ItemCosting>) => { setC((x) => ({ ...x, items: { ...x.items, [id]: { ...(x.items[id] ?? DEFAULT_ITEM), ...patch } } })); setDirty(true); setMsg(null); };
   const setTop = (k: "ocm" | "profit" | "vat", v: string) => { setC((x) => ({ ...x, [k]: Math.max(0, Number(v) || 0) })); setDirty(true); setMsg(null); };
@@ -29,7 +31,7 @@ export default function CostingPanel({ projectId, items, prices, initial }: { pr
       <div className="cost-head">
         <div>
           <h2 style={{ margin: 0 }}>Costing</h2>
-          <p className="fine" style={{ margin: ".2rem 0 0" }}>Materials come from the saved unit prices above. Add labour and equipment per item, then the markups.</p>
+          <p className="fine" style={{ margin: ".2rem 0 0" }}>Materials come from the saved unit prices above. Labour per item: % of materials, crew-days, or a trade crew with typical output (rates from <Link href="/estimate/rates">My rates</Link>). Then equipment and markups.</p>
         </div>
         <div className="est-actions">
           <Link className="btn ghost" href={`/estimate/projects/${projectId}/quote`}>Quotation →</Link>
@@ -53,8 +55,16 @@ export default function CostingPanel({ projectId, items, prices, initial }: { pr
                   <select value={cfg.mode} onChange={(e) => setItem(it.id, { mode: e.target.value as ItemCosting["mode"] })} aria-label={`Labour method for ${it.label}`} title="% of materials, or crew × daily rate × days">
                     <option value="pct">% of mat.</option>
                     <option value="crew">Crew-days</option>
+                    <option value="trade" disabled={!it.trade}>Trade crew</option>
                   </select>
-                  {cfg.mode === "pct" ? (
+                  {cfg.mode === "trade" && it.trade ? (
+                    <span className="lab-in lab-trade">
+                      {it.trade.qty.toLocaleString("en-US", { maximumFractionDigits: 2 })} {it.trade.unit} ÷
+                      <input inputMode="decimal" value={cfg.out || it.trade.presetOutput} onChange={(e) => setItem(it.id, { out: nf(e.target.value) })} aria-label="Output per crew-day" title={`Output per crew-day (preset ${it.trade.presetOutput}: ${it.trade.basis})`} />
+                      {it.trade.unit}/d = <b>{it.trade.days} d</b> × {peso(it.trade.dayCost)}
+                      <small>{crewLabel(it.trade.crew, TRADES)} · {it.trade.basis}</small>
+                    </span>
+                  ) : cfg.mode === "pct" ? (
                     <span className="lab-in"><input inputMode="decimal" value={cfg.pct} onChange={(e) => setItem(it.id, { pct: nf(e.target.value) })} aria-label="Labour percent" /> %</span>
                   ) : (
                     <span className="lab-in">

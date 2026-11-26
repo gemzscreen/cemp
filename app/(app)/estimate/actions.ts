@@ -122,3 +122,26 @@ export async function saveCosting(projectId: string, raw: unknown): Promise<{ ok
   revalidatePath(`/estimate/projects/${projectId}`); revalidatePath(`/estimate/projects/${projectId}/quote`);
   return { ok: true };
 }
+
+/** v2.5.0: issue the current quotation as a frozen revision (Rev 0, R1, R2 …). */
+export async function issueQuote(formData: FormData) {
+  const id = String(formData.get("id"));
+  const { buildQuote } = await import("@/lib/quote");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const [{ data: p }, { data: prof }, { data: ur }, { data: last }] = await Promise.all([
+    supabase.from("estimate_projects").select("id,name,client,location,items,prices,costing").eq("id", id).single(),
+    supabase.from("profiles").select("issuer,full_name").eq("id", user!.id).single(),
+    supabase.from("user_rates").select("labour").eq("user_id", user!.id).maybeSingle(),
+    supabase.from("quote_revisions").select("rev").eq("project_id", id).order("rev", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  if (!p) redirect(`/estimate/projects/${id}/quote?err=${encodeURIComponent("Project not found")}`);
+  const rev = last ? (last.rev as number) + 1 : 0;
+  const { snap } = buildQuote(p!, prof?.issuer, ur, prof?.full_name ?? null, rev);
+  if (!snap.r.items.length) redirect(`/estimate/projects/${id}/quote?err=${encodeURIComponent("Add items before issuing")}`);
+  const { error } = await supabase.from("quote_revisions").insert({ project_id: id, rev, snapshot: { ...snap, issuedAt: new Date().toISOString() } });
+  if (error) redirect(`/estimate/projects/${id}/quote?err=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/estimate/projects/${id}/quote`);
+  redirect(`/estimate/projects/${id}/quote?rev=${rev}&ok=issued`);
+}

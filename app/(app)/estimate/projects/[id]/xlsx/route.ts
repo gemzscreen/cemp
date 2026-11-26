@@ -4,6 +4,7 @@ import { CALCS } from "@/lib/calc";
 import { normalizeCosting, quoteNo } from "@/lib/costing";
 import { normalizeIssuer } from "@/lib/issuer";
 import { buildWorkbook } from "@/lib/quote-xlsx";
+import { normalizeRates } from "@/lib/rates";
 import type { EstItem } from "../../../actions";
 
 export const runtime = "nodejs";
@@ -14,9 +15,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const { supabase, user, fullName } = await getMe();
   if (!user) return new Response("Sign in", { status: 401 });
-  const [{ data: p }, { data: prof }] = await Promise.all([
+  const [{ data: p }, { data: prof }, { data: ur }] = await Promise.all([
     supabase.from("estimate_projects").select("*").eq("id", id).maybeSingle(),
     supabase.from("profiles").select("issuer").eq("id", user.id).single(),
+    supabase.from("user_rates").select("labour").eq("user_id", user.id).maybeSingle(),
   ]);
   if (!p) return new Response("Not found", { status: 404 });
   const costing = normalizeCosting(p.costing);
@@ -26,7 +28,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const no = costing.quote.no || quoteNo(id);
   const buf = await buildWorkbook({
     project: { id, name: p.name, client: p.client, location: p.location },
-    items: (p.items ?? []) as EstItem[], prices: (p.prices ?? {}) as Record<string, number>, costing, issuer,
+    items: (p.items ?? []) as EstItem[], prices: (p.prices ?? {}) as Record<string, number>, costing, issuer, labour: normalizeRates(ur).labour,
     signer: issuer.name || fullName || "", quote: { no, dateLong: long(date), validUntilLong: valid },
     calcTitle: (k) => CALCS[k]?.title ?? k,
   });

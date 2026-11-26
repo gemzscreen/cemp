@@ -799,3 +799,12 @@ a.item-link:hover { color: var(--safe); }
 .g-l { font: 11px/1 system-ui, sans-serif; fill: #1e2b3c; }
 .g-bar { fill: #5b7fa6; } .g-bar.crit { fill: #d9443a; }
 .g-float { fill: none; stroke: #8796a8; stroke-dasharray: 3 3; }
+
+/* v2.5.0: rates, trade crew, revisions */
+.rate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: .6rem 1rem; margin-bottom: .6rem; }
+.rate-grid .pct-in input { width: 5.5rem; }
+.rate-note { width: 100%; min-width: 10rem; padding: .3rem .45rem; border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: .85rem; }
+.bom-tools { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 0 0 .6rem; }
+.bom-tools button.chip { background: #fff; }
+.lab-trade { flex-wrap: wrap; white-space: normal; max-width: 300px; }
+.lab-trade small { flex-basis: 100%; color: var(--muted); font-size: .72rem; }

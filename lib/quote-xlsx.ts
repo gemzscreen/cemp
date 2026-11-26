@@ -8,12 +8,13 @@ import ExcelJS from "exceljs";
 import { groupByItem } from "@/lib/bom";
 import { computeCost, pesoWords, type Costing } from "@/lib/costing";
 import type { Issuer } from "@/lib/issuer";
-import type { Material } from "@/lib/calc";
+import type { Material, Inputs } from "@/lib/calc";
+import type { Trade } from "@/lib/rates";
 
-type Item = { id: string; label: string; calcKey: string; materials: Material[] };
+type Item = { id: string; label: string; calcKey: string; materials: Material[]; inputs?: Inputs };
 export type WorkbookInput = {
   project: { id: string; name: string; client: string | null; location: string | null };
-  items: Item[]; prices: Record<string, number>; costing: Costing; issuer: Issuer; signer: string;
+  items: Item[]; prices: Record<string, number>; costing: Costing; issuer: Issuer; signer: string; labour?: Record<Trade, number>;
   quote: { no: string; dateLong: string; validUntilLong: string | null };
   calcTitle: (key: string) => string;
 };
@@ -23,7 +24,7 @@ const thin = { style: "thin" as const, color: { argb: "FFD0D7E0" } };
 const box = { top: thin, left: thin, bottom: thin, right: thin };
 
 export async function buildWorkbook(d: WorkbookInput): Promise<Buffer> {
-  const r = computeCost(d.items, d.prices, d.costing);
+  const r = computeCost(d.items, d.prices, d.costing, d.labour);
   const groups = groupByItem(d.items);
   const wb = new ExcelJS.Workbook();
   wb.creator = "CEMP"; wb.created = new Date();
@@ -68,7 +69,7 @@ export async function buildWorkbook(d: WorkbookInput): Promise<Buffer> {
   // ---------- Cost build-up ----------
   cb.columns = [{ width: 6 }, { width: 36 }, { width: 16 }, { width: 10 }, { width: 9 }, { width: 7 }, { width: 11 }, { width: 7 }, { width: 15 }, { width: 14 }, { width: 16 }, { width: 16 }];
   cb.getCell("A1").value = `${d.project.name}: cost build-up`; cb.getCell("A1").font = { bold: true, size: 13 };
-  cb.getCell("A2").value = "Labour method: pct = % of materials, crew = crew × daily rate × days. Change the blue cells.";
+  cb.getCell("A2").value = "Labour method: pct = % of materials; crew = crew × daily rate × days; trade = 1 × crew day cost × crew-days (work qty ÷ output). Change the blue cells.";
   cb.getCell("A2").font = { size: 9, color: { argb: "FF6B7785" } };
   cb.getCell("B3").value = "OCM %"; cb.getCell("C3").value = d.costing.ocm;
   cb.getCell("B4").value = "Profit %"; cb.getCell("C4").value = d.costing.profit;
@@ -83,14 +84,17 @@ export async function buildWorkbook(d: WorkbookInput): Promise<Buffer> {
     const n = first + k, x = cb.getRow(n), cfg = it.cfg;
     x.values = [it.no, it.label];
     x.getCell(3).value = { formula: `SUMIF(BOM!$A$${firstBomRow}:$A$${lastBomRow},A${n},BOM!$G$${firstBomRow}:$G$${lastBomRow})`, result: it.materials };
-    x.getCell(4).value = cfg.mode; x.getCell(5).value = cfg.pct; x.getCell(6).value = cfg.crew; x.getCell(7).value = cfg.rate; x.getCell(8).value = cfg.days;
-    x.getCell(9).value = { formula: `IF(D${n}="crew",F${n}*G${n}*H${n},E${n}/100*C${n})`, result: it.labour };
+    const tr = cfg.mode === "trade" ? it.trade : null;
+    x.getCell(4).value = cfg.mode; x.getCell(5).value = cfg.pct;
+    x.getCell(6).value = tr ? 1 : cfg.crew; x.getCell(7).value = tr ? tr.dayCost : cfg.rate; x.getCell(8).value = tr ? tr.days : cfg.days;
+    if (tr) x.getCell(2).note = `Trade crew: ${tr.qty.toFixed(2)} ${tr.unit} ÷ ${tr.output} ${tr.unit}/day = ${tr.days} crew-days; crew day cost ₱${tr.dayCost}`;
+    x.getCell(9).value = { formula: `IF(OR(D${n}="crew",D${n}="trade"),F${n}*G${n}*H${n},E${n}/100*C${n})`, result: it.labour };
     x.getCell(10).value = cfg.equip;
     x.getCell(11).value = { formula: `C${n}+I${n}+J${n}`, result: it.direct };
     x.getCell(12).value = { formula: `ROUND(K${n}*(1+($C$3+$C$4)/100),2)`, result: it.lump };
     for (const c of [4, 5, 6, 7, 8, 10]) x.getCell(c).font = { color: { argb: "FF1F5FBF" } };
     for (const c of [3, 7, 9, 10, 11, 12]) x.getCell(c).numFmt = PESO;
-    x.getCell(4).dataValidation = { type: "list", allowBlank: false, formulae: ['"pct,crew"'] };
+    x.getCell(4).dataValidation = { type: "list", allowBlank: false, formulae: ['"pct,crew,trade"'] };
   });
   const last = first + r.items.length - 1, t = last + 1;
   const tot = cb.getRow(t);

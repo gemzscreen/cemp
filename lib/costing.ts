@@ -2,21 +2,25 @@
 //
 // Per item i:  M_i = Σ unit price × quantity (BOM lines, each rounded like the BOM: countable items up)
 //              L_i = pct% × M_i            (mode "pct", quick quote)
-//                  = crew × rate × days     (mode "crew", DUPA-style)
+//                  = crew × rate × days     (mode "crew")
+//                  = crew-days × crew day cost, crew-days = work qty ÷ output (mode "trade", v2.5.0 presets in lib/labour.ts)
 //              E_i = equipment / tools ₱
 //              DC_i = M_i + L_i + E_i
 // Project:     DC = Σ DC_i;  OCM = ocm% × DC;  Profit = profit% × DC;  VAT = vat% × (DC + OCM + Profit)
 // Quotation:   item lump sum Q_i = DC_i × (1 + ocm% + profit%), rounded to centavos;
 //              subtotal = Σ Q_i (sum of the rounded figures, so the printed column adds up); VAT on the subtotal.
 import { groupByItem } from "@/lib/bom";
-import type { Material } from "@/lib/calc";
+import type { Material, Inputs } from "@/lib/calc";
+import { labourPreset, crewDays, crewDayCost, type Crew } from "@/lib/labour";
+import { TRADES, type Trade } from "@/lib/rates";
 
-export type LabourMode = "pct" | "crew";
-export type ItemCosting = { mode: LabourMode; pct: number; crew: number; rate: number; days: number; equip: number };
+export type LabourMode = "pct" | "crew" | "trade";
+export type ItemCosting = { mode: LabourMode; pct: number; crew: number; rate: number; days: number; equip: number; out: number }; // out: trade output override (0 = preset)
 export type QuoteInfo = { no: string; date: string; validity: number; payment: string; terms: string; notes: string };
 export type Costing = { items: Record<string, ItemCosting>; ocm: number; profit: number; vat: number; quote: QuoteInfo };
 
-export const DEFAULT_ITEM: ItemCosting = { mode: "pct", pct: 40, crew: 2, rate: 750, days: 1, equip: 0 };
+export const DEFAULT_ITEM: ItemCosting = { mode: "pct", pct: 40, crew: 2, rate: 750, days: 1, equip: 0, out: 0 };
+export const DEFAULT_LABOUR = Object.fromEntries(Object.entries(TRADES).map(([k, v]) => [k, v.rate])) as Record<Trade, number>;
 export const DEFAULT_QUOTE: QuoteInfo = {
   no: "", date: "", validity: 30,
   payment: "50% down payment upon acceptance, 40% progress billing, 10% upon completion and turnover.",
@@ -34,7 +38,7 @@ export function normalizeCosting(raw: unknown): Costing {
   const items: Record<string, ItemCosting> = {};
   for (const [id, v] of Object.entries((c.items ?? {}) as Record<string, Partial<ItemCosting>>)) {
     items[id] = {
-      mode: v?.mode === "crew" ? "crew" : "pct",
+      mode: v?.mode === "crew" || v?.mode === "trade" ? v.mode : "pct", out: num(v?.out, 0),
       pct: Math.min(500, num(v?.pct, DEFAULT_ITEM.pct)), crew: num(v?.crew, DEFAULT_ITEM.crew),
       rate: num(v?.rate, DEFAULT_ITEM.rate), days: num(v?.days, DEFAULT_ITEM.days), equip: num(v?.equip, 0),
     };
@@ -49,28 +53,40 @@ export function normalizeCosting(raw: unknown): Costing {
   };
 }
 
+export type TradeCalc = { qty: number; unit: string; measure: string; output: number; presetOutput: number; days: number; dayCost: number; crew: Crew; basis: string };
 export type ItemCost = { id: string; no: number; label: string; calcKey: string; lines: number; unpriced: number;
-  materials: number; labour: number; equip: number; direct: number; lump: number; cfg: ItemCosting };
+  materials: number; labour: number; equip: number; direct: number; lump: number; cfg: ItemCosting; trade: TradeCalc | null };
 export type ProjectCost = { items: ItemCost[]; materials: number; labour: number; equip: number; direct: number;
   ocm: number; profit: number; subtotal: number; vat: number; total: number; unpriced: number; markup: number };
 
-export function labourOf(cfg: ItemCosting, materials: number) {
+/** Trade-crew build-up for an item (null if its calculator has no preset). */
+export function tradeOf(calcKey: string, inputs: Inputs | undefined, cfg: ItemCosting, rates: Record<Trade, number>): TradeCalc | null {
+  const p = inputs ? labourPreset(calcKey, inputs) : null;
+  if (!p) return null;
+  const output = cfg.out > 0 ? cfg.out : p.output, days = crewDays(p.qty, output), dayCost = crewDayCost(p.crew, rates);
+  return { qty: p.qty, unit: p.unit, measure: p.measure, output, presetOutput: p.output, days, dayCost, crew: p.crew, basis: p.basis };
+}
+export function labourOf(cfg: ItemCosting, materials: number, trade: TradeCalc | null = null) {
+  if (cfg.mode === "trade") return trade ? trade.days * trade.dayCost : 0;
   return cfg.mode === "crew" ? cfg.crew * cfg.rate * cfg.days : (cfg.pct / 100) * materials;
 }
 
 export function computeCost(
-  items: { id: string; label: string; calcKey: string; materials: Material[] }[],
+  items: { id: string; label: string; calcKey: string; materials: Material[]; inputs?: Inputs }[],
   prices: Record<string, number>,
   costing: Costing,
+  labourRates: Record<Trade, number> = DEFAULT_LABOUR,
 ): ProjectCost {
+  const inputsOf = new Map(items.map((i) => [i.id, i.inputs]));
   const markup = (costing.ocm + costing.profit) / 100;
   const rows: ItemCost[] = groupByItem(items).map((g) => {
     const cfg = costing.items[g.id] ?? DEFAULT_ITEM;
     let materials = 0, unpriced = 0;
     for (const l of g.lines) { const p = prices[l.key]; if (p == null) unpriced++; else materials += p * l.show; }
-    const labour = labourOf(cfg, materials), equip = cfg.equip, direct = materials + labour + equip;
+    const trade = tradeOf(g.calcKey, inputsOf.get(g.id), cfg, labourRates);
+    const labour = labourOf(cfg, materials, trade), equip = cfg.equip, direct = materials + labour + equip;
     return { id: g.id, no: g.no, label: g.label, calcKey: g.calcKey, lines: g.lines.length, unpriced,
-      materials, labour, equip, direct, lump: round2(direct * (1 + markup)), cfg };
+      materials, labour, equip, direct, lump: round2(direct * (1 + markup)), cfg, trade };
   });
   const sum = (f: (r: ItemCost) => number) => rows.reduce((s, r) => s + f(r), 0);
   const direct = sum((r) => r.direct);

@@ -5,6 +5,8 @@ import { CALCS } from "@/lib/calc";
 import { aggregate, groupByItem, showQty } from "@/lib/bom";
 import BomTable from "@/components/BomTable";
 import CostingPanel from "@/components/CostingPanel";
+import { normalizeRates } from "@/lib/rates";
+import { fillPricesFromList, savePricesToList } from "../../rates/actions";
 import { normalizeCosting } from "@/lib/costing";
 import SubmitButton from "@/components/SubmitButton";
 import PrintButton from "@/components/PrintButton";
@@ -15,8 +17,12 @@ export const metadata = { title: "Estimate BOM" };
 export default async function ProjectBom({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; err?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
-  const { supabase } = await getMe();
-  const { data: p } = await supabase.from("estimate_projects").select("*").eq("id", id).maybeSingle();
+  const { supabase, user } = await getMe();
+  const [{ data: p }, { data: ur }] = await Promise.all([
+    supabase.from("estimate_projects").select("*").eq("id", id).maybeSingle(),
+    user ? supabase.from("user_rates").select("materials,labour").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const myRates = normalizeRates(ur);
   if (!p) notFound();
   const items = (p.items ?? []) as EstItem[];
   const prices = (p.prices ?? {}) as Record<string, number>;
@@ -41,13 +47,18 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
           <PrintButton />
         </div>
       </div>
-      {sp.ok && <div className="msg ok no-print" style={{ marginBottom: "1rem" }}>{sp.ok === "updated" ? "Item updated: quantities recomputed." : "Saved."}</div>}
+      {sp.ok && <div className="msg ok no-print" style={{ marginBottom: "1rem" }}>{sp.ok === "updated" ? "Item updated: quantities recomputed." : sp.ok === "saved" || sp.ok === "1" ? "Saved." : sp.ok}</div>}
       {sp.err && <div className="msg err" style={{ marginBottom: "1rem" }}>{sp.err}</div>}
 
       <form action={updateProject} className="print-keep">
         <input type="hidden" name="id" value={id} />
         <section className="panel" style={{ marginBottom: "1rem" }}>
           <h2>Bill of materials <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>by item</span></h2>
+          <div className="bom-tools no-print">
+            <button formAction={fillPricesFromList} className="chip" disabled={!Object.keys(myRates.materials).length} title="Fill blank unit prices from your saved price list">⇣ Fill blanks from my price list</button>
+            <button formAction={savePricesToList} className="chip" title="Save this project's unit prices (as typed) to the project and to your price list">⇡ Save prices to my list</button>
+            <Link href="/estimate/rates" className="fine">My rates ({Object.keys(myRates.materials).length} materials)</Link>
+          </div>
           <BomTable groups={groups} combined={bom} prices={prices} projectId={id} calcTitles={calcTitles} />
           <p className="fine">Countable items are rounded up. Materials only: labour, equipment, OCM, profit and VAT are added in Costing below.</p>
         </section>
@@ -63,7 +74,7 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
         </section>
       </form>
 
-      <CostingPanel projectId={id} items={items} prices={prices} initial={normalizeCosting(p.costing)} />
+      <CostingPanel projectId={id} items={items} prices={prices} initial={normalizeCosting(p.costing)} labour={myRates.labour} />
 
       <section className="panel" style={{ marginBottom: "1rem" }}>
         <h2>Items ({items.length}) <span className="muted no-print" style={{ fontWeight: 400, fontSize: ".8rem" }}>click an item to revise it</span></h2>

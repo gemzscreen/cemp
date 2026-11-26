@@ -86,3 +86,8 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 - Engine `lib/cpm/` (pure TS): `cpm()` passes, `planCost()`, `optimum()` (exhaustive, offline only), `passSteps()`. Levels in `lib/cpm/levels.ts`; crash levels carry `best` from `npm run cpm-optimum`: re-run after editing a crash level and verify with an independent Python brute force.
 - UI `components/CpmRush.tsx` on `/games/cpm?l=N`. Runs go through `recordRun(run, "cpm")` (shared queue in `lib/truss/store.ts`, bests per game); `game_runs.cost` = seconds (find) or total ₱ (crash).
 - LDs in the game are a fixed ₱/day (verify note `LD_NOTE`); RA 12009 (NGPA, effective 13 Aug 2024; IRR Feb 2025) governs PH procurement now.
+
+## Costing extras (v2.5.0)
+- `user_rates` (one row per user): `labour` (trade → ₱/day incl. benefits, defaults in `lib/rates.ts` TRADES, wage basis in WAGE_NOTE: re-check the Region X wage order each year) and `materials` price list. Actions in `app/(app)/estimate/rates/actions.ts`.
+- Trade-crew labour presets in `lib/labour.ts` (one per estimator; outputs are "verify" defaults). `computeCost` takes labour rates; pass `normalizeRates(...).labour` everywhere it is called (project page, quote, xlsx, issue).
+- Quotations: always build through `buildQuote` (`lib/quote.ts`). Issued revisions are frozen snapshots in `quote_revisions` (no update policy); never re-compute an issued revision.

@@ -57,6 +57,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/account"><span className="ico">☺</span><span><strong>Profile &amp; password</strong><small>Name, title, photo, password</small></span></Link>
             <Link href="/saved"><span className="ico">★</span><span><strong>Saved &amp; notes</strong></span></Link>
             <Link href="/estimate/projects"><span className="ico">∑</span><span><strong>My projects</strong></span></Link>
+              <Link href="/estimate/rates"><span className="ico">₱</span><span><strong>My rates</strong></span></Link>
             <Link href="/help"><span className="ico">?</span><span><strong>Help</strong></span></Link>
             <form action="/auth/signout" method="post"><button className="menu-btn"><span className="ico">⏻</span><span><strong>Sign out</strong></span></button></form>
           </NavMenu>

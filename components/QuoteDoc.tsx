@@ -2,8 +2,9 @@
 import { peso, pesoWords, type Costing, type ProjectCost, type QuoteInfo } from "@/lib/costing";
 import type { Issuer } from "@/lib/issuer";
 
-export default function QuoteDoc({ r, costing, q, iss, signer, project, calcTitles, dateLong, validUntil }: {
-  r: ProjectCost; costing: Costing; q: QuoteInfo; iss: Issuer; signer: string;
+export default function QuoteDoc({ r, costing, q, iss, signer, project, calcTitles, dateLong, validUntil, rev }: {
+  r: Pick<ProjectCost, "subtotal" | "vat" | "total"> & { items: Pick<ProjectCost["items"][number], "id" | "no" | "label" | "calcKey" | "lump">[] };
+  costing: Pick<Costing, "vat">; q: QuoteInfo; iss: Issuer; signer: string; rev?: number;
   project: { name: string; client: string | null; location: string | null };
   calcTitles: Record<string, string>; dateLong: string; validUntil: string | null;
 }) {
@@ -26,6 +27,7 @@ export default function QuoteDoc({ r, costing, q, iss, signer, project, calcTitl
           <div className="q-title">QUOTATION</div>
           <table><tbody>
             <tr><td>No.</td><td><b>{q.no}</b></td></tr>
+            {rev != null && <tr><td>Revision</td><td>{rev === 0 ? "0 (original)" : `R${rev}`}</td></tr>}
             <tr><td>Date</td><td>{dateLong}</td></tr>
             {validUntil && <tr><td>Valid until</td><td>{validUntil}</td></tr>}
           </tbody></table>
