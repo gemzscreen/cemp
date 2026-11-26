@@ -737,3 +737,16 @@ a.item-link:hover { color: var(--safe); }
   .cost-tbl td.lab-cell::before { margin-bottom: .2rem; }
   .cost-tbl tr.cost-tot { background: #f3f8fd; border-radius: 8px; padding: .7rem .6rem; }
 }
+
+/* v2.3.0: Truss Builder settings, crowd crossing */
+.tb-settings { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5rem 1rem; margin: 0 0 .7rem; padding: .55rem .7rem; border: 1px solid #d6dfe9; border-radius: 10px; background: #f7f9fc; }
+.tb-settings label { display: grid; gap: .15rem; font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.tb-settings select { font: inherit; font-size: .88rem; text-transform: none; letter-spacing: 0; color: var(--ink); padding: .35rem .5rem; border: 1px solid #c9d3df; border-radius: 8px; background: #fff; max-width: 100%; }
+.tb-settings .fine { flex: 1 1 220px; }
+.tb-run .btn.tb-cross { background: #fff; box-shadow: 2px 2px 0 var(--navy); }
+.tb-anim-cap { color: var(--ink); }
+.tb-settings label { flex: 1 1 220px; min-width: 0; }
+.tb-settings select { width: 100%; }
+.tb-scroll { position: relative; }
+.tb-grab { position: absolute; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; touch-action: none; cursor: grab; background: transparent; }
+@media (hover: none) { .tb-grab { outline: 2px dashed rgba(30,43,60,.35); outline-offset: -6px; } }

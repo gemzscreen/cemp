@@ -1,7 +1,9 @@
-// Truss Builder engine: design → loads → analysis (1.4D, 1.2D+1.6L, L service) → AISC 360-10 / NSCP 2015 member checks → score.
+// Truss Builder engine: design → loads → analysis → member checks (AISC 360-10 / NSCP 2015, or BS 5950-1:2000) → score.
+// v2.3.0: deck types and code are Settings; live load is a crowd that can cover any run of panels from either end
+// (patch loading), so diagonals are checked for their worst partial loading, not just the full-span case.
 import { solveTruss, E_STEEL, type Support } from "./solver";
 import { sectionByKey, type Section } from "./sections";
-import { JOINT_COST, type Level } from "./levels";
+import { JOINT_COST, CODES, DECKS, dlOf, defaultSettings, type Level, type Settings } from "./levels";
 
 export * from "./sections"; export * from "./levels";
 
@@ -12,11 +14,13 @@ export type Design = { nodes: DNode[]; members: DMember[] };
 export type MemberResult = {
   id: string; sec: Section; L: number; Pu: number; ratio: number; mode: "tension" | "compression" | "zero";
   phiPn: number; slender: number; slenderLimit: number; slenderOk: boolean; steps: string[]; combo: string;
+  NtMax: number; NcMax: number; // kN, envelope over all load cases (+ tension, − compression)
 };
 export type Result =
   | { ok: false; reason: string }
   | { ok: true; passed: boolean; members: MemberResult[]; maxRatio: number; defl: number; deflLimit: number; deflOk: boolean;
-      weight: number; steelCost: number; jointCost: number; cost: number; stars: number; issues: string[]; notes: string[]; disp: Record<string, [number, number]>; loads: string[] };
+      weight: number; steelCost: number; jointCost: number; cost: number; stars: number; issues: string[]; notes: string[]; disp: Record<string, [number, number]>; loads: string[];
+      settings: Settings; budget: number };
 
 const r = (x: number, d = 1) => Math.round(x * 10 ** d) / 10 ** d;
 
@@ -49,8 +53,55 @@ export function baseNodes(lv: Level): DNode[] {
   return Array.from({ length: lv.panels + 1 }, (_, i) => ({ id: `d${i}`, x: r(i * p, 3), y: 0, kind: i === 0 || i === lv.panels ? "support" : "deck" }));
 }
 
+export type Check = { phiPn: number; ratio: number; mode: "tension" | "compression" | "zero"; slender: number; slenderLimit: number; slenderOk: boolean; steps: string[] };
+
+/** Axial member check for the chosen code. Pu in kN (+ tension). */
+export function checkMember(sec: Section, Lm: number, Pu: number, code: Settings["code"] = "aisc"): Check {
+  return code === "bs" ? checkBS5950(sec, Lm, Pu) : checkAISC(sec, Lm, Pu);
+}
+
+export const E_BS = 205000; // MPa, BS 5950
+const ROBERTSON = { a: 2.0, b: 3.5, c: 5.5, d: 8.0 } as const;
+/** BS 5950-1:2000 Annex C (Perry–Robertson) compressive strength pc, N/mm². */
+export function pcBS(py: number, lambda: number, curve: keyof typeof ROBERTSON = "c") {
+  const pE = (Math.PI ** 2 * E_BS) / lambda ** 2, l0 = 0.2 * Math.sqrt((Math.PI ** 2 * E_BS) / py);
+  const eta = Math.max(0, (ROBERTSON[curve] * (lambda - l0)) / 1000), phi = (py + (eta + 1) * pE) / 2;
+  return { pc: (pE * py) / (phi + Math.sqrt(phi * phi - pE * py)), pE, l0, eta, phi };
+}
+
+/** BS 5950-1:2000 axial check. Game assumptions (VERIFY): py = Fy of the stocked grade, LE = 1.0 L for every member,
+ *  strut curve c (angles; cold-formed hollow sections), net area an = 0.85 Ag, Ae = Ke·an ≤ Ag (Ke 1.2 for Fy ≤ 275, else 1.1),
+ *  angles connected through one leg (4.6.3): single Pt = py(Ae − 0.5 a2), back-to-back pair Pt = py(Ae − 0.25 a2), with a1 = an/2. */
+export function checkBS5950(sec: Section, Lm: number, F: number): Check {
+  const Lmm = Lm * 1000, lam = Lmm / sec.rmin, py = sec.fy, steps: string[] = [];
+  steps.push(`${sec.name} (${sec.grade}): Ag = ${r(sec.A, 0)} mm², r min = ${r(sec.rmin, 1)} mm, py = ${py} N/mm² (taken = Fy)`);
+  steps.push(`LE = 1.0 L = ${r(Lmm, 0)} mm → λ = LE/r = ${r(lam, 1)}`);
+  if (F >= 0) {
+    const an = 0.85 * sec.A, Ke = py <= 275 ? 1.2 : 1.1, Ae = Math.min(Ke * an, sec.A);
+    let Pt = (py * Ae) / 1000;
+    steps.push(`Net area an = 0.85 Ag = ${r(an, 0)} mm² (assumed, connection not designed); Ae = Ke·an ≤ Ag = min(${Ke} × ${r(an, 0)}, ${r(sec.A, 0)}) = ${r(Ae, 0)} mm²`);
+    if (sec.family === "L" || sec.family === "2L") {
+      const a1 = an / 2, a2 = Ae - a1, k = sec.family === "L" ? 0.5 : 0.25;
+      Pt = (py * (Ae - k * a2)) / 1000;
+      steps.push(`Angle${sec.family === "2L" ? "s back to back" : ""} connected through one leg (4.6.3): a2 = Ae − a1 = ${r(Ae, 0)} − ${r(a1, 0)} = ${r(a2, 0)} mm² → Pt = py(Ae − ${k} a2) = ${r(Pt)} kN`);
+    } else steps.push(`Pt = py·Ae = ${py} × ${r(Ae, 0)} = ${r(Pt)} kN`);
+    const ok = lam <= 300;
+    steps.push(`Slenderness λ = ${r(lam, 1)} ${ok ? "≤" : ">"} 300 (game rule for ties; BS sets no tie limit)`);
+    steps.push(`Ft = ${r(F)} kN tension → ratio = ${r(F)} / ${r(Pt)} = ${r(F / Pt, 3)}`);
+    return { phiPn: Pt, ratio: F / Pt, mode: F < 0.01 ? "zero" : "tension", slender: lam, slenderLimit: 300, slenderOk: ok, steps };
+  }
+  const { pc, pE, l0, eta } = pcBS(py, lam, "c"), Pc = (sec.A * pc) / 1000, P = -F;
+  steps.push(`Strut curve c (Table 23: angles, cold-formed hollow sections), Robertson a = 5.5`);
+  steps.push(`pE = π²E/λ² = ${r(pE, 1)} N/mm², λ0 = 0.2√(π²E/py) = ${r(l0, 1)}, η = 0.0055(λ − λ0) = ${r(eta, 3)}`);
+  steps.push(`pc = pE·py / (φ + √(φ² − pE·py)) = ${r(pc, 1)} N/mm² → Pc = Ag·pc = ${r(Pc)} kN`);
+  const ok = lam <= 180;
+  steps.push(`Slenderness λ = ${r(lam, 1)} ${ok ? "≤" : ">"} 180 (game rule: the 1990 edition limit; BS 5950-1:2000 removed the fixed limits, see SCI AD 270)`);
+  steps.push(`Fc = ${r(P)} kN compression → ratio = ${r(P)} / ${r(Pc)} = ${r(P / Pc, 3)}`);
+  return { phiPn: Pc, ratio: P / Pc, mode: "compression", slender: lam, slenderLimit: 180, slenderOk: ok, steps };
+}
+
 /** AISC 360-10 (= NSCP 2015 Ch. 5) axial member check. Pu in kN (+ tension). */
-export function checkMember(sec: Section, Lm: number, Pu: number) {
+export function checkAISC(sec: Section, Lm: number, Pu: number): Check {
   const Lmm = Lm * 1000, KLr = Lmm / sec.rmin, steps: string[] = [];
   steps.push(`${sec.name} (${sec.grade}): Ag = ${r(sec.A, 0)} mm², r min = ${r(sec.rmin, 1)} mm, Fy = ${sec.fy} MPa, Fu = ${sec.fu} MPa`);
   steps.push(`L = ${r(Lm, 3)} m, K = 1.0 (pinned joints) → KL/r = ${r(Lmm, 0)} / ${r(sec.rmin, 1)} = ${r(KLr, 1)}`);
@@ -74,55 +125,94 @@ export function checkMember(sec: Section, Lm: number, Pu: number) {
   return { phiPn, ratio: P / phiPn, mode: "compression" as const, slender: KLr, slenderLimit: 200, slenderOk: ok, steps };
 }
 
-export function evaluate(lv: Level, d: Design): Result {
+/** Crowd positions: empty, every run of panels from the left end (1…n panels, n = full span) and from the right end. */
+export type Pattern = { from: number; to: number; label: string }; // panels from..to-1 carry the crowd
+export function patterns(n: number): Pattern[] {
+  const out: Pattern[] = [{ from: 0, to: 0, label: "no crowd" }];
+  for (let k = 1; k <= n; k++) out.push({ from: 0, to: k, label: k === n ? "crowd on the full span" : `crowd on panels 1–${k}` });
+  for (let k = 1; k < n; k++) out.push({ from: k, to: n, label: `crowd on panels ${k + 1}–${n}` });
+  return out;
+}
+
+type Analysis = {
+  nodes: DNode[]; ix: Map<string, number>; mem: DMember[]; secs: Section[]; len: number[];
+  ND: number[]; uD: number[];             // dead load (deck + self-weight), N and mm
+  NP: number[][]; uP: number[][];          // crowd on panel j alone (live load), N and mm
+  selfW: number; dl: number;
+};
+
+/** Build the model and solve dead load + one solve per panel of crowd (superposed later: the truss is linear). */
+function analyse(lv: Level, d: Design, s: Settings): { ok: false; reason: string } | ({ ok: true } & Analysis) {
   const idx = new Map(d.nodes.map((n, i) => [n.id, i]));
   const mem = d.members.filter((m) => idx.has(m.a) && idx.has(m.b) && m.a !== m.b);
   if (mem.length < 3) return { ok: false, reason: "Add members first: connect the deck joints and build triangles." };
   const connected = new Set(mem.flatMap((m) => [m.a, m.b]));
-  const loose = d.nodes.filter((n) => !connected.has(n.id));
-  if (loose.some((n) => n.kind)) return { ok: false, reason: "Every deck joint and both supports must be connected to the truss." };
+  if (d.nodes.some((n) => n.kind && !connected.has(n.id))) return { ok: false, reason: "Every deck joint and both supports must be connected to the truss." };
   const nodes = d.nodes.filter((n) => connected.has(n.id));
   const ix = new Map(nodes.map((n, i) => [n.id, i]));
   const tn = nodes.map((n) => ({ x: n.x * 1000, y: n.y * 1000 }));
   const secs = mem.map((m) => sectionByKey(m.sec));
   const tm = mem.map((m, i) => ({ a: ix.get(m.a)!, b: ix.get(m.b)!, A: secs[i].A }));
   const len = tm.map((m) => Math.hypot(tn[m.b].x - tn[m.a].x, tn[m.b].y - tn[m.a].y) / 1000);
-  const left = ix.get("d0")!, right = ix.get(`d${lv.panels}`)!;
-  const supports: Support[] = [{ node: left, ux: true, uy: true }, { node: right, ux: false, uy: true }];
-
-  // loads (N): per truss = half the deck width; panel loads at deck nodes; member self-weight half to each end
-  const p = lv.span / lv.panels, half = lv.width / 2;
-  const D = new Array(2 * nodes.length).fill(0), Lv = new Array(2 * nodes.length).fill(0);
-  for (let i = 0; i <= lv.panels; i++) {
-    const trib = (i === 0 || i === lv.panels ? p / 2 : p) * half * 1000; // m² → N per kPa
-    const k = ix.get(`d${i}`)!;
-    D[2 * k + 1] -= lv.dl * trib; Lv[2 * k + 1] -= lv.ll * trib;
-  }
+  const supports: Support[] = [{ node: ix.get("d0")!, ux: true, uy: true }, { node: ix.get(`d${lv.panels}`)!, ux: false, uy: true }];
+  const p = lv.span / lv.panels, half = lv.width / 2, dl = dlOf(lv, s.deck), nd = 2 * nodes.length;
+  const D = new Array(nd).fill(0);
+  for (let i = 0; i <= lv.panels; i++) D[2 * ix.get(`d${i}`)! + 1] -= dl * (i === 0 || i === lv.panels ? p / 2 : p) * half * 1000;
   let selfW = 0;
   tm.forEach((m, i) => { const w = secs[i].kgm * len[i] * 9.81; selfW += w; D[2 * m.a + 1] -= w / 2; D[2 * m.b + 1] -= w / 2; });
-  const loads = [
-    `Deck dead load ${lv.dl} kPa × ${half} m (half of ${lv.width} m) = ${r(lv.dl * half, 2)} kN/m per truss, applied at panel points every ${r(p, 2)} m`,
-    `Live load ${lv.ll} kPa × ${half} m = ${r(lv.ll * half, 2)} kN/m per truss`,
-    `Truss self-weight = ${r(selfW / 1000, 2)} kN (half to each end joint of every member)`,
-    `Strength combos: 1.4D and 1.2D + 1.6L. Deflection: live load only, limit L/360 = ${r((lv.span * 1000) / 360, 1)} mm`,
-  ];
-  const combos = { "1.4D": D.map((x) => 1.4 * x), "1.2D + 1.6L": D.map((x, i) => 1.2 * x + 1.6 * Lv[i]) };
-  const res: Record<string, ReturnType<typeof solveTruss>> = {};
-  for (const [k, F] of Object.entries(combos)) { res[k] = solveTruss(tn, tm, supports, F); if (!res[k].ok) return { ok: false, reason: (res[k] as any).reason }; }
-  const svc = solveTruss(tn, tm, supports, Lv);
-  if (!svc.ok) return { ok: false, reason: svc.reason };
+  const dead = solveTruss(tn, tm, supports, D);
+  if (!dead.ok) return dead;
+  const NP: number[][] = [], uP: number[][] = [];
+  for (let j = 0; j < lv.panels; j++) {
+    const F = new Array(nd).fill(0), w = (lv.ll * p * half * 1000) / 2;
+    F[2 * ix.get(`d${j}`)! + 1] -= w; F[2 * ix.get(`d${j + 1}`)! + 1] -= w;
+    const o = solveTruss(tn, tm, supports, F);
+    if (!o.ok) return o;
+    NP.push(o.N); uP.push(o.u);
+  }
+  return { ok: true, nodes, ix, mem, secs, len, ND: dead.N, uD: dead.u, NP, uP, selfW, dl };
+}
 
+const sumP = (rows: number[][], pt: Pattern, k: number) => { let t = 0; for (let j = pt.from; j < pt.to; j++) t += rows[j][k]; return t; };
+
+/** Factored combos for a code: [label, dead factor, live factor]. BS 5950 Table 2: dead 1.0 where it counteracts the crowd. */
+function combos(code: Settings["code"]): [string, number, number][] {
+  return code === "bs" ? [["1.4D + 1.6L", 1.4, 1.6], ["1.0D + 1.6L", 1.0, 1.6]] : [["1.4D", 1.4, 0], ["1.2D + 1.6L", 1.2, 1.6]];
+}
+
+export function evaluate(lv: Level, d: Design, s: Settings = defaultSettings(lv), budget = lv.budget, opts: { fullSpanOnly?: boolean } = {}): Result {
+  const an = analyse(lv, d, s);
+  if (!an.ok) return an;
+  const { nodes, ix, mem, secs, len, ND, NP, uP, selfW, dl } = an;
+  const all = patterns(lv.panels), pats = opts.fullSpanOnly ? [all[0], all[lv.panels]] : all, cmb = combos(s.code); // fullSpanOnly = pre-v2.3 rule, calibration only
+  const p = lv.span / lv.panels, half = lv.width / 2;
+  const loads = [
+    `Deck: ${DECKS[s.deck].name} ${DECKS[s.deck].dl} kPa${lv.extra ? ` + other dead load ${lv.extra} kPa` : ""} = ${dl} kPa × ${half} m (half of ${lv.width} m) = ${r(dl * half, 2)} kN/m per truss, at panel points every ${r(p, 2)} m`,
+    `Crowd (live load) ${lv.ll} kPa × ${half} m = ${r(lv.ll * half, 2)} kN/m per truss, placed on any run of panels from either end (${pats.length - 1} positions) to find each member's worst case`,
+    `Truss self-weight = ${r(selfW / 1000, 2)} kN (half to each end joint of every member)`,
+    `${CODES[s.code].name}: ${cmb.map((c) => c[0]).join(" and ")}. Deflection: crowd only, limit L/360 = ${r((lv.span * 1000) / 360, 1)} mm`,
+  ];
   const members: MemberResult[] = mem.map((m, i) => {
-    let best: MemberResult | null = null;
-    for (const [k, out] of Object.entries(res)) {
-      const Pu = (out as any).N[i] / 1000, c = checkMember(secs[i], len[i], Pu);
-      if (!best || c.ratio > best.ratio || (!c.slenderOk && best.slenderOk))
-        best = { id: m.id, sec: secs[i], L: len[i], Pu, ratio: c.ratio, mode: c.mode, phiPn: c.phiPn, slender: c.slender, slenderLimit: c.slenderLimit, slenderOk: c.slenderOk, steps: [`Governing combo: ${k}`, ...c.steps], combo: k };
+    let best: MemberResult | null = null, NtMax = 0, NcMax = 0;
+    for (const [cl, fd, fl] of cmb) for (const pt of fl ? pats : [pats[0]]) {
+      const N = (fd * ND[i] + fl * sumP(NP, pt, i)) / 1000;
+      NtMax = Math.max(NtMax, N); NcMax = Math.min(NcMax, N);
+      const c = checkMember(secs[i], len[i], N, s.code);
+      if (!best || c.ratio > best.ratio || (!c.slenderOk && best.slenderOk)) {
+        const combo = fl ? `${cl}, ${pt.label}` : cl;
+        best = { id: m.id, sec: secs[i], L: len[i], Pu: N, ratio: c.ratio, mode: c.mode, phiPn: c.phiPn, slender: c.slender, slenderLimit: c.slenderLimit, slenderOk: c.slenderOk, steps: [`Governing case: ${combo}`, ...c.steps], combo, NtMax: 0, NcMax: 0 };
+      }
     }
-    return best!;
+    // a member can be in tension for one crowd position and compression for another: check both ends of the envelope
+    if (NtMax > 0.01 && NcMax < -0.01) {
+      const other = best!.Pu >= 0 ? NcMax : NtMax, c = checkMember(secs[i], len[i], other, s.code);
+      if (!c.slenderOk && best!.slenderOk) best = { ...best!, slenderOk: false, slenderLimit: c.slenderLimit, steps: [...best!.steps, `Force reverses (${r(NcMax)} to ${r(NtMax)} kN): compression slenderness λ = ${r(c.slender, 1)} > ${c.slenderLimit}`] };
+    }
+    return { ...best!, NtMax, NcMax };
   });
-  // deflection: max vertical live-load displacement of deck joints
-  const defl = Math.max(...[...Array(lv.panels + 1).keys()].map((i) => Math.abs(svc.u[2 * ix.get(`d${i}`)! + 1])));
+  // deflection: worst crowd position, deck joints
+  let defl = 0;
+  for (const pt of pats) for (let i = 0; i <= lv.panels; i++) defl = Math.max(defl, Math.abs(sumP(uP, pt, 2 * ix.get(`d${i}`)! + 1)));
   const deflLimit = (lv.span * 1000) / 360;
   const { weight, steelCost, jointCost, cost, loose: looseN } = costOf(d); // same figure as the live cost meter
   const maxRatio = Math.max(...members.map((m) => m.ratio));
@@ -134,10 +224,33 @@ export function evaluate(lv: Level, d: Design): Result {
   if (!deflOk) issues.push(`Deflection ${r(defl)} mm > L/360 = ${r(deflLimit)} mm: make the truss deeper or the chords bigger`);
   const passed = !issues.length;
   const notes = looseN ? [`${looseN} loose joint(s) connected to nothing still cost ₱${(looseN * 2 * JOINT_COST).toLocaleString("en-PH")}: delete them to save money`] : [];
-  const stars = !passed ? 0 : cost <= 0.9 * lv.budget ? 3 : cost <= lv.budget ? 2 : 1;
-  const disp: Record<string, [number, number]> = {};
-  nodes.forEach((n, i) => (disp[n.id] = [svc.u[2 * i] / 1000, svc.u[2 * i + 1] / 1000]));
-  return { ok: true, passed, members, maxRatio, defl, deflLimit, deflOk, weight, steelCost, jointCost, cost, stars, issues, notes, disp, loads };
+  const stars = !passed ? 0 : cost <= 0.9 * budget ? 3 : cost <= budget ? 2 : 1;
+  const full = all[lv.panels], disp: Record<string, [number, number]> = {};
+  nodes.forEach((n, i) => (disp[n.id] = [sumP(uP, full, 2 * i) / 1000, sumP(uP, full, 2 * i + 1) / 1000]));
+  return { ok: true, passed, members, maxRatio, defl, deflLimit, deflOk, weight, steelCost, jointCost, cost, stars, issues, notes, disp, loads, settings: s, budget };
+}
+
+/** Frames for the crowd-crossing animation: the crowd walks on from the left, fills the span, then walks off to the right.
+ *  Each frame: member utilisation for that crowd position (worst code combo) and deck/joint displacement (dead + crowd, service, m). */
+export type Frame = { pattern: Pattern; ratio: Record<string, number>; disp: Record<string, [number, number]> };
+export function crossing(lv: Level, d: Design, s: Settings = defaultSettings(lv)): { ok: false; reason: string } | { ok: true; frames: Frame[] } {
+  const an = analyse(lv, d, s);
+  if (!an.ok) return an;
+  const { nodes, mem, secs, len, ND, NP, uD, uP } = an, n = lv.panels, cmb = combos(s.code).filter((c) => c[2] > 0);
+  const seq: Pattern[] = [{ from: 0, to: 0, label: "no crowd" }];
+  for (let k = 1; k <= n; k++) seq.push({ from: 0, to: k, label: k === n ? "crowd on the full span" : `crowd on panels 1–${k}` });
+  for (let k = 1; k <= n; k++) seq.push({ from: k, to: n, label: k === n ? "crowd has crossed" : `crowd on panels ${k + 1}–${n}` });
+  const frames = seq.map((pt) => {
+    const ratio: Record<string, number> = {}, disp: Record<string, [number, number]> = {};
+    mem.forEach((m, i) => {
+      let worst = 0;
+      for (const [, fd, fl] of cmb) worst = Math.max(worst, checkMember(secs[i], len[i], (fd * ND[i] + fl * sumP(NP, pt, i)) / 1000, s.code).ratio);
+      ratio[m.id] = worst;
+    });
+    nodes.forEach((nd, i) => (disp[nd.id] = [(uD[2 * i] + sumP(uP, pt, 2 * i)) / 1000, (uD[2 * i + 1] + sumP(uP, pt, 2 * i + 1)) / 1000]));
+    return { pattern: pt, ratio, disp };
+  });
+  return { ok: true, frames };
 }
 
 /** Starter templates (through truss above the deck). */

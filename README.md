@@ -74,4 +74,5 @@ Read-only, key-authenticated API at `/api/v1` for darkwizscroll, DARKWIZ CT and 
 | v2.0.0 | Games: Truss Builder (real NSCP/AISC member checks, ₱ cost, offline) ✅ |
 | v2.1.0 | Dashboard cards (Games, Projects, darkwizscroll), Games hub, darkwizscroll merged at /scroll, revise saved items, BOM grouped by item ✅ |
 | v2.1.1 | Truss Builder live cost meter ✅ |
+| v2.3.0 | Truss Builder: drag joints, deck types, BS 5950 option, crowd patch loading + crossing animation, re-calibrated budgets ✅ |
 | v2.2.0 | Project costing (labour, equipment, OCM, profit, VAT), client quotation (print/PDF), .xlsx workbook with formulas ✅ |

@@ -1,10 +1,11 @@
 // Truss Builder client storage: drafts and local bests in localStorage; runs queued offline and pushed to Supabase.
 "use client";
 import { createClient } from "@/lib/supabase/client";
-import type { Design } from "./index";
+import type { Design, Settings } from "./index";
 
-const QKEY = "cemp-game-queue", DKEY = (l: number) => `cemp-truss-draft-${l}`, BKEY = "cemp-truss-bests";
-export type Run = { client_id: string; game: "truss"; level: number; passed: boolean; stars: number; cost: number; weight: number; max_ratio: number; design: Design; created_at: string };
+const QKEY = "cemp-game-queue", DKEY = (l: number) => `cemp-truss-draft-${l}`, BKEY = "cemp-truss-bests", SKEY = "cemp-truss-settings";
+export type Run = { client_id: string; game: "truss"; level: number; passed: boolean; stars: number; cost: number; weight: number; max_ratio: number; design: Design; created_at: string;
+  deck?: string; code?: string; std?: boolean }; // v2.3.0: setting played; std = level default deck + AISC (only std runs set best cost)
 export type Best = { stars: number; best_cost: number | null };
 
 const get = <T,>(k: string, d: T): T => { try { const v = localStorage.getItem(k); return v ? (JSON.parse(v) as T) : d; } catch { return d; } };
@@ -14,10 +15,14 @@ export const loadDraft = (l: number) => get<Design | null>(DKEY(l), null);
 export const saveDraft = (l: number, d: Design) => set(DKEY(l), d);
 export const clearDraft = (l: number) => { try { localStorage.removeItem(DKEY(l)); } catch {} };
 
+/** v2.3.0: deck and code chosen per level (remembered on this device). */
+export const loadSettings = (l: number) => get<Record<number, Settings>>(SKEY, {})[l] ?? null;
+export const saveSettings = (l: number, st: Settings) => set(SKEY, { ...get<Record<number, Settings>>(SKEY, {}), [l]: st });
+
 export const localBests = () => get<Record<number, Best>>(BKEY, {});
 function bumpBest(r: Run) {
   const b = localBests(), cur = b[r.level] ?? { stars: 0, best_cost: null };
-  b[r.level] = { stars: Math.max(cur.stars, r.stars), best_cost: r.passed ? Math.min(cur.best_cost ?? Infinity, r.cost) : cur.best_cost };
+  b[r.level] = { stars: Math.max(cur.stars, r.stars), best_cost: r.passed && r.std !== false ? Math.min(cur.best_cost ?? Infinity, r.cost) : cur.best_cost };
   set(BKEY, b);
 }
 export function mergeBests(server: { level: number; stars: number; best_cost: number | null }[]) {

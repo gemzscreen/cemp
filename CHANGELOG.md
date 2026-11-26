@@ -2,6 +2,15 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.3.0: Truss Builder patches (2026-11-26)
+- **Drag joints** (`components/TrussBuilder.tsx`): mouse drags any free joint in Select/Joints mode; touch drags the selected joint through an HTML grab handle (`.tb-grab`, touch-action none: Chrome ignores touch-action on SVG shapes). Snaps to the grid, live cost follows, one undo step per move. Selection and the cost flash wait for the drop so nothing shifts the canvas mid-drag.
+- **Deck types** (`DECKS` in `lib/truss/levels.ts`): timber 1.0, grating 0.5, precast planks 1.8, RC slab 100 mm 2.6 kPa (typical, verify) + per-level `extra` dead load (railings 0.2 kPa on L3, water mains 3.0 kPa on L4). Defaults reproduce every level's previous dead load.
+- **BS 5950-1:2000 option** (`checkBS5950`, `pcBS`): 1.4D + 1.6L and 1.0D + 1.6L; py = Fy; LE = 1.0 L; strut curve c (Annex C, a = 5.5, E = 205 kN/mm²); tension Ae = Ke·an ≤ Ag with an = 0.85 Ag, angles via 4.6.3 (single 0.5 a2, back-to-back 0.25 a2). λ ≤ 180 kept as a game rule (the 2000 edition removed fixed limits, SCI AD 270). pc verified against an independent Python implementation.
+- **Crowd patch loading**: live load on every run of panels from either end (2n − 1 positions + none), computed by superposing one solve per panel (`analyse`); verified against a brute-force numpy solve of every case (max difference 1e-11 kN). Partial crowds raise some diagonal forces 1.5–2.8× above the full-span case.
+- **Crowd crossing animation** (`crossing()` frames): walkers on/off, interpolated deflected shape (exaggerated), members coloured by utilisation per crowd position, worst-so-far ratio.
+- **Budgets** re-calibrated per level × deck × code by `scripts/truss-calibrate.ts` (`npm run truss-calibrate`): cheapest auto-sized Warren/Pratt/Howe over all grid depths, scaled from the v2.0.0 base budgets. Table `BUDGETS` + `budgetFor()`. Standard-setting budgets: L5 ₱101k → ₱102k, L6 ₱187k → ₱191k, others unchanged.
+- **Scores**: migration `v2_3_0_game_run_settings` adds `game_runs.deck/code/std`; `game_bests.best_cost` uses standard-setting runs only; stars count in any setting. Settings remembered per level on the device.
+
 ## v2.2.0: Costing and quotations (2026-11-26)
 - **Costing engine** `lib/costing.ts` (one formula for panel, quotation and workbook): per item materials (saved unit prices × BOM quantities), labour (% of materials or crew × rate × days), equipment → direct cost; OCM and profit on direct cost; item lump sum = direct × (1 + OCM% + profit%) rounded to centavos; VAT on the sum of the rounded lump sums. Verified against an independent Python calc (₱30,468.75 + VAT ₱3,656.25 = ₱34,125.00) and after LibreOffice recalculation of the workbook.
 - **Costing panel** (`components/CostingPanel.tsx`) on the project page: live totals, cost shares, unpriced-line warning, Save → `saveCosting` (normalized server-side, removed items dropped). Stacks into cards on phones.

@@ -1,6 +1,6 @@
 {
   "name": "cemp-web-app",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "description": "CEMP Web App - Civil Engineering practices library (Codes, Tools, Conversions, Practices, Education)",
   "scripts": {
@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "check-content": "tsx scripts/check-content.ts",
     "audit": "tsx scripts/audit.ts",
-    "build-scroll": "tsx scripts/build-scroll.ts"
+    "build-scroll": "tsx scripts/build-scroll.ts",
+    "truss-calibrate": "tsx scripts/truss-calibrate.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
