@@ -2,6 +2,13 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.4.0: Critical Path Rush (2026-11-26)
+- **Engine** `lib/cpm/`: AON CPM with FS links (`topo`, `cpm`: ES/EF/LS/LF, total and free float), `planCost` (crash ₱/day + overhead/day + LDs/day late, or a hard deadline), exhaustive `optimum`, `passSteps` (worked forward/backward pass). Verified against an independent Python implementation (relaxation passes + itertools brute force): every date and float, and all three crash optima, agree.
+- **Levels** `lib/cpm/levels.ts`: 1 ground water tank, 2 septic tank (tie: two critical branches), 3 bungalow structure (find the path, 3★ in 60/90/150 s, 2★ in double); 4 steel footbridge (hard deadline day 21), 5 two-storey house finishing (deadline 25, overhead ₱3,000, LDs ₱6,000), 6 barangay road (deadline 34, overhead ₱8,000, LDs ₱15,000). `best` from `npm run cpm-optimum` (L6: 110,592 combinations).
+- **UI** `components/CpmRush.tsx` on `/games/cpm?l=N`: network diagram (columns by longest predecessor chain, barycentre ordering), Start overlay and clock, tap-to-mark, duration input, reveal with critical path in red, AON boxes (ES | id · d | EF / LS | TF | LF), Gantt with float tails, worked passes; crash mode with −/+ per activity, live CPM, cost meter (crash, overhead, LDs vs normal plan), optimum reveal. Stars: find = exact set + duration, by time; crash = optimum (3★), within 10% (2★), on time or soft-late (1★), hard deadline missed (0).
+- **Scores**: shared queue in `lib/truss/store.ts` now takes a game key (`recordRun(run, "cpm")`, bests per game). Migration `v2_4_0_game_cpm` allows `game = 'cpm'`; cost = seconds (find) or total ₱ (crash). Hub shows a Critical Path Rush level list; dashboard and hub count stars across both games.
+- LDs: fixed ₱/day in the game; note cites RA 9184 IRR Sec. 68 (at least 0.1% of the unperformed portion per day) and that RA 12009 now governs (verify).
+
 ## v2.3.0: Truss Builder patches (2026-11-26)
 - **Drag joints** (`components/TrussBuilder.tsx`): mouse drags any free joint in Select/Joints mode; touch drags the selected joint through an HTML grab handle (`.tb-grab`, touch-action none: Chrome ignores touch-action on SVG shapes). Snaps to the grid, live cost follows, one undo step per move. Selection and the cost flash wait for the drop so nothing shifts the canvas mid-drag.
 - **Deck types** (`DECKS` in `lib/truss/levels.ts`): timber 1.0, grating 0.5, precast planks 1.8, RC slab 100 mm 2.6 kPa (typical, verify) + per-level `extra` dead load (railings 0.2 kPa on L3, water mains 3.0 kPa on L4). Defaults reproduce every level's previous dead load.

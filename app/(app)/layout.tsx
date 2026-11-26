@@ -27,7 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               ))}
               <span className="menu-sep" />
               <Link href="/estimate/projects"><span className="ico"><NavIcon name="projects" size={16} /></span><span><strong>Projects</strong><small>Saved estimates and their bills of materials</small></span></Link>
-              <Link href="/games"><span className="ico"><NavIcon name="games" size={16} /></span><span><strong>Games</strong><small>Truss Builder and more to come</small></span></Link>
+              <Link href="/games"><span className="ico"><NavIcon name="games" size={16} /></span><span><strong>Games</strong><small>Truss Builder, Critical Path Rush</small></span></Link>
               <a href="/scroll"><span className="ico"><NavIcon name="scroll" size={16} /></span><span><strong>darkwizscroll</strong><small>Learn by scrolling: site knowledge cards</small></span></a>
             </NavMenu>
           </Suspense>

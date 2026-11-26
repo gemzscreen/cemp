@@ -81,3 +81,8 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 - Stored in `estimate_projects.costing` (`normalizeCosting` on read and on save; per-item config keyed by item id). Issuer in `profiles.issuer` (`normalizeIssuer`).
 - Quotation = `components/QuoteDoc.tsx` (pure markup) on `/estimate/projects/[id]/quote`; workbook = `lib/quote-xlsx.ts` (exceljs, formulas + cached results, fullCalcOnLoad).
 - The client sees item lump sums only; BOM and build-up stay internal (Gemz's choice).
+
+## Critical Path Rush (v2.4.0)
+- Engine `lib/cpm/` (pure TS): `cpm()` passes, `planCost()`, `optimum()` (exhaustive, offline only), `passSteps()`. Levels in `lib/cpm/levels.ts`; crash levels carry `best` from `npm run cpm-optimum`: re-run after editing a crash level and verify with an independent Python brute force.
+- UI `components/CpmRush.tsx` on `/games/cpm?l=N`. Runs go through `recordRun(run, "cpm")` (shared queue in `lib/truss/store.ts`, bests per game); `game_runs.cost` = seconds (find) or total ₱ (crash).
+- LDs in the game are a fixed ₱/day (verify note `LD_NOTE`); RA 12009 (NGPA, effective 13 Aug 2024; IRR Feb 2025) governs PH procurement now.

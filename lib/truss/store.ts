@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/client";
 import type { Design, Settings } from "./index";
 
 const QKEY = "cemp-game-queue", DKEY = (l: number) => `cemp-truss-draft-${l}`, BKEY = "cemp-truss-bests", SKEY = "cemp-truss-settings";
-export type Run = { client_id: string; game: "truss"; level: number; passed: boolean; stars: number; cost: number; weight: number; max_ratio: number; design: Design; created_at: string;
+export type GameKey = "truss" | "cpm";
+export type Run = { client_id: string; game: GameKey; level: number; passed: boolean; stars: number; cost: number; weight: number; max_ratio: number; design: Design; created_at: string;
   deck?: string; code?: string; std?: boolean }; // v2.3.0: setting played; std = level default deck + AISC (only std runs set best cost)
 export type Best = { stars: number; best_cost: number | null };
 
@@ -19,27 +20,28 @@ export const clearDraft = (l: number) => { try { localStorage.removeItem(DKEY(l)
 export const loadSettings = (l: number) => get<Record<number, Settings>>(SKEY, {})[l] ?? null;
 export const saveSettings = (l: number, st: Settings) => set(SKEY, { ...get<Record<number, Settings>>(SKEY, {}), [l]: st });
 
-export const localBests = () => get<Record<number, Best>>(BKEY, {});
+const bkey = (g: GameKey) => (g === "truss" ? BKEY : `cemp-${g}-bests`); // v2.4.0: bests per game
+export const localBests = (g: GameKey = "truss") => get<Record<number, Best>>(bkey(g), {});
 function bumpBest(r: Run) {
-  const b = localBests(), cur = b[r.level] ?? { stars: 0, best_cost: null };
+  const b = localBests(r.game), cur = b[r.level] ?? { stars: 0, best_cost: null };
   b[r.level] = { stars: Math.max(cur.stars, r.stars), best_cost: r.passed && r.std !== false ? Math.min(cur.best_cost ?? Infinity, r.cost) : cur.best_cost };
-  set(BKEY, b);
+  set(bkey(r.game), b);
 }
-export function mergeBests(server: { level: number; stars: number; best_cost: number | null }[]) {
-  const b = localBests();
+export function mergeBests(server: { level: number; stars: number; best_cost: number | null }[], g: GameKey = "truss") {
+  const b = localBests(g);
   for (const s of server) {
     const cur = b[s.level] ?? { stars: 0, best_cost: null };
     const costs = [cur.best_cost, s.best_cost].filter((x): x is number => x != null);
     b[s.level] = { stars: Math.max(cur.stars, s.stars), best_cost: costs.length ? Math.min(...costs) : null };
   }
-  set(BKEY, b);
+  set(bkey(g), b);
   return b;
 }
 
 export const pending = () => get<Run[]>(QKEY, []).length;
 
-export function recordRun(r: Omit<Run, "client_id" | "created_at" | "game">) {
-  const run: Run = { ...r, game: "truss", client_id: (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`), created_at: new Date().toISOString() };
+export function recordRun(r: Omit<Run, "client_id" | "created_at" | "game">, game: GameKey = "truss") {
+  const run: Run = { ...r, game, client_id: (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`), created_at: new Date().toISOString() };
   set(QKEY, [...get<Run[]>(QKEY, []), run].slice(-200));
   bumpBest(run);
   return flush();
