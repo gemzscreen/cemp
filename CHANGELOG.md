@@ -2,6 +2,14 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.2.0: Costing and quotations (2026-11-26)
+- **Costing engine** `lib/costing.ts` (one formula for panel, quotation and workbook): per item materials (saved unit prices × BOM quantities), labour (% of materials or crew × rate × days), equipment → direct cost; OCM and profit on direct cost; item lump sum = direct × (1 + OCM% + profit%) rounded to centavos; VAT on the sum of the rounded lump sums. Verified against an independent Python calc (₱30,468.75 + VAT ₱3,656.25 = ₱34,125.00) and after LibreOffice recalculation of the workbook.
+- **Costing panel** (`components/CostingPanel.tsx`) on the project page: live totals, cost shares, unpriced-line warning, Save → `saveCosting` (normalized server-side, removed items dropped). Stacks into cards on phones.
+- **Quotation** `/estimate/projects/[id]/quote` (`components/QuoteDoc.tsx` + `QuoteEditor.tsx`): issuer header and logo, To/Project/Location, item lump sums (1 lot each), VAT, total, amount in words (`pesoWords`), payment terms, T&C, validity date, Prepared by / Conforme. Default number `Q-YYMMDD-XXXX`, date in Asia/Manila. Prints alone on A4.
+- **Workbook** `/estimate/projects/[id]/xlsx` (`lib/quote-xlsx.ts`, exceljs): Quotation → Cost build-up → BOM with live formulas (SUMIF from BOM, IF for labour method, ROUND for lump sums) plus cached results; blue input cells; unpriced cells yellow.
+- **Issuer details** on /account (`components/IssuerForm.tsx`, `lib/issuer.ts`): company, signatory, title, PRC nos., address, phone, e-mail, TIN, logo (resized on device).
+- DB: migration `v2_2_0_costing_quotation` adds `estimate_projects.costing` and `profiles.issuer` (jsonb, size-checked; existing RLS covers both).
+
 ## v2.1.1: Truss Builder live cost meter (2026-11-25)
 - **Live cost:** `costOf(design)` in `lib/truss/index.ts` is the one cost formula, used by the meter and by `evaluate`, so the live figure always equals the load-test cost. The meter at the top of the canvas updates on every joint, member, section change, delete, undo and template, and flashes the change (+₱ / −₱).
 - **Budget bar** with 3★ (≤ 90%) and 2★ (budget) marks; green → amber → red; ₱ left / ₱ over; breakdown of steel (kg, ₱) and joints (count × ₱1,200 for both trusses).

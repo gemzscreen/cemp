@@ -4,6 +4,8 @@ import { getMe } from "@/lib/auth";
 import { CALCS } from "@/lib/calc";
 import { aggregate, groupByItem, showQty } from "@/lib/bom";
 import BomTable from "@/components/BomTable";
+import CostingPanel from "@/components/CostingPanel";
+import { normalizeCosting } from "@/lib/costing";
 import SubmitButton from "@/components/SubmitButton";
 import PrintButton from "@/components/PrintButton";
 import { updateProject, removeItem, deleteProject, type EstItem } from "../../actions";
@@ -33,7 +35,9 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
           <p className="sub" style={{ margin: 0 }}>{[p.client && `Client: ${p.client}`, p.location && `Location: ${p.location}`, `${items.length} item(s)`, `updated ${new Date(p.updated_at).toLocaleString()}`].filter(Boolean).join(" · ")}</p>
         </div>
         <div className="est-actions no-print">
-          <a className="btn ghost" href={`/estimate/projects/${id}/csv`}>CSV (Excel)</a>
+          <Link className="btn" href={`/estimate/projects/${id}/quote`} style={{ width: "auto", margin: 0 }}>Quotation</Link>
+          <a className="btn ghost" href={`/estimate/projects/${id}/xlsx`}>Excel (.xlsx)</a>
+          <a className="btn ghost" href={`/estimate/projects/${id}/csv`}>CSV</a>
           <PrintButton />
         </div>
       </div>
@@ -45,7 +49,7 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
         <section className="panel" style={{ marginBottom: "1rem" }}>
           <h2>Bill of materials <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>by item</span></h2>
           <BomTable groups={groups} combined={bom} prices={prices} projectId={id} calcTitles={calcTitles} />
-          <p className="fine">Countable items are rounded up. Quantities exclude labor, equipment, OCM, profit and VAT: use the Cost build-up tool for unit prices.</p>
+          <p className="fine">Countable items are rounded up. Materials only: labour, equipment, OCM, profit and VAT are added in Costing below.</p>
         </section>
 
         <section className="panel no-print" style={{ marginBottom: "1rem" }}>
@@ -58,6 +62,8 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
           <SubmitButton style={{ width: "auto" }} pending="Saving…">Save prices &amp; details</SubmitButton>
         </section>
       </form>
+
+      <CostingPanel projectId={id} items={items} prices={prices} initial={normalizeCosting(p.costing)} />
 
       <section className="panel" style={{ marginBottom: "1rem" }}>
         <h2>Items ({items.length}) <span className="muted no-print" style={{ fontWeight: 400, fontSize: ".8rem" }}>click an item to revise it</span></h2>

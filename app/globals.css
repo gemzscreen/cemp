@@ -658,3 +658,82 @@ a.item-link:hover { color: var(--safe); }
 .tb-meminfo { font-size: .85rem; background: #fdf6dd; border: 1px solid #ecd58a; border-radius: 8px; padding: .35rem .6rem; justify-content: space-between; }
 .tb-notes { color: #8a6400; margin: .2rem 0 .6rem; padding-left: 1.1rem; font-size: .86rem; }
 @media (max-width: 600px) { .tm-cost { font-size: 1.2rem; } .tm-sub { gap: .1rem .7rem; font-size: .72rem; } }
+
+/* ===== v2.2.0: costing, issuer, quotation ===== */
+.msg.warn { background: #fff7dc; border: 1px solid #ecd58a; color: #6b4e00; }
+.warn-txt { color: #a86b00; }
+.ok-txt { color: var(--safe); }
+.costing { margin-bottom: 1rem; }
+.cost-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: .6rem; }
+.cost-tbl td { vertical-align: middle; }
+.cost-tbl .lab-cell { white-space: nowrap; }
+.cost-tbl .lab-cell select { font: inherit; font-size: .82rem; padding: .25rem .3rem; border: 1px solid var(--line); border-radius: 6px; margin-right: .35rem; }
+.lab-in { display: inline-flex; align-items: center; gap: .2rem; font-size: .82rem; color: var(--muted); }
+.lab-in input, .pct-in input { width: 3.6rem; padding: .25rem .35rem; border: 1px solid var(--line); border-radius: 6px; font: inherit; font-size: .85rem; text-align: right; }
+.lab-in input.w-rate { width: 4.6rem; }
+.cost-bottom { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.2rem; margin-top: 1rem; align-items: start; }
+.cost-marks { display: grid; gap: .5rem; }
+.pct-in { display: inline-flex; align-items: center; gap: .3rem; }
+.cost-sum td { padding: .3rem .5rem; }
+.cost-sum tr.grand td { border-top: 2px solid var(--navy); font-size: 1.02rem; background: #fdf3cf; }
+.cost-save { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; margin-top: .8rem; }
+@media (max-width: 760px) { .cost-bottom { grid-template-columns: minmax(0, 1fr); } }
+
+.issuer-logo { display: flex; align-items: center; gap: .8rem; margin: .6rem 0 .8rem; }
+.issuer-logo img { max-height: 60px; max-width: 200px; border: 1px solid var(--line); border-radius: 6px; padding: 4px; background: #fff; }
+
+.quote-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .6rem; margin-bottom: .8rem; }
+.quote-edit { margin-bottom: 1rem; }
+.quote-edit summary { cursor: pointer; }
+.quote-edit textarea { width: 100%; font: inherit; }
+.quote-doc { background: #fff; color: #111; max-width: 820px; margin: 0 auto 2rem; padding: 2.2rem 2.4rem; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 2px 10px rgba(20,30,45,.06); font-size: .92rem; line-height: 1.45; }
+.q-head { display: flex; justify-content: space-between; gap: 1.5rem; border-bottom: 3px solid var(--navy); padding-bottom: 1rem; margin-bottom: 1rem; }
+.q-from { display: flex; gap: .9rem; align-items: flex-start; }
+.q-logo { max-height: 64px; max-width: 160px; object-fit: contain; }
+.q-company { font-size: 1.25rem; font-weight: 800; color: var(--navy); }
+.q-meta { text-align: right; }
+.q-title { font-size: 1.5rem; font-weight: 800; letter-spacing: .08em; color: var(--navy); }
+.q-meta table { margin-left: auto; border-collapse: collapse; }
+.q-meta td { padding: .05rem 0 .05rem .7rem; }
+.q-meta td:first-child { color: #6b7785; }
+.q-to { display: grid; gap: .15rem; margin: 0 0 .9rem; }
+.q-lbl { display: inline-block; min-width: 5.5rem; color: #6b7785; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+.q-items { width: 100%; border-collapse: collapse; margin: .6rem 0; }
+.q-items th { background: var(--navy); color: #fff; text-align: left; padding: .45rem .55rem; font-size: .82rem; }
+.q-items td { padding: .45rem .55rem; border-bottom: 1px solid #e3e7ec; vertical-align: top; }
+.q-items .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.q-items tfoot td { border-bottom: 0; padding: .3rem .55rem; }
+.q-items tr.q-total td { font-weight: 800; font-size: 1.02rem; border-top: 2px solid var(--navy); background: #fdf3cf; }
+.q-words { font-size: .85rem; margin: .4rem 0 1rem; }
+.q-block h3 { font-size: .9rem; margin: .9rem 0 .2rem; color: var(--navy); }
+.q-block p { margin: 0; white-space: pre-wrap; }
+.q-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 2.4rem; }
+.q-line { border-bottom: 1px solid #333; height: 2.6rem; margin-bottom: .3rem; }
+@media (max-width: 640px) { .quote-doc { padding: 1.2rem 1rem; } .q-head { flex-direction: column; } .q-meta { text-align: left; } .q-meta table { margin-left: 0; } .q-sign { grid-template-columns: 1fr; gap: 1.4rem; } }
+@media print {
+  .quote-doc { border: 0; box-shadow: none; padding: 0; max-width: none; margin: 0; font-size: 10.5pt; }
+  .q-items th, .q-items tr.q-total td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .q-sign, .q-items tr { break-inside: avoid; }
+  body:has(.quote-doc) footer.foot { display: none !important; }
+}
+.cost-tbl { font-size: .86rem; }
+.cost-tbl th, .cost-tbl td { padding-left: .4rem; padding-right: .4rem; }
+.cost-tbl td.num { white-space: nowrap; font-size: .82rem; }
+.cost-tbl input.price.eq { width: 5.6rem; }
+.lab-in input { width: 2.8rem; }
+.lab-in input.w-rate { width: 3.9rem; }
+.costing .est-actions .btn { white-space: nowrap; }
+@media (max-width: 640px) {
+  .costing .tbl-wrap { overflow: visible; background: none; box-shadow: none; }
+  .cost-tbl, .cost-tbl tbody { display: block; }
+  .cost-tbl thead { display: none; }
+  .cost-tbl tr { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem .8rem; padding: .7rem .2rem; border-bottom: 1px solid var(--line); }
+  .cost-tbl td { border: 0 !important; padding: 0 !important; text-align: left !important; }
+  .cost-tbl td.c-no { display: none; }
+  .cost-tbl td.c-item { grid-column: 1 / -1; font-size: .95rem; }
+  .cost-tbl td.lab-cell { grid-column: 1 / -1; white-space: normal; }
+  .cost-tbl td.m-hide { display: none; }
+  .cost-tbl td[data-l]::before { content: attr(data-l); display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .cost-tbl td.lab-cell::before { margin-bottom: .2rem; }
+  .cost-tbl tr.cost-tot { background: #f3f8fd; border-radius: 8px; padding: .7rem .6rem; }
+}

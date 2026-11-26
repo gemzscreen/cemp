@@ -74,3 +74,9 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 - Projects: items are revised via `/estimate/<calc>?p=<project>&i=<item>` → `updateItem` (server recompute, same id/position). BOM is grouped by item (`groupByItem` + `components/BomTable.tsx`); prices stay one per material key (`price:<key>`), shared by every item.
 - darkwizscroll: source `content/scroll/darkwizscroll.html` (edit this, never `lib/scroll/html.ts`, which `npm run build-scroll`/prebuild generates). Served at `/scroll` behind login. Its `window.claude.use` shim talks to `/api/scroll` → table `scroll_docs` (collection cards|votes|ideas, one doc per user) + `scroll_names()`. The old claude.ai artifact (slug 72825dbc-…) is now legacy.
 - MathText: scanner, not regex (see the header comment). Keep the test cases in mind: `$a$$b$`, `$5 and $10`, `\$`, `$$…$$` on its own line.
+
+## Costing & quotations (v2.2.0)
+- `lib/costing.ts` is the only cost formula (panel, quotation page, .xlsx). Lump sum per item = direct × (1 + OCM% + profit%), rounded; VAT on the sum of rounded lump sums. Change it there and re-verify against Python + a LibreOffice recalculation of the workbook.
+- Stored in `estimate_projects.costing` (`normalizeCosting` on read and on save; per-item config keyed by item id). Issuer in `profiles.issuer` (`normalizeIssuer`).
+- Quotation = `components/QuoteDoc.tsx` (pure markup) on `/estimate/projects/[id]/quote`; workbook = `lib/quote-xlsx.ts` (exceljs, formulas + cached results, fullCalcOnLoad).
+- The client sees item lump sums only; BOM and build-up stay internal (Gemz's choice).

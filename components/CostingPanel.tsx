@@ -1,0 +1,108 @@
+"use client";
+// v2.2.0: project costing on top of the BOM. Labour per item (% of materials or crew × rate × days),
+// equipment per item, then OCM, profit and VAT on the project. Live totals; Save stores it in estimate_projects.costing.
+import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import type { Material } from "@/lib/calc";
+import { computeCost, DEFAULT_ITEM, peso, type Costing, type ItemCosting } from "@/lib/costing";
+import { saveCosting } from "@/app/(app)/estimate/actions";
+
+type Item = { id: string; label: string; calcKey: string; materials: Material[] };
+
+export default function CostingPanel({ projectId, items, prices, initial }: { projectId: string; items: Item[]; prices: Record<string, number>; initial: Costing }) {
+  const [c, setC] = useState<Costing>(initial);
+  const [dirty, setDirty] = useState(false);
+  const [msg, setMsg] = useState<{ ok?: boolean; error?: string } | null>(null);
+  const [pending, start] = useTransition();
+  const r = useMemo(() => computeCost(items, prices, c), [items, prices, c]);
+
+  const setItem = (id: string, patch: Partial<ItemCosting>) => { setC((x) => ({ ...x, items: { ...x.items, [id]: { ...(x.items[id] ?? DEFAULT_ITEM), ...patch } } })); setDirty(true); setMsg(null); };
+  const setTop = (k: "ocm" | "profit" | "vat", v: string) => { setC((x) => ({ ...x, [k]: Math.max(0, Number(v) || 0) })); setDirty(true); setMsg(null); };
+  const nf = (v: string) => Math.max(0, Number(v) || 0);
+  const save = () => start(async () => { const res = await saveCosting(projectId, c); setMsg(res); if (res.ok) setDirty(false); });
+
+  if (!items.length) return null;
+  const pct = (x: number) => (r.direct > 0 ? `${((x / r.direct) * 100).toFixed(1)}%` : "–");
+
+  return (
+    <section className="panel costing no-print" id="costing">
+      <div className="cost-head">
+        <div>
+          <h2 style={{ margin: 0 }}>Costing</h2>
+          <p className="fine" style={{ margin: ".2rem 0 0" }}>Materials come from the saved unit prices above. Add labour and equipment per item, then the markups.</p>
+        </div>
+        <div className="est-actions">
+          <Link className="btn ghost" href={`/estimate/projects/${projectId}/quote`}>Quotation →</Link>
+          <a className="btn ghost" href={`/estimate/projects/${projectId}/xlsx`}>Excel (.xlsx)</a>
+        </div>
+      </div>
+
+      {r.unpriced > 0 && <div className="msg warn" style={{ margin: ".6rem 0" }}>{r.unpriced} material line{r.unpriced > 1 ? "s have" : " has"} no unit price yet, so {r.unpriced > 1 ? "they count" : "it counts"} as ₱0. Enter prices in the bill of materials and click Save prices.</div>}
+
+      <div className="tbl-wrap"><table className="tbl compact cost-tbl">
+        <thead><tr><th>#</th><th>Item</th><th className="num">Materials</th><th>Labour</th><th className="num">Labour ₱</th><th className="num">Equipment ₱</th><th className="num">Direct cost</th><th className="num">Quoted</th></tr></thead>
+        <tbody>
+          {r.items.map((it) => {
+            const cfg = it.cfg;
+            return (
+              <tr key={it.id}>
+                <td className="c-no">{it.no}</td>
+                <td className="c-item"><strong>{it.label}</strong>{it.unpriced > 0 && <span className="fine warn-txt"> · {it.unpriced} unpriced</span>}</td>
+                <td className="num" data-l="Materials">{peso(it.materials)}</td>
+                <td className="lab-cell" data-l="Labour">
+                  <select value={cfg.mode} onChange={(e) => setItem(it.id, { mode: e.target.value as ItemCosting["mode"] })} aria-label={`Labour method for ${it.label}`} title="% of materials, or crew × daily rate × days">
+                    <option value="pct">% of mat.</option>
+                    <option value="crew">Crew-days</option>
+                  </select>
+                  {cfg.mode === "pct" ? (
+                    <span className="lab-in"><input inputMode="decimal" value={cfg.pct} onChange={(e) => setItem(it.id, { pct: nf(e.target.value) })} aria-label="Labour percent" /> %</span>
+                  ) : (
+                    <span className="lab-in">
+                      <input inputMode="numeric" value={cfg.crew} onChange={(e) => setItem(it.id, { crew: nf(e.target.value) })} aria-label="Crew size" title="Workers" /> ×
+                      ₱<input inputMode="decimal" value={cfg.rate} onChange={(e) => setItem(it.id, { rate: nf(e.target.value) })} aria-label="Daily rate" title="Average daily rate incl. benefits" className="w-rate" /> ×
+                      <input inputMode="decimal" value={cfg.days} onChange={(e) => setItem(it.id, { days: nf(e.target.value) })} aria-label="Days" title="Days" /> d
+                    </span>
+                  )}
+                </td>
+                <td className="num" data-l="Labour ₱">{peso(it.labour)}</td>
+                <td className="num" data-l="Equipment ₱"><input className="price eq" inputMode="decimal" value={cfg.equip} onChange={(e) => setItem(it.id, { equip: nf(e.target.value) })} aria-label={`Equipment for ${it.label}`} /></td>
+                <td className="num" data-l="Direct cost">{peso(it.direct)}</td>
+                <td className="num" data-l="Quoted"><strong>{peso(it.lump)}</strong></td>
+              </tr>
+            );
+          })}
+          <tr className="hl cost-tot"><td className="c-no" /><td className="c-item"><strong>Totals</strong></td><td className="num" data-l="Materials">{peso(r.materials)}</td><td className="m-hide" /><td className="num" data-l="Labour ₱">{peso(r.labour)}</td><td className="num" data-l="Equipment ₱">{peso(r.equip)}</td><td className="num" data-l="Direct cost"><strong>{peso(r.direct)}</strong></td><td className="num" data-l="Quoted"><strong>{peso(r.subtotal)}</strong></td></tr>
+        </tbody>
+      </table></div>
+
+      <div className="cost-bottom">
+        <div className="cost-marks">
+          <label className="fld"><span>OCM (overhead, contingencies, misc.)</span><span className="pct-in"><input inputMode="decimal" value={c.ocm} onChange={(e) => setTop("ocm", e.target.value)} /> %</span></label>
+          <label className="fld"><span>Profit</span><span className="pct-in"><input inputMode="decimal" value={c.profit} onChange={(e) => setTop("profit", e.target.value)} /> %</span></label>
+          <label className="fld"><span>VAT (0 if not VAT-registered)</span><span className="pct-in"><input inputMode="decimal" value={c.vat} onChange={(e) => setTop("vat", e.target.value)} /> %</span></label>
+          <p className="fine" style={{ margin: 0 }}>OCM and profit are on the direct cost; VAT on direct cost + OCM + profit. For government work, use the OCM and profit brackets in the current DPWH order.</p>
+        </div>
+        <table className="tbl compact cost-sum">
+          <tbody>
+            <tr><td>Materials</td><td className="num">{peso(r.materials)}</td><td className="num fine">{pct(r.materials)}</td></tr>
+            <tr><td>Labour</td><td className="num">{peso(r.labour)}</td><td className="num fine">{pct(r.labour)}</td></tr>
+            <tr><td>Equipment</td><td className="num">{peso(r.equip)}</td><td className="num fine">{pct(r.equip)}</td></tr>
+            <tr className="hl"><td>Direct cost</td><td className="num">{peso(r.direct)}</td><td /></tr>
+            <tr><td>OCM {c.ocm}%</td><td className="num">{peso(r.ocm)}</td><td /></tr>
+            <tr><td>Profit {c.profit}%</td><td className="num">{peso(r.profit)}</td><td /></tr>
+            <tr className="hl"><td>Contract price before VAT</td><td className="num">{peso(r.subtotal)}</td><td /></tr>
+            {c.vat > 0 && <tr><td>VAT {c.vat}%</td><td className="num">{peso(r.vat)}</td><td /></tr>}
+            <tr className="grand"><td><strong>Total contract price</strong></td><td className="num"><strong>{peso(r.total)}</strong></td><td /></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="cost-save">
+        <button type="button" className="btn" style={{ width: "auto" }} disabled={pending || !dirty} onClick={save}>{pending ? "Saving…" : dirty ? "Save costing" : "Saved"}</button>
+        {dirty && <span className="fine">Unsaved changes</span>}
+        {msg?.error && <span className="msg err">{msg.error}</span>}
+        {msg?.ok && <span className="fine ok-txt">Costing saved.</span>}
+      </div>
+    </section>
+  );
+}

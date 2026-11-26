@@ -1,6 +1,6 @@
 {
   "name": "cemp-web-app",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "private": true,
   "description": "CEMP Web App - Civil Engineering practices library (Codes, Tools, Conversions, Practices, Education)",
   "scripts": {
@@ -17,6 +17,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.1",
+    "exceljs": "^4.4.0",
     "katex": "^0.16.47",
     "next": "^15.5.29",
     "react": "^19.3.1",

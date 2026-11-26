@@ -105,3 +105,20 @@ export async function deleteProject(formData: FormData) {
   revalidatePath("/estimate/projects");
   redirect("/estimate/projects?ok=deleted");
 }
+
+/** v2.2.0: save labour/equipment per item, markups and quotation details. Normalized on the server. */
+export async function saveCosting(projectId: string, raw: unknown): Promise<{ ok?: boolean; error?: string }> {
+  const { normalizeCosting } = await import("@/lib/costing");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Sign in again." };
+  const { data: proj } = await supabase.from("estimate_projects").select("items").eq("id", projectId).single();
+  if (!proj) return { error: "Project not found." };
+  const costing = normalizeCosting(raw);
+  const ids = new Set(((proj.items as EstItem[]) ?? []).map((i) => i.id));
+  for (const id of Object.keys(costing.items)) if (!ids.has(id)) delete costing.items[id]; // drop removed items
+  const { error } = await supabase.from("estimate_projects").update({ costing }).eq("id", projectId);
+  if (error) return { error: error.message };
+  revalidatePath(`/estimate/projects/${projectId}`); revalidatePath(`/estimate/projects/${projectId}/quote`);
+  return { ok: true };
+}

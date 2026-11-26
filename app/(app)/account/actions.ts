@@ -46,3 +46,19 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+export type IssuerState = { ok?: boolean; error?: string };
+/** v2.2.0: quotation issuer details (company, signatory, licences, contact, logo). Own row only (RLS). */
+export async function updateIssuer(_prev: IssuerState, formData: FormData): Promise<IssuerState> {
+  const { normalizeIssuer } = await import("@/lib/issuer");
+  const raw = Object.fromEntries(formData.entries());
+  if (raw.logo && !/^data:image\/(png|jpeg|webp);base64,/.test(String(raw.logo))) return { error: "Logo must be a PNG, JPEG or WebP image." };
+  if (String(raw.logo ?? "").length > 200000) return { error: "Logo is too large: choose a smaller image." };
+  const issuer = normalizeIssuer({ ...raw, logo: formData.get("remove_logo") === "1" ? "" : raw.logo });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Your session expired. Sign in again." };
+  const { error } = await supabase.from("profiles").update({ issuer }).eq("id", user.id);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
