@@ -10,6 +10,7 @@ import NavIcon from "@/components/NavIcon";
 import { GAMES } from "@/lib/games";
 import { LEVELS } from "@/lib/truss/levels";
 import { CPM_LEVELS } from "@/lib/cpm/levels";
+import { BEAM_LEVELS } from "@/lib/beam/levels";
 
 
 
@@ -71,8 +72,8 @@ export default async function Dashboard() {
         <Link href="/games" className="tile dark">
           <span className="icon"><NavIcon name="games" size={22} /></span>
           <span className="name">Games</span>
-          <span className="blurb">Truss Builder and Critical Path Rush: real code checks, CPM and crashing, ₱ budgets and stars. Plays offline.</span>
-          <span className="meta"><span>{GAMES.filter((g) => g.live).length} live · ★ {stars} / {(LEVELS.length + CPM_LEVELS.length) * 3}</span></span>
+          <span className="blurb">Truss Builder, Critical Path Rush and Beam Optimizer: real code checks, CPM and crashing, ₱ budgets and stars. Plays offline.</span>
+          <span className="meta"><span>{GAMES.filter((g) => g.live).length} live · ★ {stars} / {(LEVELS.length + CPM_LEVELS.length + BEAM_LEVELS.length) * 3}</span></span>
         </Link>
         <Link href="/estimate/projects" className="tile dark">
           <span className="icon"><NavIcon name="projects" size={22} /></span>

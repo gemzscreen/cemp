@@ -95,3 +95,8 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 ## darkwizscroll × CEMP (v2.6.0)
 - Practice entries reach darkwizscroll only through `/api/scroll/cemp` → `toCard()` (`lib/scroll/cemp.ts`). Never copy Practice content into the scroll HTML: CEMP is the single source of truth.
 - In the scroll HTML, everything lives inside one block scope: new functions that touch its `let` state (e.g. `cempCards`, `S`) must be defined inside that block, before its closing `}`.
+
+## Beam Optimizer (v2.7.0)
+- Engine `lib/beam/` (pure TS): `evaluate` (prop h ≤ 3b, headroom, bar fit, bending, shear, deflection), `costOf`, `optimum` (exhaustive), `starsOf`/`budgetOf`. Assumptions in the header comment and `ASSUME_NOTE`; prices `PRICES` + `PRICE_NOTE` (verify).
+- Levels `lib/beam/levels.ts`; `BEST` comes from `npm run beam-optimum`: re-run and paste whenever loads, options, prices or checks change, and verify with an independent Python brute force.
+- UI `components/BeamOptimizer.tsx` on `/games/beam?l=N`; runs via `recordRun(run, "beam")` with `std: true`.

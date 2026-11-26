@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Design, Settings } from "./index";
 
 const QKEY = "cemp-game-queue", DKEY = (l: number) => `cemp-truss-draft-${l}`, BKEY = "cemp-truss-bests", SKEY = "cemp-truss-settings";
-export type GameKey = "truss" | "cpm";
+export type GameKey = "truss" | "cpm" | "beam";
 export type Run = { client_id: string; game: GameKey; level: number; passed: boolean; stars: number; cost: number; weight: number; max_ratio: number; design: Design; created_at: string;
   deck?: string; code?: string; std?: boolean }; // v2.3.0: setting played; std = level default deck + AISC (only std runs set best cost)
 export type Best = { stars: number; best_cost: number | null };

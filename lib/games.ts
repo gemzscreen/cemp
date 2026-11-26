@@ -6,10 +6,11 @@ export const GAMES: Game[] = [
     blurb: "Span the gap with steel angles, tubes and pipes. AISC 360-10 / NSCP 2015 member checks, ₱ budget, stars." },
   { slug: "cpm", name: "Critical Path Rush", icon: "cpm", live: true, href: "/games/cpm",
     blurb: "Find the critical path against the clock, then crash a programme to the deadline at the lowest cost." },
+  { slug: "beam", name: "Beam Optimizer", icon: "beam", live: true, href: "/games/beam",
+    blurb: "Size the cheapest RC beam that passes NSCP 2015 bending, shear, bar fit and deflection. Six levels, ₱ budget, stars." },
   { slug: "splice", name: "Splice Zone", icon: "splice", live: false, blurb: "Place lap splices where the code allows them in beams and columns." },
   { slug: "pipe", name: "Pipe Puzzle", icon: "pipe", live: false, blurb: "Route supply and drainage lines with the right sizes, slopes and fittings." },
   { slug: "qty", name: "Guess the Quantity", icon: "qty", live: false, blurb: "Estimate cement, CHB and rebar by eye, then see how close you got." },
 
   { slug: "hazard", name: "Spot the Hazard", icon: "hazard", live: false, blurb: "Find the unsafe acts and conditions on a site scene before time runs out." },
-  { slug: "beam", name: "Beam Optimizer", icon: "beam", live: false, blurb: "Size the lightest beam that passes bending, shear and deflection." },
 ];
