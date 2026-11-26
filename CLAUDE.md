@@ -91,3 +91,7 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 - `user_rates` (one row per user): `labour` (trade → ₱/day incl. benefits, defaults in `lib/rates.ts` TRADES, wage basis in WAGE_NOTE: re-check the Region X wage order each year) and `materials` price list. Actions in `app/(app)/estimate/rates/actions.ts`.
 - Trade-crew labour presets in `lib/labour.ts` (one per estimator; outputs are "verify" defaults). `computeCost` takes labour rates; pass `normalizeRates(...).labour` everywhere it is called (project page, quote, xlsx, issue).
 - Quotations: always build through `buildQuote` (`lib/quote.ts`). Issued revisions are frozen snapshots in `quote_revisions` (no update policy); never re-compute an issued revision.
+
+## darkwizscroll × CEMP (v2.6.0)
+- Practice entries reach darkwizscroll only through `/api/scroll/cemp` → `toCard()` (`lib/scroll/cemp.ts`). Never copy Practice content into the scroll HTML: CEMP is the single source of truth.
+- In the scroll HTML, everything lives inside one block scope: new functions that touch its `let` state (e.g. `cempCards`, `S`) must be defined inside that block, before its closing `}`.

@@ -2,6 +2,11 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.6.0: darkwizscroll × CEMP Practice cards (2026-11-26)
+- **API** `/api/scroll/cemp` (session auth): Practice entries → cards via `toCard` (`lib/scroll/cemp.ts`): summary, Do (safe sections, ≤5), Avoid (≤4), first explanatory note, clause refs (≤4), diagram rendered to SVG on the server (`components/Diagram`). Published only by default; `?review=1` adds entries in review, honoured only for editors/admin (RLS `entries_read` enforces it anyway).
+- **darkwizscroll** (`content/scroll/darkwizscroll.html`): new card type `practice` (badge Verified in CEMP / In review, diagram, Do/Avoid, refs, Open in CEMP), category **CEMP Practices** (CP), counted for dwell sparks, saved-board summary, library search over summary/avoid/refs. Cards cached in localStorage `darkwizscroll.cemp` (offline). More → **CEMP cards**: Verified only / Include in review (editors), stored as `S.cempReview`. Practice cards top-align and scroll inside the card when taller than the screen (auto margins instead of flex centring); on phones the diagram caps at 24vh and lists at 3 items.
+- Tested with real Practice entries rendered through the same `toCard` + diagram path, served to the real page (desktop + 390 px).
+
 ## v2.5.0: Costing extras (2026-11-26)
 - **My rates** `/estimate/rates` (`lib/rates.ts`, table `user_rates`: one row per user, RLS owner): labour rates for 10 trades (defaults: helper ₱600/day = Region X minimum ₱500 Category I from 1 May 2026 + ~20% benefits; skilled ₱700–950, verify) and a material price list `{ key: { name, unit, price, note, at } }`. Project BOM buttons: **Fill blanks from my price list** (never overwrites) and **Save prices to my list** (uses the prices as typed and saves them to the project too).
 - **Trade-crew labour** (`lib/labour.ts`): preset per estimator (work quantity from the calculator result or inputs, crew, output per crew-day, basis). Labour = ceil-to-½-day(qty ÷ output) × Σ(workers × rate). New costing mode `trade` with an output override (`ItemCosting.out`); `computeCost(..., labourRates)`; xlsx writes method `trade` with crew day cost × crew-days so the formula stays live. Verified against Python and a LibreOffice recalculation (₱39,249.00).
