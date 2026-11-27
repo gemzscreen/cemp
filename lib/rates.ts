@@ -26,19 +26,26 @@ export const CURRENCIES: Record<Currency, { sym: string; name: string; unit: [st
   PHP: { sym: "₱", name: "Philippine peso (₱)", unit: ["Peso", "Pesos"] },
   BND: { sym: "B$", name: "Brunei dollar (B$)", unit: ["Brunei Dollar", "Brunei Dollars"] },
 };
-export type RateSet = { id: string; name: string; currency: Currency; vat: boolean; labour: Record<Trade, number>; note?: string };
+// v2.10.0: every rate set also owns its material price list (prices are in the set's currency).
+export type RateSet = { id: string; name: string; currency: Currency; vat: boolean; labour: Record<Trade, number>; note?: string; materials: Record<string, MatRate> };
+/** `materials` mirrors the first set (older code paths); use `rateSetOf(r, id).materials` for a project. */
 export type Rates = { materials: Record<string, MatRate>; labour: Record<Trade, number>; sets: RateSet[] };
 export const DEFAULT_SET_ID = "ph-r10";
 
-const num = (v: unknown) => { const x = Number(v); return Number.isFinite(x) && x >= 0 ? x : null; };
-export function normalizeRates(row: { materials?: unknown; labour?: unknown; sets?: unknown } | null | undefined): Rates {
-  const labour = Object.fromEntries((Object.keys(TRADES) as Trade[]).map((t) => [t, num((row?.labour as Record<string, unknown> | undefined)?.[t]) ?? TRADES[t].rate])) as Record<Trade, number>;
+export function normalizeMaterials(raw: unknown): Record<string, MatRate> {
   const materials: Record<string, MatRate> = {};
-  for (const [k, v] of Object.entries((row?.materials ?? {}) as Record<string, Partial<MatRate>>)) {
+  if (!raw || typeof raw !== "object") return materials;
+  for (const [k, v] of Object.entries(raw as Record<string, Partial<MatRate>>)) {
     const p = num(v?.price);
     if (p == null || !/^[\w.\-]{1,60}$/.test(k)) continue;
     materials[k] = { name: String(v?.name ?? k).slice(0, 120), unit: String(v?.unit ?? "").slice(0, 20), price: p, note: v?.note ? String(v.note).slice(0, 120) : undefined, at: String(v?.at ?? "").slice(0, 10) };
   }
+  return materials;
+}
+const num = (v: unknown) => { const x = Number(v); return Number.isFinite(x) && x >= 0 ? x : null; };
+export function normalizeRates(row: { materials?: unknown; labour?: unknown; sets?: unknown } | null | undefined): Rates {
+  const labour = Object.fromEntries((Object.keys(TRADES) as Trade[]).map((t) => [t, num((row?.labour as Record<string, unknown> | undefined)?.[t]) ?? TRADES[t].rate])) as Record<Trade, number>;
+  const legacy = normalizeMaterials(row?.materials); // v2.5 list: becomes the first set's prices
   const sets: RateSet[] = [];
   const seen = new Set<string>();
   for (const raw of (Array.isArray((row as { sets?: unknown })?.sets) ? (row as { sets: unknown[] }).sets : []) as Partial<RateSet>[]) {
@@ -50,11 +57,12 @@ export function normalizeRates(row: { materials?: unknown; labour?: unknown; set
       id, name: String(raw?.name ?? id).slice(0, 60) || id, currency: cur, vat: raw?.vat !== false,
       labour: Object.fromEntries((Object.keys(TRADES) as Trade[]).map((t) => [t, num((raw?.labour as Record<string, unknown> | undefined)?.[t]) ?? labour[t]])) as Record<Trade, number>,
       note: raw?.note ? String(raw.note).slice(0, 200) : undefined,
+      materials: raw?.materials ? normalizeMaterials(raw.materials) : sets.length === 0 ? legacy : {},
     });
   }
   // Older rows (v2.5) have one labour table: it becomes the first set.
-  if (!sets.length) sets.push({ id: DEFAULT_SET_ID, name: "PH Region X", currency: "PHP", vat: true, labour });
-  return { materials, labour: sets[0].labour, sets };
+  if (!sets.length) sets.push({ id: DEFAULT_SET_ID, name: "PH Region X", currency: "PHP", vat: true, labour, materials: legacy });
+  return { materials: sets[0].materials, labour: sets[0].labour, sets };
 }
 
 /** The rate set a project uses (falls back to the first set). */

@@ -77,6 +77,8 @@ Read-only, key-authenticated API at `/api/v1` for darkwizscroll, DARKWIZ CT and 
 | v2.6.0 | darkwizscroll pulls CEMP Practice cards (published; review toggle for editors) ✅ |
 | v2.7.0 | Games: Beam Optimizer (NSCP 2015 RC beam, cheapest passing design) ✅ |
 | v2.8.0 | Night mode, dashboard badges, labour rate sets (₱/B$, VAT per set), game and darkwizscroll fixes ✅ |
+| v2.9.0 | Security headers + CSP, API rate limiting, dependency fixes ✅ |
+| v2.10.0 | Material price list per rate set (own prices and currency) ✅ |
 | v2.5.0 | Costing extras: My rates (labour + price list), trade-crew labour presets, quotation revisions R0/R1/R2 ✅ |
 | v2.4.0 | Games: Critical Path Rush (find the critical path; crash to deadline at least cost) ✅ |
 | v2.3.0 | Truss Builder: drag joints, deck types, BS 5950 option, crowd patch loading + crossing animation, re-calibrated budgets ✅ |

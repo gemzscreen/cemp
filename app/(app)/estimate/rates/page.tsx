@@ -15,7 +15,7 @@ export default async function RatesPage({ searchParams }: { searchParams: Promis
   const r = normalizeRates(data);
   const set = rateSetOf(r, sp.set), sym = curSym(set.currency);
   const okMsg: Record<string, string> = { labour: `Rate set "${set.name}" saved.`, added: `Rate set "${set.name}" added: copied rates, edit them for this area.`, deleted: "Rate set deleted.", keep: "Keep at least one rate set.", materials: "Price list saved." };
-  const mats = Object.entries(r.materials).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  const mats = Object.entries(set.materials).sort((a, b) => a[1].name.localeCompare(b[1].name));
   return (
     <>
       <p className="sub no-print" style={{ marginBottom: ".5rem" }}><Link href="/estimate/projects">← My projects</Link> · <Link href="/estimate">Calculators</Link></p>
@@ -31,7 +31,7 @@ export default async function RatesPage({ searchParams }: { searchParams: Promis
         <div className="rs-tabs" role="tablist">
           {r.sets.map((x, i) => (
             <Link key={x.id} href={`/estimate/rates?set=${x.id}`} role="tab" aria-selected={x.id === set.id} className={`rs-tab ${x.id === set.id ? "on" : ""}`}>
-              <b>{x.name}</b><small>{curSym(x.currency)} · {x.vat ? "VAT" : "no VAT"}{i === 0 ? " · default" : ""}</small>
+              <b>{x.name}</b><small>{curSym(x.currency)} · {x.vat ? "VAT" : "no VAT"} · {Object.keys(x.materials).length} prices{i === 0 ? " · default" : ""}</small>
             </Link>
           ))}
         </div>
@@ -62,19 +62,21 @@ export default async function RatesPage({ searchParams }: { searchParams: Promis
             <label className="fld"><span>Name</span><input name="name" placeholder="e.g. PH Region IX, Brunei" maxLength={60} required /></label>
             <label className="fld"><span>Currency</span><select name="currency" defaultValue="PHP">{(Object.keys(CURRENCIES) as (keyof typeof CURRENCIES)[]).map((c) => <option key={c} value={c}>{CURRENCIES[c].name}</option>)}</select></label>
             <label className="fld"><span>Start from</span><select name="from" defaultValue={set.id}>{r.sets.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <label className="fld rs-vat"><span>Material prices</span><span><input type="checkbox" name="prices" value="1" /> copy prices (same currency only)</span></label>
             <SubmitButton style={{ width: "auto", alignSelf: "end", marginTop: 0 }} pending="Adding…">Add set</SubmitButton>
           </form>
-          <p className="fine">Brunei dollar sets start with VAT off. Rates are copied from the set you start from, so edit every trade afterwards.</p>
+          <p className="fine">Brunei dollar sets start with VAT off. Labour rates are copied from the set you start from, so edit every trade afterwards; material prices start empty unless you copy them.</p>
         </details>
       </section>
 
       <section className="panel">
-        <h2 style={{ marginTop: 0 }}>Material price list <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>{mats.length} item(s)</span></h2>
-        <p className="fine" style={{ marginTop: 0 }}>Add prices from a project with <b>⇡ Save prices to my list</b>, and fill a new project's blanks with <b>⇣ Fill blanks from my price list</b> (both above the bill of materials).</p>
+        <h2 style={{ marginTop: 0 }}>Material price list: {set.name} <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>{mats.length} item(s) · prices in {sym} · each rate set has its own list</span></h2>
+        <p className="fine" style={{ marginTop: 0 }}>Prices follow the rate set a project uses (Costing → Labour rate set). <b>⇡ Save prices to my list</b> stores them in that project's set, and <b>⇣ Fill blanks from my price list</b> reads from it (both above the bill of materials). Changing a set's currency does not convert its prices.</p>
         {mats.length ? (
-          <form action={saveMaterialRates}>
+          <form action={saveMaterialRates} key={set.id}>
+            <input type="hidden" name="set" value={set.id} />
             <div className="tbl-wrap"><table className="tbl compact">
-              <thead><tr><th>Material</th><th>Unit</th><th className="num">Unit price (₱)</th><th>Note / supplier</th><th>Updated</th><th>Remove</th></tr></thead>
+              <thead><tr><th>Material</th><th>Unit</th><th className="num">Unit price ({sym})</th><th>Note / supplier</th><th>Updated</th><th>Remove</th></tr></thead>
               <tbody>
                 {mats.map(([k, m]) => (
                   <tr key={k}>
@@ -89,7 +91,7 @@ export default async function RatesPage({ searchParams }: { searchParams: Promis
             </table></div>
             <SubmitButton style={{ width: "auto" }} pending="Saving…">Save price list</SubmitButton>
           </form>
-        ) : <p className="fine">No prices yet. Open a project, enter unit prices and click ⇡ Save prices to my list.</p>}
+        ) : <p className="fine">No prices in "{set.name}" yet. Open a project that uses this rate set, enter unit prices and click ⇡ Save prices to my list.</p>}
       </section>
     </>
   );

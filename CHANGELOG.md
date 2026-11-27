@@ -2,6 +2,12 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.10.0: Material price list per rate set (2026-11-27)
+- **Each rate set owns its material price list** (`RateSet.materials`, stored inside `user_rates.sets`, no migration): PH Region X, PH Region IX and Brunei can each carry their own unit prices in their own currency.
+- **Projects** use the price list of the rate set they pick in Costing: "⇣ Fill blanks" reads from it and "⇡ Save prices" writes to it; the messages and the link name the set.
+- **My rates**: the price list section shows the selected set (tabs show a price count); "Add a rate set" can copy prices when the currency is the same. Prices are never converted between currencies.
+- Older rows: the v2.5/v2.8 price list becomes the first set's list, other sets start empty (tested). The top-level `materials` column mirrors the first set for older code.
+
 ## v2.9.0: Security hardening (2026-11-27)
 - **Security headers** on every response: Content-Security-Policy, HSTS (2 years, preload), X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, COOP; `sw.js` never cached.
 - **Rate limiting** for the integration API: 120 requests/min/IP, and 429 after 10 failed key checks/min/IP (`lib/ratelimit.ts`).

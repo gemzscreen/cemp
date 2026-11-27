@@ -23,6 +23,7 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
     user ? supabase.from("user_rates").select("materials,labour,sets").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const myRates = normalizeRates(ur);
+  const mySet = rateSetOf(myRates, normalizeCosting(p.costing).rateSet);
   if (!p) notFound();
   const items = (p.items ?? []) as EstItem[];
   const prices = (p.prices ?? {}) as Record<string, number>;
@@ -55,11 +56,11 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
         <section className="panel" style={{ marginBottom: "1rem" }}>
           <h2>Bill of materials <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>by item</span></h2>
           <div className="bom-tools no-print">
-            <button formAction={fillPricesFromList} className="chip" disabled={!Object.keys(myRates.materials).length} title="Fill blank unit prices from your saved price list">⇣ Fill blanks from my price list</button>
-            <button formAction={savePricesToList} className="chip" title="Save this project's unit prices (as typed) to the project and to your price list">⇡ Save prices to my list</button>
-            <Link href="/estimate/rates" className="fine">My rates ({Object.keys(myRates.materials).length} materials)</Link>
+            <button formAction={fillPricesFromList} className="chip" disabled={!Object.keys(mySet.materials).length} title={`Fill blank unit prices from the "${mySet.name}" price list`}>⇣ Fill blanks from my price list</button>
+            <button formAction={savePricesToList} className="chip" title={`Save this project's unit prices (as typed) to the project and to the "${mySet.name}" price list`}>⇡ Save prices to my list</button>
+            <Link href={`/estimate/rates?set=${mySet.id}`} className="fine">{mySet.name}: {Object.keys(mySet.materials).length} priced materials</Link>
           </div>
-          <BomTable groups={groups} combined={bom} prices={prices} projectId={id} calcTitles={calcTitles} cur={rateSetOf(myRates, normalizeCosting(p.costing).rateSet).currency} />
+          <BomTable groups={groups} combined={bom} prices={prices} projectId={id} calcTitles={calcTitles} cur={mySet.currency} />
           <p className="fine">Countable items are rounded up. Materials only: labour, equipment, OCM, profit and VAT are added in Costing below.</p>
         </section>
 
