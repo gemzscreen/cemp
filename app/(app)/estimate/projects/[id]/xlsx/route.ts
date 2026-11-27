@@ -1,10 +1,10 @@
 // v2.2.0: project workbook download (Quotation, Cost build-up, BOM) with live formulas.
 import { getMe } from "@/lib/auth";
 import { CALCS } from "@/lib/calc";
-import { normalizeCosting, quoteNo } from "@/lib/costing";
+import { normalizeCosting, quoteNo, withRateSet } from "@/lib/costing";
 import { normalizeIssuer } from "@/lib/issuer";
 import { buildWorkbook } from "@/lib/quote-xlsx";
-import { normalizeRates } from "@/lib/rates";
+import { normalizeRates, rateSetOf } from "@/lib/rates";
 import type { EstItem } from "../../../actions";
 
 export const runtime = "nodejs";
@@ -18,17 +18,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const [{ data: p }, { data: prof }, { data: ur }] = await Promise.all([
     supabase.from("estimate_projects").select("*").eq("id", id).maybeSingle(),
     supabase.from("profiles").select("issuer").eq("id", user.id).single(),
-    supabase.from("user_rates").select("labour").eq("user_id", user.id).maybeSingle(),
+    supabase.from("user_rates").select("labour,sets").eq("user_id", user.id).maybeSingle(),
   ]);
   if (!p) return new Response("Not found", { status: 404 });
-  const costing = normalizeCosting(p.costing);
+  const set = rateSetOf(normalizeRates(ur), normalizeCosting(p.costing).rateSet);
+  const costing = withRateSet(normalizeCosting(p.costing), set);
   const issuer = normalizeIssuer(prof?.issuer);
   const date = costing.quote.date || manila(new Date());
   const valid = costing.quote.validity > 0 ? (() => { const t = new Date(`${date}T00:00:00+08:00`); t.setDate(t.getDate() + costing.quote.validity); return long(manila(t)); })() : null;
   const no = costing.quote.no || quoteNo(id);
   const buf = await buildWorkbook({
     project: { id, name: p.name, client: p.client, location: p.location },
-    items: (p.items ?? []) as EstItem[], prices: (p.prices ?? {}) as Record<string, number>, costing, issuer, labour: normalizeRates(ur).labour,
+    items: (p.items ?? []) as EstItem[], prices: (p.prices ?? {}) as Record<string, number>, costing, issuer, labour: set.labour, cur: set.currency,
     signer: issuer.name || fullName || "", quote: { no, dateLong: long(date), validUntilLong: valid },
     calcTitle: (k) => CALCS[k]?.title ?? k,
   });

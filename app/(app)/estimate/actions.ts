@@ -133,7 +133,7 @@ export async function issueQuote(formData: FormData) {
   const [{ data: p }, { data: prof }, { data: ur }, { data: last }] = await Promise.all([
     supabase.from("estimate_projects").select("id,name,client,location,items,prices,costing").eq("id", id).single(),
     supabase.from("profiles").select("issuer,full_name").eq("id", user!.id).single(),
-    supabase.from("user_rates").select("labour").eq("user_id", user!.id).maybeSingle(),
+    supabase.from("user_rates").select("labour,sets").eq("user_id", user!.id).maybeSingle(),
     supabase.from("quote_revisions").select("rev").eq("project_id", id).order("rev", { ascending: false }).limit(1).maybeSingle(),
   ]);
   if (!p) redirect(`/estimate/projects/${id}/quote?err=${encodeURIComponent("Project not found")}`);

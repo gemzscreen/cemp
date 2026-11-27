@@ -100,3 +100,8 @@ first account = admin (Gemz). Others viewer by default; editor promoted via SQL.
 - Engine `lib/beam/` (pure TS): `evaluate` (prop h ≤ 3b, headroom, bar fit, bending, shear, deflection), `costOf`, `optimum` (exhaustive), `starsOf`/`budgetOf`. Assumptions in the header comment and `ASSUME_NOTE`; prices `PRICES` + `PRICE_NOTE` (verify).
 - Levels `lib/beam/levels.ts`; `BEST` comes from `npm run beam-optimum`: re-run and paste whenever loads, options, prices or checks change, and verify with an independent Python brute force.
 - UI `components/BeamOptimizer.tsx` on `/games/beam?l=N`; runs via `recordRun(run, "beam")` with `std: true`.
+
+## Theme, badges, rate sets (v2.8.0)
+- Night mode: `html[data-theme]` set before paint (script in `app/layout.tsx`), switch `components/ThemeSwitch.tsx`. Use `var(--card)` for white surfaces, `var(--bar)` for dark bars/buttons, `var(--edge)` for outlines and offset shadows; never hard-code `#fff` backgrounds. Drawings stay light via the paper-island rule (`.bo-elev, .tb-canvas, .cpm-canvas, .diagram, .sketch, .quote-doc …`): add new drawing containers there.
+- Dashboard badges are computed in `app/(app)/page.tsx` (review queue, games < 3★, projects without an issued quote, new scroll cards, unsynced batches).
+- Labour rate sets: `normalizeRates().sets` (`RateSet`: id, name, currency PHP|BND, vat, labour). Projects store `costing.rateSet`; always resolve with `rateSetOf()` and apply `withRateSet()` before `computeCost` (no-VAT sets zero the VAT). Money via `money(x, cur)` / `amountWords(x, cur)`; quote snapshots carry `cur`.

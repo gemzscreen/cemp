@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMe } from "@/lib/auth";
-import { normalizeCosting, peso } from "@/lib/costing";
+import { normalizeCosting, money } from "@/lib/costing";
 import { buildQuote, diffSnaps, type QuoteSnap } from "@/lib/quote";
 import PrintButton from "@/components/PrintButton";
 import QuoteEditor from "@/components/QuoteEditor";
@@ -20,7 +20,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
   const [{ data: p }, { data: prof }, { data: ur }, { data: revs }] = await Promise.all([
     supabase.from("estimate_projects").select("*").eq("id", id).maybeSingle(),
     user ? supabase.from("profiles").select("issuer").eq("id", user.id).single() : Promise.resolve({ data: null }),
-    user ? supabase.from("user_rates").select("labour").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
+    user ? supabase.from("user_rates").select("labour,sets").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from("quote_revisions").select("rev,snapshot,created_at").eq("project_id", id).order("rev"),
   ]);
   if (!p) notFound();
@@ -29,6 +29,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
   const { snap: draft, full, base } = buildQuote(p, prof?.issuer, ur, fullName, nextRev);
   const viewRev = sp.rev != null ? issued.find((x) => x.rev === Number(sp.rev)) : undefined;
   const shown: QuoteSnap = viewRev ?? draft;
+  const peso = (x: number) => money(x, draft.cur);
   const costing = normalizeCosting(p.costing);
   const last = issued[issued.length - 1];
   const draftDiff = last ? diffSnaps(last, draft) : null;
@@ -54,7 +55,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
       ) : (
         <>
           {(!draft.iss.name && !draft.iss.company) && <div className="msg warn no-print" style={{ marginBottom: ".8rem" }}>Add your company, licence and contact details once in <Link href="/account#quotation">Profile → Quotation details</Link>.</div>}
-          {full.unpriced > 0 && <div className="msg warn no-print" style={{ marginBottom: ".8rem" }}>{full.unpriced} material line(s) have no unit price and count as ₱0. <Link href={`/estimate/projects/${id}`}>Price them first.</Link></div>}
+          {full.unpriced > 0 && <div className="msg warn no-print" style={{ marginBottom: ".8rem" }}>{full.unpriced} material line(s) have no unit price and count as {draft.cur === "BND" ? "B$" : "₱"}0. <Link href={`/estimate/projects/${id}`}>Price them first.</Link></div>}
           <div className="msg revise no-print">
             <span><b>Draft</b> of {nextRev === 0 ? "Rev 0" : `R${nextRev}`} ({draft.q.no}).{" "}
               {last ? (draftSame ? `Same as ${last.rev === 0 ? "Rev 0" : `R${last.rev}`}: nothing new to issue.` : `Changed since ${last.rev === 0 ? "Rev 0" : `R${last.rev}`}: total ${draftDiff!.delta >= 0 ? "+" : "−"}${peso(Math.abs(draftDiff!.delta))}.`) : "Issue it to freeze a copy you can send."}</span>
@@ -65,7 +66,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
         </>
       )}
 
-      <QuoteDoc r={shown.r} costing={shown.costing} q={shown.q} iss={shown.iss} signer={shown.signer} project={shown.project} calcTitles={shown.calcTitles} dateLong={shown.dateLong} validUntil={shown.validUntil} rev={viewRev ? viewRev.rev : issued.length ? nextRev : undefined} />
+      <QuoteDoc r={shown.r} costing={shown.costing} q={shown.q} iss={shown.iss} signer={shown.signer} project={shown.project} calcTitles={shown.calcTitles} dateLong={shown.dateLong} validUntil={shown.validUntil} rev={viewRev ? viewRev.rev : issued.length ? nextRev : undefined} cur={shown.cur ?? "PHP"} />
 
       {issued.length > 0 && (
         <section className="panel no-print" style={{ marginTop: "1rem" }}>

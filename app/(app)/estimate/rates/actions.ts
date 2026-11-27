@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeRates, TRADES, type Rates, type Trade } from "@/lib/rates";
+import { normalizeRates, TRADES, type Rates, type Trade, type RateSet, type Currency } from "@/lib/rates";
 import { aggregate } from "@/lib/bom";
 import type { EstItem } from "../actions";
 
@@ -13,22 +13,58 @@ async function load() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Sign in again.");
-  const { data } = await supabase.from("user_rates").select("materials,labour").eq("user_id", user.id).maybeSingle();
+  const { data } = await supabase.from("user_rates").select("materials,labour,sets").eq("user_id", user.id).maybeSingle();
   return { supabase, user, rates: normalizeRates(data) };
 }
 async function save(supabase: Awaited<ReturnType<typeof createClient>>, uid: string, r: Rates) {
-  const { error } = await supabase.from("user_rates").upsert({ user_id: uid, materials: r.materials, labour: r.labour }, { onConflict: "user_id" });
+  // `labour` mirrors the first set so older code paths and v2.5 rows stay consistent
+  const { error } = await supabase.from("user_rates").upsert({ user_id: uid, materials: r.materials, labour: r.sets[0].labour, sets: r.sets }, { onConflict: "user_id" });
   if (error) throw new Error(error.message);
 }
 
+const back = (set: string, ok: string) => `/estimate/rates?set=${encodeURIComponent(set)}&ok=${ok}`;
+
+/** v2.8.0: save one rate set (name, currency, VAT and the trade rates). */
 export async function saveLabour(formData: FormData) {
   const { supabase, user, rates } = await load();
+  const id = String(formData.get("set") ?? rates.sets[0].id);
+  const set = rates.sets.find((x) => x.id === id) ?? rates.sets[0];
   for (const t of Object.keys(TRADES) as Trade[]) {
     const v = Number(formData.get(`rate:${t}`));
-    if (Number.isFinite(v) && v >= 0 && v < 100000) rates.labour[t] = v;
+    if (Number.isFinite(v) && v >= 0 && v < 100000) set.labour[t] = v;
   }
+  const name = String(formData.get("name") ?? "").trim().slice(0, 60);
+  if (name) set.name = name;
+  set.currency = formData.get("currency") === "BND" ? "BND" : "PHP";
+  set.vat = formData.get("vat") === "1";
+  set.note = String(formData.get("note") ?? "").trim().slice(0, 200) || undefined;
   await save(supabase, user.id, rates);
-  revalidatePath("/estimate/rates"); redirect("/estimate/rates?ok=labour");
+  revalidatePath("/estimate/rates"); redirect(back(set.id, "labour"));
+}
+
+/** v2.8.0: add a rate set, copying the trade rates of an existing one as a starting point. */
+export async function addRateSet(formData: FormData) {
+  const { supabase, user, rates } = await load();
+  if (rates.sets.length >= 12) redirect("/estimate/rates?err=" + encodeURIComponent("Up to 12 rate sets."));
+  const name = String(formData.get("name") ?? "").trim().slice(0, 60) || "New rate set";
+  const currency: Currency = formData.get("currency") === "BND" ? "BND" : "PHP";
+  const from = rates.sets.find((x) => x.id === String(formData.get("from"))) ?? rates.sets[0];
+  let id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "set";
+  while (rates.sets.some((x) => x.id === id)) id = `${id.slice(0, 26)}-${Math.random().toString(36).slice(2, 5)}`;
+  const set: RateSet = { id, name, currency, vat: currency === "PHP", labour: { ...from.labour }, note: `Copied from ${from.name}: edit every rate for this area.` };
+  rates.sets.push(set);
+  await save(supabase, user.id, rates);
+  revalidatePath("/estimate/rates"); redirect(back(id, "added"));
+}
+
+/** v2.8.0: delete a rate set (the last one cannot be removed; projects using it fall back to the first set). */
+export async function deleteRateSet(formData: FormData) {
+  const { supabase, user, rates } = await load();
+  const id = String(formData.get("set"));
+  if (rates.sets.length <= 1) redirect(back(id, "keep"));
+  rates.sets = rates.sets.filter((x) => x.id !== id);
+  await save(supabase, user.id, rates);
+  revalidatePath("/estimate/rates"); redirect(back(rates.sets[0].id, "deleted"));
 }
 
 export async function saveMaterialRates(formData: FormData) {

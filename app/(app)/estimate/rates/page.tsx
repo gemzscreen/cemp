@@ -1,18 +1,20 @@
 // v2.5.0: My rates: labour trade rates and the materials price list reused across projects.
 import Link from "next/link";
 import { getMe } from "@/lib/auth";
-import { normalizeRates, TRADES, WAGE_NOTE, type Trade } from "@/lib/rates";
+import { normalizeRates, rateSetOf, TRADES, WAGE_NOTE, CURRENCIES, curSym, type Trade } from "@/lib/rates";
 import SubmitButton from "@/components/SubmitButton";
-import { saveLabour, saveMaterialRates } from "./actions";
+import { saveLabour, saveMaterialRates, addRateSet, deleteRateSet } from "./actions";
 
 export const metadata = { title: "My rates" };
 const peso = (x: number) => `₱${x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default async function RatesPage({ searchParams }: { searchParams: Promise<{ ok?: string }> }) {
+export default async function RatesPage({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string; set?: string }> }) {
   const sp = await searchParams;
   const { supabase, user } = await getMe();
-  const { data } = user ? await supabase.from("user_rates").select("materials,labour,updated_at").eq("user_id", user.id).maybeSingle() : { data: null };
+  const { data } = user ? await supabase.from("user_rates").select("materials,labour,sets,updated_at").eq("user_id", user.id).maybeSingle() : { data: null };
   const r = normalizeRates(data);
+  const set = rateSetOf(r, sp.set), sym = curSym(set.currency);
+  const okMsg: Record<string, string> = { labour: `Rate set "${set.name}" saved.`, added: `Rate set "${set.name}" added: copied rates, edit them for this area.`, deleted: "Rate set deleted.", keep: "Keep at least one rate set.", materials: "Price list saved." };
   const mats = Object.entries(r.materials).sort((a, b) => a[1].name.localeCompare(b[1].name));
   return (
     <>
@@ -21,21 +23,49 @@ export default async function RatesPage({ searchParams }: { searchParams: Promis
         <h1>My rates</h1>
         <p className="sub" style={{ margin: 0 }}>Your labour rates and material prices, reused in every project. {data?.updated_at ? `Updated ${new Date(data.updated_at).toLocaleDateString("en-PH")}.` : "Not saved yet: defaults shown."}</p>
       </div></div>
-      {sp.ok && <div className="msg ok" style={{ marginBottom: "1rem" }}>{sp.ok === "labour" ? "Labour rates saved." : "Price list saved."}</div>}
+      {sp.ok && <div className="msg ok" style={{ marginBottom: "1rem" }}>{okMsg[sp.ok] ?? "Saved."}</div>}
+      {sp.err && <div className="msg err" style={{ marginBottom: "1rem" }}>{sp.err}</div>}
 
       <section className="panel" style={{ marginBottom: "1rem" }}>
-        <h2 style={{ marginTop: 0 }}>Labour rates <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>₱ per day, including benefits</span></h2>
-        <form action={saveLabour}>
+        <h2 style={{ marginTop: 0 }}>Labour rate sets <span className="muted" style={{ fontWeight: 400, fontSize: ".8rem" }}>per day, including benefits · each project picks one in Costing</span></h2>
+        <div className="rs-tabs" role="tablist">
+          {r.sets.map((x, i) => (
+            <Link key={x.id} href={`/estimate/rates?set=${x.id}`} role="tab" aria-selected={x.id === set.id} className={`rs-tab ${x.id === set.id ? "on" : ""}`}>
+              <b>{x.name}</b><small>{curSym(x.currency)} · {x.vat ? "VAT" : "no VAT"}{i === 0 ? " · default" : ""}</small>
+            </Link>
+          ))}
+        </div>
+        <form action={saveLabour} key={set.id}>
+          <input type="hidden" name="set" value={set.id} />
+          <div className="rs-meta">
+            <label className="fld"><span>Name</span><input name="name" defaultValue={set.name} maxLength={60} required /></label>
+            <label className="fld"><span>Currency</span><select name="currency" defaultValue={set.currency}>{(Object.keys(CURRENCIES) as (keyof typeof CURRENCIES)[]).map((c) => <option key={c} value={c}>{CURRENCIES[c].name}</option>)}</select></label>
+            <label className="fld rs-vat"><span>VAT on quotations</span><span><input type="checkbox" name="vat" value="1" defaultChecked={set.vat} /> VAT applies (untick for Brunei: no VAT)</span></label>
+          </div>
           <div className="rate-grid">
             {(Object.keys(TRADES) as Trade[]).map((t) => (
               <label key={t} className="fld"><span>{TRADES[t].name}</span>
-                <span className="pct-in">₱ <input name={`rate:${t}`} inputMode="decimal" defaultValue={r.labour[t]} /></span>
-                {r.labour[t] !== TRADES[t].rate && <small className="fine">default {peso(TRADES[t].rate)}</small>}</label>
+                <span className="pct-in">{sym} <input name={`rate:${t}`} inputMode="decimal" defaultValue={set.labour[t]} /></span>
+                {set.currency === "PHP" && set.labour[t] !== TRADES[t].rate && <small className="fine">default {peso(TRADES[t].rate)}</small>}</label>
             ))}
           </div>
-          <p className="fine"><span className="badge b-review">verify</span> {WAGE_NOTE} Trade-crew labour in Costing uses these rates.</p>
-          <SubmitButton style={{ width: "auto" }} pending="Saving…">Save labour rates</SubmitButton>
+          <label className="fld"><span>Note (source, area, date)</span><input name="note" defaultValue={set.note ?? ""} maxLength={200} placeholder="e.g. Region IX wage order + 20% benefits, Nov 2026" /></label>
+          <p className="fine"><span className="badge b-review">verify</span> {set.currency === "PHP" ? WAGE_NOTE : "Brunei rates are yours to enter: check current market day rates and employer contributions (TAP/SCP) for your trades."} Trade-crew labour in Costing uses the set the project picks.</p>
+          <div className="est-actions">
+            <SubmitButton style={{ width: "auto", marginTop: 0 }} pending="Saving…">Save {set.name}</SubmitButton>
+            {r.sets.length > 1 && <button formAction={deleteRateSet} className="btn ghost" style={{ width: "auto" }} title="Projects using this set fall back to the default set">Delete this set</button>}
+          </div>
         </form>
+        <details className="rs-add">
+          <summary>＋ Add a rate set</summary>
+          <form action={addRateSet} className="rs-meta">
+            <label className="fld"><span>Name</span><input name="name" placeholder="e.g. PH Region IX, Brunei" maxLength={60} required /></label>
+            <label className="fld"><span>Currency</span><select name="currency" defaultValue="PHP">{(Object.keys(CURRENCIES) as (keyof typeof CURRENCIES)[]).map((c) => <option key={c} value={c}>{CURRENCIES[c].name}</option>)}</select></label>
+            <label className="fld"><span>Start from</span><select name="from" defaultValue={set.id}>{r.sets.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+            <SubmitButton style={{ width: "auto", alignSelf: "end", marginTop: 0 }} pending="Adding…">Add set</SubmitButton>
+          </form>
+          <p className="fine">Brunei dollar sets start with VAT off. Rates are copied from the set you start from, so edit every trade afterwards.</p>
+        </details>
       </section>
 
       <section className="panel">

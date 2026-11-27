@@ -94,10 +94,10 @@ export default function BeamOptimizer() {
       <div className="bo-ctrl">
         <Stepper label="Width b" unit="mm" value={x.b} onDown={() => step("b", OPTIONS.b, -1)} onUp={() => step("b", OPTIONS.b, 1)} min={x.b === OPTIONS.b[0]} max={x.b === OPTIONS.b.at(-1)} />
         <Stepper label="Depth h" unit="mm" value={x.h} onDown={() => step("h", hs, -1)} onUp={() => step("h", hs, 1)} min={x.h === hs[0]} max={x.h === hs.at(-1)} />
-        <Stepper label={`${lv.support === "simple" ? "Bottom" : "Top"} bars`} unit="pcs" value={x.n} onDown={() => step("n", OPTIONS.n, -1)} onUp={() => step("n", OPTIONS.n, 1)} min={x.n === OPTIONS.n[0]} max={x.n === OPTIONS.n.at(-1)} />
-        <Chips label="Bar size" list={OPTIONS.db} value={x.db} on={(v) => setK("db", v)} />
-        <Chips label="Stirrup size" list={OPTIONS.ds} value={x.ds} on={(v) => setK("ds", v)} />
-        <Stepper label="Stirrup spacing" unit="mm" value={x.s} onDown={() => step("s", OPTIONS.s, -1)} onUp={() => step("s", OPTIONS.s, 1)} min={x.s === OPTIONS.s[0]} max={x.s === OPTIONS.s.at(-1)} />
+        <Stepper label={`${lv.support === "simple" ? "Bottom" : "Top"} bars n`} unit="pcs" value={x.n} onDown={() => step("n", OPTIONS.n, -1)} onUp={() => step("n", OPTIONS.n, 1)} min={x.n === OPTIONS.n[0]} max={x.n === OPTIONS.n.at(-1)} />
+        <Chips label="Bar size (mm)" list={OPTIONS.db} value={x.db} on={(v) => setK("db", v)} />
+        <Chips label="Stirrup size (mm)" list={OPTIONS.ds} value={x.ds} on={(v) => setK("ds", v)} />
+        <Stepper label="Stirrup spacing s" unit="mm" value={x.s} onDown={() => step("s", OPTIONS.s, -1)} onUp={() => step("s", OPTIONS.s, 1)} min={x.s === OPTIONS.s[0]} max={x.s === OPTIONS.s.at(-1)} />
       </div>
       <p className="fine bo-sum">Design: {x.b} × {x.h} mm, {x.n} – {x.db} mm {lv.support === "simple" ? "bottom" : "top"} bars, 2 – {HANGER} mm hangers, {x.ds} mm stirrups @ {x.s} mm ({cost.nStir} pcs).</p>
 
@@ -163,7 +163,7 @@ function Stepper({ label, unit, value, onDown, onUp, min, max }: { label: string
 function Chips({ label, list, value, on }: { label: string; list: readonly number[]; value: number; on: (v: number) => void }) {
   return (
     <div className="bo-field"><span className="bo-lab">{label}</span>
-      <div className="bo-chips">{list.map((v) => <button key={v} type="button" className={v === value ? "on" : ""} onClick={() => on(v)} aria-pressed={v === value}>{v}</button>)}</div>
+      <div className={`bo-chips ${list.length <= 2 ? "c2" : ""}`}>{list.map((v) => <button key={v} type="button" className={v === value ? "on" : ""} onClick={() => on(v)} aria-pressed={v === value}>{v}</button>)}</div>
     </div>
   );
 }

@@ -17,7 +17,7 @@ import { TRADES, type Trade } from "@/lib/rates";
 export type LabourMode = "pct" | "crew" | "trade";
 export type ItemCosting = { mode: LabourMode; pct: number; crew: number; rate: number; days: number; equip: number; out: number }; // out: trade output override (0 = preset)
 export type QuoteInfo = { no: string; date: string; validity: number; payment: string; terms: string; notes: string };
-export type Costing = { items: Record<string, ItemCosting>; ocm: number; profit: number; vat: number; quote: QuoteInfo };
+export type Costing = { items: Record<string, ItemCosting>; ocm: number; profit: number; vat: number; quote: QuoteInfo; rateSet?: string };
 
 export const DEFAULT_ITEM: ItemCosting = { mode: "pct", pct: 40, crew: 2, rate: 750, days: 1, equip: 0, out: 0 };
 export const DEFAULT_LABOUR = Object.fromEntries(Object.entries(TRADES).map(([k, v]) => [k, v.rate])) as Record<Trade, number>;
@@ -50,6 +50,7 @@ export function normalizeCosting(raw: unknown): Costing {
     ocm: Math.min(100, num(c.ocm, DEFAULT_COSTING.ocm)), profit: Math.min(100, num(c.profit, DEFAULT_COSTING.profit)), vat: Math.min(100, num(c.vat, DEFAULT_COSTING.vat)),
     quote: { no: str(q.no, "", 40), date: str(q.date, "", 10), validity: Math.round(num(q.validity, 30)),
       payment: str(q.payment, DEFAULT_QUOTE.payment, 600), terms: str(q.terms, DEFAULT_QUOTE.terms, 1500), notes: str(q.notes, "", 1500) },
+    ...(typeof c.rateSet === "string" && /^[a-z0-9-]{1,40}$/.test(c.rateSet) ? { rateSet: c.rateSet } : {}),
   };
 }
 
@@ -100,6 +101,11 @@ export function computeCost(
 }
 
 export const peso = (x: number) => `₱${x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/** Money in the project's currency (v2.8.0): ₱ or B$. */
+export const money = (x: number, cur: "PHP" | "BND" = "PHP") => `${cur === "BND" ? "B$" : "₱"}${x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const amountWords = (x: number, cur: "PHP" | "BND" = "PHP") => (cur === "BND" ? pesoWords(x).replace(/ Pesos? and /, (m) => (m.includes("Pesos") ? " Brunei Dollars and " : " Brunei Dollar and ")) : pesoWords(x));
+/** VAT that actually applies: none when the project's rate set says no VAT (e.g. Brunei). */
+export const withRateSet = (c: Costing, set?: { vat: boolean }): Costing => (set && !set.vat ? { ...c, vat: 0 } : c);
 
 /** Default quotation number: Q-YYMMDD-<4 chars of the project id>. */
 export const quoteNo = (projectId: string, d = new Date()) =>

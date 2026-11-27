@@ -8,6 +8,7 @@ import HeaderNav from "@/components/HeaderNav";
 import Avatar from "@/components/Avatar";
 import Clock from "@/components/Clock";
 import NavIcon from "@/components/NavIcon";
+import ThemeSwitch from "@/components/ThemeSwitch";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, role, fullName, avatar, jobTitle } = await getMe();
@@ -27,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               ))}
               <span className="menu-sep" />
               <Link href="/estimate/projects"><span className="ico"><NavIcon name="projects" size={16} /></span><span><strong>Projects</strong><small>Saved estimates and their bills of materials</small></span></Link>
-              <Link href="/games"><span className="ico"><NavIcon name="games" size={16} /></span><span><strong>Games</strong><small>Truss Builder, Critical Path Rush</small></span></Link>
+              <Link href="/games"><span className="ico"><NavIcon name="games" size={16} /></span><span><strong>Games</strong><small>Truss Builder, Critical Path Rush, Beam Optimizer</small></span></Link>
               <a href="/scroll"><span className="ico"><NavIcon name="scroll" size={16} /></span><span><strong>darkwizscroll</strong><small>Learn by scrolling: site knowledge cards</small></span></a>
             </NavMenu>
           </Suspense>
@@ -48,6 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           )}
           <form action="/search" className="nav-search"><input name="q" placeholder="Search…" aria-label="Search CEMP" /></form>
         </HeaderNav>
+        <ThemeSwitch />
         <Suspense fallback={<span className="navmenu-fallback">Account ▾</span>}>
           <NavMenu className="me" align="right" label={<span className="acct"><Avatar name={name} src={avatar} /><span className="hi">Welcome, <b>{firstName(name)}</b></span><i className="rolechip">{roleName(role)}</i></span>}>
             <div className="menu-head">

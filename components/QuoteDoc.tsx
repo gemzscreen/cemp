@@ -1,13 +1,14 @@
 // v2.2.0: the client quotation document (used by /estimate/projects/[id]/quote). Pure markup, no data access.
-import { peso, pesoWords, type Costing, type ProjectCost, type QuoteInfo } from "@/lib/costing";
+import { money, amountWords, type Costing, type ProjectCost, type QuoteInfo } from "@/lib/costing";
 import type { Issuer } from "@/lib/issuer";
 
-export default function QuoteDoc({ r, costing, q, iss, signer, project, calcTitles, dateLong, validUntil, rev }: {
+export default function QuoteDoc({ r, costing, q, iss, signer, project, calcTitles, dateLong, validUntil, rev, cur = "PHP" }: {
   r: Pick<ProjectCost, "subtotal" | "vat" | "total"> & { items: Pick<ProjectCost["items"][number], "id" | "no" | "label" | "calcKey" | "lump">[] };
   costing: Pick<Costing, "vat">; q: QuoteInfo; iss: Issuer; signer: string; rev?: number;
   project: { name: string; client: string | null; location: string | null };
-  calcTitles: Record<string, string>; dateLong: string; validUntil: string | null;
+  calcTitles: Record<string, string>; dateLong: string; validUntil: string | null; cur?: "PHP" | "BND";
 }) {
+  const peso = (x: number) => money(x, cur), sym = cur === "BND" ? "B$" : "₱";
   const headName = iss.company || signer || "Your name or company";
   return (
     <article className="quote-doc">
@@ -43,10 +44,10 @@ export default function QuoteDoc({ r, costing, q, iss, signer, project, calcTitl
       <p>We are pleased to submit our price for the works below{costing.vat > 0 ? ", inclusive of materials, labour, equipment, overhead and profit, with VAT shown separately" : ", inclusive of materials, labour, equipment, overhead and profit"}.</p>
 
       <table className="q-items">
-        <thead><tr><th>Item</th><th>Description of work</th><th className="num">Qty</th><th>Unit</th><th className="num">Amount (₱)</th></tr></thead>
+        <thead><tr><th>Item</th><th>Description of work</th><th className="num">Qty</th><th>Unit</th><th className="num">Amount ({sym})</th></tr></thead>
         <tbody>
           {r.items.map((it) => (
-            <tr key={it.id}><td>{it.no}</td><td>{it.label}{calcTitles[it.calcKey] && calcTitles[it.calcKey] !== it.label && <div className="fine">{calcTitles[it.calcKey]}</div>}</td><td className="num">1</td><td>lot</td><td className="num">{peso(it.lump).slice(1)}</td></tr>
+            <tr key={it.id}><td>{it.no}</td><td>{it.label}{calcTitles[it.calcKey] && calcTitles[it.calcKey] !== it.label && <div className="fine">{calcTitles[it.calcKey]}</div>}</td><td className="num">1</td><td>lot</td><td className="num">{peso(it.lump).slice(sym.length)}</td></tr>
           ))}
         </tbody>
         <tfoot>
@@ -55,7 +56,7 @@ export default function QuoteDoc({ r, costing, q, iss, signer, project, calcTitl
           <tr className="q-total"><td colSpan={4} className="num">TOTAL CONTRACT PRICE</td><td className="num">{peso(r.total)}</td></tr>
         </tfoot>
       </table>
-      <p className="q-words"><b>Amount in words:</b> {pesoWords(r.total)}{costing.vat > 0 ? " (VAT inclusive)" : ""}</p>
+      <p className="q-words"><b>Amount in words:</b> {amountWords(r.total, cur)}{costing.vat > 0 ? " (VAT inclusive)" : ""}</p>
 
       {q.payment && <section className="q-block"><h3>Payment terms</h3><p>{q.payment}</p></section>}
       {q.terms && <section className="q-block"><h3>Terms and conditions</h3><p>{q.terms}</p></section>}

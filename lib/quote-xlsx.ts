@@ -6,7 +6,7 @@
 // fullCalcOnLoad makes Excel recalculate on open.
 import ExcelJS from "exceljs";
 import { groupByItem } from "@/lib/bom";
-import { computeCost, pesoWords, type Costing } from "@/lib/costing";
+import { computeCost, amountWords, type Costing } from "@/lib/costing";
 import type { Issuer } from "@/lib/issuer";
 import type { Material, Inputs } from "@/lib/calc";
 import type { Trade } from "@/lib/rates";
@@ -14,17 +14,18 @@ import type { Trade } from "@/lib/rates";
 type Item = { id: string; label: string; calcKey: string; materials: Material[]; inputs?: Inputs };
 export type WorkbookInput = {
   project: { id: string; name: string; client: string | null; location: string | null };
-  items: Item[]; prices: Record<string, number>; costing: Costing; issuer: Issuer; signer: string; labour?: Record<Trade, number>;
+  items: Item[]; prices: Record<string, number>; costing: Costing; issuer: Issuer; signer: string; labour?: Record<Trade, number>; cur?: "PHP" | "BND";
   quote: { no: string; dateLong: string; validUntilLong: string | null };
   calcTitle: (key: string) => string;
 };
 
-const NAVY = "FF1E2A3A", GOLD = "FFF2D27A", LIGHT = "FFF3EFE4", PESO = '"₱"#,##0.00', PCT = '0.0"%"';
+const NAVY = "FF1E2A3A", GOLD = "FFF2D27A", LIGHT = "FFF3EFE4", PCT = '0.0"%"';
 const thin = { style: "thin" as const, color: { argb: "FFD0D7E0" } };
 const box = { top: thin, left: thin, bottom: thin, right: thin };
 
 export async function buildWorkbook(d: WorkbookInput): Promise<Buffer> {
   const r = computeCost(d.items, d.prices, d.costing, d.labour);
+  const sym = d.cur === "BND" ? "B$" : "₱", PESO = `"${sym}"#,##0.00`; // v2.8.0: currency of the project's rate set
   const groups = groupByItem(d.items);
   const wb = new ExcelJS.Workbook();
   wb.creator = "CEMP"; wb.created = new Date();
@@ -63,7 +64,7 @@ export async function buildWorkbook(d: WorkbookInput): Promise<Buffer> {
     sub.getCell(7).numFmt = PESO; sub.getCell(7).font = { italic: true, bold: true };
   }
   const lastBomRow = row - 1;
-  bom.getCell(`C${row + 1}`).value = "Yellow unit price = not priced yet (counts as ₱0).";
+  bom.getCell(`C${row + 1}`).value = `Yellow unit price = not priced yet (counts as ${sym}0).`;
   bom.getCell(`C${row + 1}`).font = { italic: true, size: 9, color: { argb: "FF6B7785" } };
 
   // ---------- Cost build-up ----------
@@ -76,7 +77,7 @@ export async function buildWorkbook(d: WorkbookInput): Promise<Buffer> {
   cb.getCell("D3").value = "VAT %"; cb.getCell("E3").value = d.costing.vat;
   for (const a of ["C3", "C4", "E3"]) { cb.getCell(a).font = { color: { argb: "FF1F5FBF" }, bold: true }; cb.getCell(a).border = box; }
   const ch = cb.getRow(6);
-  ch.values = ["Item", "Description", "Materials", "Method", "Labour %", "Crew", "Rate ₱/day", "Days", "Labour", "Equipment", "Direct cost", "Quoted (lump sum)"];
+  ch.values = ["Item", "Description", "Materials", "Method", "Labour %", "Crew", `Rate ${sym}/day`, "Days", "Labour", "Equipment", "Direct cost", "Quoted (lump sum)"];
   ch.eachCell((c) => { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } }; c.alignment = { wrapText: true, vertical: "middle" }; });
   ch.height = 30;
   const first = 7;
@@ -87,7 +88,7 @@ export async function buildWorkbook(d: WorkbookInput): Promise<Buffer> {
     const tr = cfg.mode === "trade" ? it.trade : null;
     x.getCell(4).value = cfg.mode; x.getCell(5).value = cfg.pct;
     x.getCell(6).value = tr ? 1 : cfg.crew; x.getCell(7).value = tr ? tr.dayCost : cfg.rate; x.getCell(8).value = tr ? tr.days : cfg.days;
-    if (tr) x.getCell(2).note = `Trade crew: ${tr.qty.toFixed(2)} ${tr.unit} ÷ ${tr.output} ${tr.unit}/day = ${tr.days} crew-days; crew day cost ₱${tr.dayCost}`;
+    if (tr) x.getCell(2).note = `Trade crew: ${tr.qty.toFixed(2)} ${tr.unit} ÷ ${tr.output} ${tr.unit}/day = ${tr.days} crew-days; crew day cost ${sym}${tr.dayCost}`;
     x.getCell(9).value = { formula: `IF(OR(D${n}="crew",D${n}="trade"),F${n}*G${n}*H${n},E${n}/100*C${n})`, result: it.labour };
     x.getCell(10).value = cfg.equip;
     x.getCell(11).value = { formula: `C${n}+I${n}+J${n}`, result: it.direct };
@@ -142,7 +143,7 @@ export async function buildWorkbook(d: WorkbookInput): Promise<Buffer> {
   qr++;
   kv("To", d.project.client || "Client"); kv("Project", d.project.name); if (d.project.location) kv("Location", d.project.location);
   qr++;
-  const hdr = q.getRow(qr); hdr.values = ["Item", "Description of work", "Qty", "Unit", "Amount (₱)"];
+  const hdr = q.getRow(qr); hdr.values = ["Item", "Description of work", "Qty", "Unit", `Amount (${sym})`];
   hdr.eachCell((c) => { c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } }; });
   qr++;
   const qFirst = qr;
@@ -167,7 +168,7 @@ export async function buildWorkbook(d: WorkbookInput): Promise<Buffer> {
     foot("TOTAL CONTRACT PRICE", { formula: `E${subRow}+E${subRow + 1}`, result: r.total }, true);
   } else foot("TOTAL CONTRACT PRICE", subF, true);
   qr++;
-  q.getCell(`A${qr}`).value = `Amount in words: ${pesoWords(r.total)}${d.costing.vat > 0 ? " (VAT inclusive)" : ""}`; q.mergeCells(`A${qr}:E${qr}`);
+  q.getCell(`A${qr}`).value = `Amount in words: ${amountWords(r.total, d.cur)}${d.costing.vat > 0 ? " (VAT inclusive)" : ""}`; q.mergeCells(`A${qr}:E${qr}`);
   q.getCell(`A${qr}`).font = { italic: true, size: 9 }; q.getCell(`A${qr}`).alignment = { wrapText: true }; qr += 2;
   const para = (title: string, body: string) => {
     if (!body) return;

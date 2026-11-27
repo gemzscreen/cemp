@@ -5,7 +5,7 @@ import { CALCS } from "@/lib/calc";
 import { aggregate, groupByItem, showQty } from "@/lib/bom";
 import BomTable from "@/components/BomTable";
 import CostingPanel from "@/components/CostingPanel";
-import { normalizeRates } from "@/lib/rates";
+import { normalizeRates, rateSetOf } from "@/lib/rates";
 import { fillPricesFromList, savePricesToList } from "../../rates/actions";
 import { normalizeCosting } from "@/lib/costing";
 import SubmitButton from "@/components/SubmitButton";
@@ -20,7 +20,7 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
   const { supabase, user } = await getMe();
   const [{ data: p }, { data: ur }] = await Promise.all([
     supabase.from("estimate_projects").select("*").eq("id", id).maybeSingle(),
-    user ? supabase.from("user_rates").select("materials,labour").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
+    user ? supabase.from("user_rates").select("materials,labour,sets").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const myRates = normalizeRates(ur);
   if (!p) notFound();
@@ -59,7 +59,7 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
             <button formAction={savePricesToList} className="chip" title="Save this project's unit prices (as typed) to the project and to your price list">⇡ Save prices to my list</button>
             <Link href="/estimate/rates" className="fine">My rates ({Object.keys(myRates.materials).length} materials)</Link>
           </div>
-          <BomTable groups={groups} combined={bom} prices={prices} projectId={id} calcTitles={calcTitles} />
+          <BomTable groups={groups} combined={bom} prices={prices} projectId={id} calcTitles={calcTitles} cur={rateSetOf(myRates, normalizeCosting(p.costing).rateSet).currency} />
           <p className="fine">Countable items are rounded up. Materials only: labour, equipment, OCM, profit and VAT are added in Costing below.</p>
         </section>
 
@@ -74,7 +74,7 @@ export default async function ProjectBom({ params, searchParams }: { params: Pro
         </section>
       </form>
 
-      <CostingPanel projectId={id} items={items} prices={prices} initial={normalizeCosting(p.costing)} labour={myRates.labour} />
+      <CostingPanel projectId={id} items={items} prices={prices} initial={normalizeCosting(p.costing)} sets={myRates.sets} />
 
       <section className="panel" style={{ marginBottom: "1rem" }}>
         <h2>Items ({items.length}) <span className="muted no-print" style={{ fontWeight: 400, fontSize: ".8rem" }}>click an item to revise it</span></h2>

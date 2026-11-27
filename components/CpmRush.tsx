@@ -9,24 +9,107 @@ import { CPM_LEVELS, cpmLevelById, cpm, planCost, passSteps, LD_NOTE, type Act, 
 import { recordRun, flush, localBests } from "@/lib/truss/store";
 
 const peso = (x: number) => "₱" + Math.round(x).toLocaleString("en-PH");
-const W = 150, H = 84, GX = 54, GY = 22, PAD = 30; // node box and gaps (svg units ≈ px)
+const W = 150, H = 84, GX = 70, GY = 44, PAD = 30, SF = 56; // node box, gaps, outer pad, S/F lane (svg units ≈ px)
 
-/** Columns by longest chain of predecessors; rows ordered by the average row of predecessors (fewer crossings). */
-function layout(acts: Act[]) {
+/** Columns by longest chain of predecessors; rows ordered by the average row of predecessors (fewer crossings).
+ *  Every box sits on a whole row, so the gaps between rows are clear corridors for long links. */
+export function layout(acts: Act[]) {
   const r = cpm(acts), col: Record<string, number> = {};
   for (const id of r.order) { const a = acts.find((x) => x.id === id)!; col[id] = a.pred.length ? 1 + Math.max(...a.pred.map((p) => col[p])) : 0; }
   const cols: string[][] = [];
   for (const id of r.order) (cols[col[id]] ??= []).push(id);
   const row: Record<string, number> = {};
-  cols.forEach((ids) => {
-    const bary = (id: string) => { const p = acts.find((x) => x.id === id)!.pred; return p.length ? p.reduce((s, q) => s + row[q], 0) / p.length : 0; };
-    ids.sort((a, b) => bary(a) - bary(b) || a.localeCompare(b)).forEach((id, i) => (row[id] = i));
-  });
   const rows = Math.max(...cols.map((c) => c.length));
-  // centre short columns vertically
+  cols.forEach((ids) => {
+    const bary = (id: string) => { const p = acts.find((x) => x.id === id)!.pred; return p.length ? p.reduce((s, q) => s + row[q], 0) / p.length : rows / 2; };
+    const off = Math.floor((rows - ids.length) / 2);
+    ids.sort((a, b) => bary(a) - bary(b) || a.localeCompare(b)).forEach((id, i) => (row[id] = i + off));
+  });
   const y: Record<string, number> = {}, x: Record<string, number> = {};
-  cols.forEach((ids, c) => ids.forEach((id, i) => { x[id] = PAD + 40 + c * (W + GX); y[id] = PAD + (i + (rows - ids.length) / 2) * (H + GY); }));
-  return { x, y, width: PAD * 2 + 80 + cols.length * (W + GX) - GX, height: PAD * 2 + rows * (H + GY) - GY, cols: cols.length };
+  for (const id of Object.keys(col)) { x[id] = PAD + SF + col[id] * (W + GX); y[id] = PAD + row[id] * (H + GY); }
+  return { x, y, col, row, rows, width: PAD * 2 + SF * 2 + cols.length * (W + GX) - GX, height: PAD * 2 + rows * (H + GY) - GY, cols: cols.length };
+}
+type Lay = ReturnType<typeof layout>;
+type Edge = { key: string; from: string; to: string; d: string };
+
+/** Orthogonal links with rounded corners. Ports are spread along the box sides; links between neighbouring columns
+ *  turn in the gap between them; links that skip columns run along the corridor between rows, so no link passes
+ *  behind a box. "S" and "F" are the start and finish nodes. */
+export function routeAll(acts: Act[], L: Lay): Edge[] {
+  const S = "__S", F = "__F", my = L.height / 2;
+  const succ: Record<string, string[]> = {};
+  acts.forEach((a) => a.pred.forEach((p) => (succ[p] ??= []).push(a.id)));
+  const pairs: [string, string][] = [];
+  acts.forEach((a) => (a.pred.length ? a.pred.forEach((p) => pairs.push([p, a.id])) : pairs.push([S, a.id])));
+  acts.forEach((a) => { if (!succ[a.id]) pairs.push([a.id, F]); });
+  const colOf = (id: string) => (id === S ? -1 : id === F ? L.cols : L.col[id]);
+  const cy = (id: string) => (id === S || id === F ? my : L.y[id] + H / 2);
+  // ports: spread incoming by source y, outgoing by target y, over the middle of the box side
+  const port: Record<string, number> = {};
+  const spread = (id: string, list: [string, string][], key: (e: [string, string]) => string, other: (e: [string, string]) => string) => {
+    const es = list.slice().sort((p, q) => cy(other(p)) - cy(other(q)));
+    if (id === S || id === F) { es.forEach((e) => (port[key(e)] = my)); return; }
+    // a link from the same row gets the middle port, so it stays a straight line; the others stack above / below it
+    const c = L.y[id] + H / 2, same = es.findIndex((e) => Math.abs(cy(other(e)) - c) < 1);
+    const step = es.length > 1 ? Math.min(12, (H - 50) / (es.length - 1)) : 0;
+    const i0 = same >= 0 ? same : (es.length - 1) / 2;
+    es.forEach((e, i) => (port[key(e)] = c + Math.max(-(H / 2 - 22), Math.min(H / 2 - 22, (i - i0) * step))));
+  };
+  const ids = [S, F, ...acts.map((a) => a.id)];
+  for (const id of ids) {
+    spread(id, pairs.filter((e) => e[1] === id), (e) => `in:${e[0]}>${e[1]}`, (e) => e[0]);
+    spread(id, pairs.filter((e) => e[0] === id), (e) => `out:${e[0]}>${e[1]}`, (e) => e[1]);
+  }
+  const right = (id: string) => (id === S ? PAD + 16 : L.x[id] + W), left = (id: string) => (id === F ? L.width - PAD - 16 : L.x[id]);
+  // gap g lies between column g-1 and column g (g = 0 is between S and the first column)
+  const gapX = (g: number) => (g <= 0 ? PAD + SF / 2 + 8 : g >= L.cols ? L.width - PAD - SF / 2 - 8 : PAD + SF + g * (W + GX) - GX / 2);
+  const corrY = (r: number) => PAD + r * (H + GY) - GY / 2;
+  type Seg = { e: string; g?: number; r?: number; a: number; b: number };
+  const vsegs: Seg[] = [], hsegs: Seg[] = [];
+  const plan = pairs.map(([f, t]) => {
+    const k = `${f}>${t}`, y1 = port[`out:${k}`], y2 = port[`in:${k}`], c1 = colOf(f), c2 = colOf(t);
+    if (c2 === c1 + 1) { vsegs.push({ e: k, g: c2, a: y1, b: y2 }); return { k, f, t, y1, y2, long: false as const }; }
+    // long link: pick the corridor closest to both ends
+    let best = 0, bd = Infinity;
+    for (let r = 0; r <= L.rows; r++) { const d = Math.abs(corrY(r) - y1) + Math.abs(corrY(r) - y2); if (d < bd) { bd = d; best = r; } }
+    const yc = corrY(best);
+    vsegs.push({ e: k + "#1", g: c1 + 1, a: y1, b: yc }, { e: k + "#2", g: c2, a: yc, b: y2 });
+    hsegs.push({ e: k, r: best, a: gapX(c1 + 1), b: gapX(c2) });
+    return { k, f, t, y1, y2, long: true as const, r: best };
+  });
+  // lane offsets so parallel segments in one gap / corridor do not overlap
+  const lane: Record<string, number> = {};
+  const assign = (list: Seg[], groupKey: (s: Seg) => number, step: number) => {
+    const groups = new Map<number, Seg[]>();
+    list.forEach((s) => (groups.get(groupKey(s)) ?? groups.set(groupKey(s), []).get(groupKey(s))!).push(s));
+    groups.forEach((g) => { g.sort((p, q) => Math.min(p.a, p.b) - Math.min(q.a, q.b) || p.e.localeCompare(q.e)); g.forEach((s, i) => (lane[s.e] = (i - (g.length - 1) / 2) * step)); });
+  };
+  // vertical segments: only links that actually move vertically need their own lane
+  const moving = vsegs.filter((s) => Math.abs(s.a - s.b) > 0.5);
+  assign(moving, (s) => s.g!, 8);
+  assign(hsegs, (s) => s.r!, 8);
+  const R = 6;
+  const path = (pts: [number, number][]) => {
+    let d = `M${pts[0][0]} ${pts[0][1]}`;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [px, py] = pts[i - 1], [x, y] = pts[i], [nx, ny] = pts[i + 1];
+      const l1 = Math.hypot(x - px, y - py), l2 = Math.hypot(nx - x, ny - y), r = Math.min(R, l1 / 2, l2 / 2);
+      if (r < 0.5) { d += ` L${x} ${y}`; continue; }
+      d += ` L${x - ((x - px) / l1) * r} ${y - ((y - py) / l1) * r} Q${x} ${y} ${x + ((nx - x) / l2) * r} ${y + ((ny - y) / l2) * r}`;
+    }
+    const [lx, ly] = pts[pts.length - 1];
+    return d + ` L${lx} ${ly}`;
+  };
+  return plan.map((p) => {
+    const x1 = right(p.f), x2 = left(p.t) - 2;
+    if (!p.long) {
+      if (Math.abs(p.y1 - p.y2) < 0.5) return { key: p.k, from: p.f, to: p.t, d: `M${x1} ${p.y1} L${x2} ${p.y2}` };
+      const gx = gapX(colOf(p.t)) + (lane[p.k] ?? 0);
+      return { key: p.k, from: p.f, to: p.t, d: path([[x1, p.y1], [gx, p.y1], [gx, p.y2], [x2, p.y2]]) };
+    }
+    const g1 = gapX(colOf(p.f) + 1) + (lane[p.k + "#1"] ?? 0), g2 = gapX(colOf(p.t)) + (lane[p.k + "#2"] ?? 0), yc = corrY(p.r) + (lane[p.k] ?? 0);
+    return { key: p.k, from: p.f, to: p.t, d: path([[x1, p.y1], [g1, p.y1], [g1, yc], [g2, yc], [g2, p.y2], [x2, p.y2]]) };
+  });
 }
 
 type Reveal = { stars: number; correct: boolean; wrong: string[]; missed: string[]; durOk: boolean; secs: number } | null;
@@ -38,6 +121,7 @@ export default function CpmRush() {
   const lv = cpmLevelById(lvId);
   const go = (id: number) => { setLvId(id); try { window.history.replaceState(null, "", `/games/cpm?l=${id}`); } catch {} };
   const L = useMemo(() => layout(lv.acts), [lv]);
+  const edges = useMemo(() => routeAll(lv.acts, L), [lv, L]);
   const base = useMemo(() => cpm(lv.acts), [lv]);
 
   // find mode
@@ -100,7 +184,6 @@ export default function CpmRush() {
 
   const steps = useMemo(() => passSteps(lv.acts, base), [lv, base]);
   const succ = useMemo(() => { const m: Record<string, string[]> = {}; lv.acts.forEach((a) => a.pred.forEach((p) => (m[p] ??= []).push(a.id))); return m; }, [lv]);
-  const starts = lv.acts.filter((a) => !a.pred.length).map((a) => a.id), ends = lv.acts.filter((a) => !succ[a.id]).map((a) => a.id);
   const sx = PAD, fx = L.width - PAD, my = L.height / 2;
   const critEdge = (a: string, b: string) => shown && shown.byId[a].critical && shown.byId[b].critical && shown.byId[a].ef === shown.byId[b].es;
 
@@ -148,18 +231,16 @@ export default function CpmRush() {
         )}
         <div className="cpm-scroll">
           <svg viewBox={`0 0 ${L.width} ${L.height}`} width={L.width} height={L.height} className={!started ? "blur" : ""} role="img" aria-label="Activity network">
-            <defs><marker id="cpm-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5b6b80" /></marker>
-              <marker id="cpm-arc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#d9443a" /></marker></defs>
+            <defs><marker id="cpm-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5b6b80" /></marker>
+              <marker id="cpm-arc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#d9443a" /></marker></defs>
             {/* start / finish */}
             <circle cx={sx} cy={my} r={16} className="cpm-sf" /><text x={sx} y={my + 4} textAnchor="middle" className="cpm-sft">S</text>
             <circle cx={fx} cy={my} r={16} className="cpm-sf" /><text x={fx} y={my + 4} textAnchor="middle" className="cpm-sft">F</text>
             {/* links */}
-            {starts.map((id) => <path key={`s${id}`} d={`M${sx + 16} ${my} C ${sx + 40} ${my}, ${L.x[id] - 30} ${L.y[id] + H / 2}, ${L.x[id]} ${L.y[id] + H / 2}`} className={`cpm-link ${shown?.byId[id].critical ? "crit" : ""}`} markerEnd={`url(#${shown?.byId[id].critical ? "cpm-arc" : "cpm-ar"})`} />)}
-            {lv.acts.flatMap((a) => a.pred.map((p) => {
-              const x1 = L.x[p] + W, y1 = L.y[p] + H / 2, x2 = L.x[a.id], y2 = L.y[a.id] + H / 2, c = critEdge(p, a.id);
-              return <path key={`${p}${a.id}`} d={`M${x1} ${y1} C ${x1 + GX / 2} ${y1}, ${x2 - GX / 2} ${y2}, ${x2} ${y2}`} className={`cpm-link ${c ? "crit" : ""}`} markerEnd={`url(#${c ? "cpm-arc" : "cpm-ar"})`} />;
-            }))}
-            {ends.map((id) => <path key={`f${id}`} d={`M${L.x[id] + W} ${L.y[id] + H / 2} C ${L.x[id] + W + 30} ${L.y[id] + H / 2}, ${fx - 40} ${my}, ${fx - 16} ${my}`} className={`cpm-link ${shown?.byId[id].critical && shown.byId[id].ef === shown.T ? "crit" : ""}`} markerEnd={`url(#${shown?.byId[id].critical ? "cpm-arc" : "cpm-ar"})`} />)}
+            {edges.map((e) => {
+              const c = e.from === "__S" ? !!shown?.byId[e.to].critical : e.to === "__F" ? !!(shown?.byId[e.from].critical && shown.byId[e.from].ef === shown.T) : !!critEdge(e.from, e.to);
+              return <path key={e.key} d={e.d} className={`cpm-link ${c ? "crit" : ""}`} markerEnd={`url(#${c ? "cpm-arc" : "cpm-ar"})`} />;
+            })}
             {/* activity boxes: ES | D | EF / name / LS | TF | LF */}
             {lv.acts.map((a) => {
               const x = L.x[a.id], y = L.y[a.id], row = shown?.byId[a.id], marked = marks.has(a.id);

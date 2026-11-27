@@ -7,11 +7,12 @@ import Link from "next/link";
 import type { BomGroup, BomLine } from "@/lib/bom";
 import { showQty } from "@/lib/bom";
 
-const peso = (x: number) => `₱${x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (x: number, sym: string) => `${sym}${x.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function BomTable({ groups, combined, prices: initial, projectId, calcTitles }: {
-  groups: BomGroup[]; combined: BomLine[]; prices: Record<string, number>; projectId: string; calcTitles: Record<string, string>;
+export default function BomTable({ groups, combined, prices: initial, projectId, calcTitles, cur = "PHP" }: {
+  groups: BomGroup[]; combined: BomLine[]; prices: Record<string, number>; projectId: string; calcTitles: Record<string, string>; cur?: "PHP" | "BND";
 }) {
+  const sym = cur === "BND" ? "B$" : "₱", peso = (x: number) => fmt(x, sym);
   const [prices, setPrices] = useState<Record<string, string>>(() => Object.fromEntries(Object.entries(initial).map(([k, v]) => [k, String(v)])));
   const num = (k: string) => { const v = prices[k]; return v != null && v.trim() !== "" && Number.isFinite(Number(v)) ? Number(v) : null; };
 
@@ -26,7 +27,7 @@ export default function BomTable({ groups, combined, prices: initial, projectId,
   return (
     <>
       <div className="tbl-wrap"><table className="tbl compact bom bom-grouped">
-        <thead><tr><th>#</th><th>Material</th><th className="num">Qty</th><th>Unit</th><th className="num">Unit price (₱)</th><th className="num">Amount</th></tr></thead>
+        <thead><tr><th>#</th><th>Material</th><th className="num">Qty</th><th>Unit</th><th className="num">Unit price ({sym})</th><th className="num">Amount</th></tr></thead>
         {groups.map((g, gi) => (
           <tbody key={g.id} className="bom-group">
             <tr className="grp-head">
