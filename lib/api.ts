@@ -2,6 +2,7 @@
 // Clients send `Authorization: Bearer <key>` (or `x-api-key`). Only the SHA-256 hash is sent to the DB.
 import { createHash, randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import { API_BAD_LIMIT, blocked, clientIp, hit } from "@/lib/ratelimit";
 
 export const API_VERSION = "v1";
 export const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -14,7 +15,10 @@ export function apiDb() {
   });
 }
 
+const badKey = (req: Request) => `bad:${clientIp(req)}`;
+
 export function keyHash(req: Request): string | null {
+  if (blocked(badKey(req), API_BAD_LIMIT)) return null; // too many failed attempts: don't even query the database
   const auth = req.headers.get("authorization");
   const k = auth?.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : req.headers.get("x-api-key")?.trim();
   return k && k.length >= 20 ? sha256(k) : null;
@@ -34,7 +38,15 @@ export function json(req: Request, body: unknown, status = 200, extra: Record<st
     status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...cors(req), ...extra },
   });
 }
-export const fail = (req: Request, status: number, error: string) => json(req, { error }, status);
+/** 401/403 count as failed key attempts; past the limit the client gets 429 (see lib/ratelimit.ts). */
+export function fail(req: Request, status: number, error: string) {
+  if (status === 401 || status === 403) {
+    const wait = blocked(badKey(req), API_BAD_LIMIT);
+    if (wait) return json(req, { error: "Too many failed attempts" }, 429, { "retry-after": String(wait) });
+    hit(badKey(req), API_BAD_LIMIT);
+  }
+  return json(req, { error }, status);
+}
 export const preflight = (req: Request) => new Response(null, { status: 204, headers: cors(req) });
 
 /** Validate a key for a scope; returns an error Response or null when OK. */

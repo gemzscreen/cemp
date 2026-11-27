@@ -1,11 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { API_LIMIT, clientIp, hit } from "@/lib/ratelimit";
 
 const PUBLIC_PATHS = ["/login", "/auth/callback"];
 
 export async function middleware(request: NextRequest) {
   // Integration API: key-authenticated in the route handlers, no session or login redirect.
-  if (request.nextUrl.pathname.startsWith("/api/v1")) return NextResponse.next();
+  if (request.nextUrl.pathname.startsWith("/api/v1")) {
+    if (request.method === "OPTIONS") return NextResponse.next();
+    const wait = hit(`api:${clientIp(request)}`, API_LIMIT);
+    if (wait) return new NextResponse(JSON.stringify({ error: "Too many requests" }), { status: 429, headers: { "content-type": "application/json", "retry-after": String(wait), "cache-control": "no-store" } });
+    return NextResponse.next();
+  }
   // PWA files must load without a session (service worker updates, install prompt, offline page).
   if (["/sw.js", "/manifest.webmanifest", "/offline.html"].includes(request.nextUrl.pathname) || request.nextUrl.pathname.startsWith("/icons/")) return NextResponse.next();
   let response = NextResponse.next({ request });

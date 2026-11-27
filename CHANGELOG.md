@@ -2,6 +2,12 @@
 
 All notable changes to CEMP Web App. Versions follow SemVer: each content batch bumps the minor version (v0.x.0), fixes bump the patch.
 
+## v2.9.0: Security hardening (2026-11-27)
+- **Security headers** on every response: Content-Security-Policy, HSTS (2 years, preload), X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, COOP; `sw.js` never cached.
+- **Rate limiting** for the integration API: 120 requests/min/IP, and 429 after 10 failed key checks/min/IP (`lib/ratelimit.ts`).
+- **Dependencies**: 5 audit findings cleared (uuid, postcss via overrides; katex 0.19.1). `npm audit --omit=dev` = 0.
+- `docs/SECURITY.md`: what is protected, dashboard settings to switch on, accepted risks.
+
 ## v2.8.0: Night mode, dashboard badges, labour rate sets, game fixes (2026-11-27)
 - **Night / Light / Auto** (`components/ThemeSwitch.tsx`, header): same three choices as darkwizscroll, stored per device (`cemp-theme`), applied before paint by a script in `app/layout.tsx`; Auto follows the device. CSS: `--bar` (dark bars), `--edge` (outlines, offset shadows), `--soft`; drawings, sketches, diagrams and the quotation stay on paper in Night mode; print is always light.
 - **Dashboard badges**: red counts on the cards. Tools / Practices / Learn: entries waiting for review (editors, admin). Games: levels played but not yet 3★. Projects: projects without an issued quotation. darkwizscroll: members who posted cards this week. A "Needs attention" strip for unsynced batches and the review queue.
